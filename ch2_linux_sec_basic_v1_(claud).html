@@ -1,0 +1,504 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ch 2: Linux Security Basics — 정리</title><style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#0d1424;--line:#1f2a3d;--text:#d8dee9;--muted:#8a96ab;--cyan:#56c2e6;--amber:#f0b44c;--green:#72cf8f;--rose:#ec6d78;--violet:#a08cf0;
+--body:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;--mono:'Menlo','Courier New',monospace;--head:'Impact','Arial Narrow',sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:15.5px;line-height:1.72;-webkit-text-size-adjust:100%}
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr);max-width:1320px;margin:0 auto}
+nav{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 14px 28px 20px;border-right:1px solid var(--line)}
+nav .ttl{font-family:var(--head);font-size:22px;letter-spacing:.5px;color:var(--text);line-height:1.1;margin:0 0 4px}
+nav .sub{color:var(--muted);font-size:12px;margin-bottom:18px}
+nav ol{list-style:none;margin:0;padding:0}
+nav a{display:flex;gap:10px;align-items:baseline;padding:6px 10px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;font-size:13.5px;border-radius:0 6px 6px 0}
+nav a .n{font-family:var(--head);font-size:14px;color:#4b5874;min-width:20px}
+nav a:hover{color:var(--text);background:var(--surface)}
+nav a.active{color:var(--text);border-left-color:var(--amber);background:var(--surface)}
+nav a.active .n{color:var(--amber)}
+a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+main{padding:36px 40px 80px;min-width:0}
+.hero{padding:10px 0 34px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.hero .course{color:var(--cyan);font-size:14px}
+.hero h1{font-family:var(--head);font-weight:400;font-size:clamp(40px,6vw,68px);line-height:1;margin:8px 0 12px;letter-spacing:.5px}
+.hero p{color:var(--muted);margin:0;max-width:70ch}
+.hero .prompt{font-family:var(--mono);font-size:13.5px;color:var(--green);margin-top:18px}
+.sec{padding-top:26px}
+.sh{display:flex;gap:16px;align-items:flex-end;margin-bottom:12px}
+.sh .num{font-family:var(--head);font-size:52px;line-height:.9;color:var(--amber)}
+.sh h2{margin:0;font-family:var(--head);font-weight:400;font-size:28px;letter-spacing:.4px;line-height:1.1}
+.sh .sl{color:var(--muted);font-size:12.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px 26px}
+h3{font-size:16.5px;margin:22px 0 8px;color:var(--cyan)}
+.card>h3:first-child,.split>div>h3:first-child{margin-top:0}
+h4{margin:0 0 6px;color:var(--amber);font-size:15px}
+p{margin:8px 0}ul,ol{margin:6px 0;padding-left:22px}li{margin:3px 0}
+b{color:#fff;font-weight:700}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface2);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:#e9d9a8}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:26px;align-items:start;margin:14px 0}
+figure{margin:0;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:14px}
+figure.wide{margin:12px 0;overflow-x:auto}
+figcaption{color:var(--muted);font-size:12px;margin-top:8px;text-align:center}
+.tbl{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--surface2);color:var(--cyan);font-weight:700}
+tr.hl td{background:rgba(240,180,76,.08)}
+td code{white-space:nowrap}
+pre.code{background:#070a13;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:10px 0;font-size:12.8px;line-height:1.6}
+pre.code code{background:none;border:0;padding:0;color:var(--text);font-size:inherit}
+.pr{color:var(--green)}.cm{color:var(--cyan);font-weight:700}.op{color:var(--violet)}.ar{color:#e9d9a8}.ou{color:#a9b3c4}.co{color:#6b7891;font-style:italic}.kw{color:var(--violet)}.fn{color:var(--cyan)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.two pre.code{margin:6px 0}
+.note{border-left:3px solid var(--amber);background:rgba(240,180,76,.06);padding:8px 12px;border-radius:0 6px 6px 0;color:#cfd6e2}
+.qlist li{color:#cfd6e2}
+.sum{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.sum>div{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:var(--surface2)}
+.sum p{margin:0;font-size:14px;color:#cfd6e2}
+@media (max-width:980px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}nav ol{columns:2}main{padding:24px 18px 60px}.split,.two,.sum{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body>
+<div class="wrap"><nav aria-label="목차"><p class="ttl">Linux Security Basics</p><p class="sub">System Security · Ch 2</p><ol><li><a href="#s01"><span class="n">01</span>Linux OS 구조</a></li><li><a href="#s02"><span class="n">02</span>OS 핵심 개념</a></li><li><a href="#s03"><span class="n">03</span>커널과 이중 모드 (Dual-Mode)</a></li><li><a href="#s04"><span class="n">04</span>커널 모드 권한과 주소 공간</a></li><li><a href="#s05"><span class="n">05</span>모드 전환과 시스템 콜</a></li><li><a href="#s06"><span class="n">06</span>예외 처리 (Exception Handling)</a></li><li><a href="#s07"><span class="n">07</span>Man pages와 Linux 명령어</a></li><li><a href="#s08"><span class="n">08</span>사용자와 그룹</a></li><li><a href="#s09"><span class="n">09</span>파일 권한과 umask</a></li><li><a href="#s10"><span class="n">10</span>Access Control List (ACL)</a></li><li><a href="#s11"><span class="n">11</span>권한 실행: sudo와 POSIX Capabilities</a></li><li><a href="#s12"><span class="n">12</span>사용자 인증 (Authentication)</a></li><li><a href="#s13"><span class="n">13</span>/etc/passwd와 /etc/shadow</a></li><li><a href="#s14"><span class="n">14</span>비밀번호 생성·검증과 계정 잠금</a></li><li><a href="#s15"><span class="n">15</span>핵심 요약</a></li></ol></nav>
+<main><div class="hero"><div class="course">System Security · 이승수 교수 · 인천대학교 컴퓨터공학부</div><h1>Ch 2: Linux Security Basics</h1>
+<p>커널과 이중 모드에서 출발해 시스템 콜, 사용자·그룹, 파일 권한, 특권 실행(sudo·capabilities), 비밀번호 저장까지 — Linux가 “누가 무엇을 할 수 있는가”를 결정하는 구조를 따라갑니다.</p>
+<div class="prompt">seed@VM:~$ id<br>uid=1000(seed) gid=1000(seed) groups=1000(seed),27(sudo)</div></div>
+<section id="s01" class="sec"><header class="sh"><span class="num">01</span><div><h2>Linux OS 구조</h2><span class="sl">슬라이드 3–4</span></div></header><div class="card">
+<div class="split"><div>
+<p>OS는 하드웨어와 (사용자·애플리케이션) 사이의 <b>인터페이스</b>를 제공합니다. 위에서 아래로 사용자 → 유틸리티 → 표준 라이브러리 → 커널 → 하드웨어 순으로 계층이 쌓입니다.</p>
+<ul>
+<li><b>User interface</b>: 사용자가 유틸리티(shell 등)를 사용</li>
+<li><b>Library interface</b>: 유틸리티가 표준 라이브러리를 호출</li>
+<li><b>System call interface</b>: 라이브러리가 커널에 진입하는 경계 — 빨간 점선이 User mode / Kernel mode의 경계</li>
+</ul>
+<p>커널(UNIX operating system)은 프로세스 관리, 메모리 관리, 파일 시스템, I/O를 담당합니다.</p>
+</div><figure><svg viewBox="100 28 650 290" role="img" aria-label="Linux OS 계층 구조" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="310" y="40" width="150" height="38" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="385.0" y="64" fill="#72cf8f" font-size="15" text-anchor="middle" font-weight="700">Users</text><rect x="270" y="84" width="230" height="46" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="385.0" y="104" fill="#72cf8f" font-size="15" text-anchor="middle" font-weight="700">Standard utility programs</text><text x="385.0" y="121" fill="#8a96ab" font-size="11.5" text-anchor="middle" font-weight="400">(shell, editors, compilers)</text><rect x="230" y="138" width="310" height="46" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="385.0" y="158" fill="#72cf8f" font-size="15" text-anchor="middle" font-weight="700">Standard library</text><text x="385.0" y="175" fill="#8a96ab" font-size="11.5" text-anchor="middle" font-weight="400">(open, close, read, write, fork)</text><rect x="190" y="204" width="390" height="46" rx="6" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="385.0" y="224" fill="#f0b44c" font-size="15" text-anchor="middle" font-weight="700">UNIX operating system</text><text x="385.0" y="241" fill="#8a96ab" font-size="11.5" text-anchor="middle" font-weight="400">(process · memory · file system · I/O)</text><rect x="150" y="266" width="470" height="46" rx="6" fill="#16203a" stroke="#8a96ab" stroke-width="1.5"/><text x="385.0" y="286" fill="#8a96ab" font-size="15" text-anchor="middle" font-weight="700">Hardware</text><text x="385.0" y="303" fill="#8a96ab" font-size="11.5" text-anchor="middle" font-weight="400">(CPU, memory, disks, terminals)</text><line x1="40" y1="197" x2="680" y2="197" stroke="#ec6d78" stroke-width="2" stroke-dasharray="8 5"/><text x="302" y="56" fill="#56c2e6" font-size="12.5" text-anchor="end" font-weight="400">User interface</text><text x="262" y="104" fill="#56c2e6" font-size="12.5" text-anchor="end" font-weight="400">Library interface</text><text x="222" y="160" fill="#56c2e6" font-size="12.5" text-anchor="end" font-weight="400">System call interface</text><text x="710" y="130" fill="#72cf8f" font-size="14" text-anchor="middle" font-weight="700">User mode</text><text x="710" y="236" fill="#f0b44c" font-size="14" text-anchor="middle" font-weight="700">Kernel mode</text><line x1="710" y1="110" x2="710" y2="60" stroke="#72cf8f" stroke-width="1.5" marker-end="url(#ah)"/><line x1="710" y1="145" x2="710" y2="188" stroke="#72cf8f" stroke-width="1.5" marker-end="url(#ah)"/><line x1="710" y1="222" x2="710" y2="203" stroke="#f0b44c" stroke-width="1.5" marker-end="url(#ah)"/><line x1="710" y1="245" x2="710" y2="262" stroke="#f0b44c" stroke-width="1.5" marker-end="url(#ah)"/><text x="620" y="192" fill="#ec6d78" font-size="10.5" text-anchor="end" font-weight="400">user / kernel 경계</text></svg><figcaption>슬라이드 3 · Linux OS 계층</figcaption></figure></div>
+<h3>Utilities in Linux (슬라이드 4)</h3>
+<p><b>Shell</b>은 명령어 해석기(command interpreter)이며, 그 위에서 여러 명령어·도구가 실행됩니다.</p>
+<div class="tbl"><table><tr><th>Program</th><th>Typical use</th><th>Program</th><th>Typical use</th></tr>
+<tr><td><code>cat</code></td><td>여러 파일을 표준 출력으로 연결</td><td><code>od</code></td><td>파일 8진 덤프</td></tr>
+<tr><td><code>chmod</code></td><td>파일 보호 모드 변경</td><td><code>paste</code></td><td>텍스트 열 붙여넣기</td></tr>
+<tr><td><code>cp</code></td><td>파일 복사</td><td><code>pr</code></td><td>인쇄용 포맷</td></tr>
+<tr><td><code>cut</code></td><td>텍스트 열 잘라내기</td><td><code>ps</code></td><td>실행 중 프로세스 목록</td></tr>
+<tr><td><code>grep</code></td><td>패턴 검색</td><td><code>rm</code></td><td>파일 삭제</td></tr>
+<tr><td><code>head</code></td><td>파일 앞부분 추출</td><td><code>rmdir</code></td><td>디렉터리 삭제</td></tr>
+<tr><td><code>ls</code></td><td>디렉터리 목록</td><td><code>sort</code></td><td>줄 알파벳 정렬</td></tr>
+<tr><td><code>make</code></td><td>컴파일·빌드</td><td><code>tail</code></td><td>파일 끝부분 추출</td></tr>
+<tr><td><code>mkdir</code></td><td>디렉터리 생성</td><td><code>tr</code></td><td>문자 집합 변환</td></tr></table></div>
+</div></section><section id="s02" class="sec"><header class="sh"><span class="num">02</span><div><h2>OS 핵심 개념</h2><span class="sl">슬라이드 5–7</span></div></header><div class="card">
+<h3>강의 도입 질문 (슬라이드 5)</h3>
+<ul class="qlist">
+<li>normal user와 root user의 차이는? — root는 관리자(administrator) 사용자 (Windows의 super user)</li>
+<li><code>su</code>와 <code>sudo</code>의 차이는? → 섹션 08·11</li>
+<li>커널이란? 커널의 기능은? 커널 모듈과 사용자 프로그램의 차이는? → 섹션 03</li>
+<li>user mode와 kernel mode의 차이는? → 섹션 03·04</li>
+<li>system call과 procedure call의 차이는? → 섹션 05</li></ul>
+<div class="split"><div>
+<h3>Classical View (슬라이드 6)</h3>
+<ul>
+<li>프로그램은 <b>독립된 프로세스</b>로 실행</li>
+<li>각 프로세스는 <b>private virtual address space</b>와 하나 이상의 thread를 가짐</li>
+<li>보호된 <b>system call</b>로 커널에 진입, 커널은 <b>upcall</b>(예: signal)로 프로세스에 통지</li>
+<li>보호된 OS 커널이 <b>공유 자원 접근을 중재</b> — thread는 OS 서비스를 위해 커널에 진입</li>
+</ul></div>
+<figure><svg viewBox="0 0 620 360" role="img" aria-label="OS classical view" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="60" y="40" width="120" height="26" fill="#4a66f5"/><rect x="60" y="66" width="120" height="20" fill="#3a7e7a"/><rect x="60" y="86" width="120" height="30" fill="#5a5aa0"/><rect x="60" y="116" width="120" height="4" fill="#e8e8e8"/><rect x="60" y="120" width="120" height="30" fill="#8a8a8a"/><rect x="60" y="150" width="120" height="20" fill="#6f1c7c"/><circle cx="120" cy="97" r="11" fill="#b0443a" stroke="#fff" stroke-width="1"/><line x1="120" y1="178" x2="120" y2="232" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><line x1="120" y1="232" x2="120" y2="180" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><circle cx="120" cy="280" r="11" fill="#b0443a" stroke="#fff" stroke-width="1"/><rect x="250" y="40" width="120" height="26" fill="#4a66f5"/><rect x="250" y="66" width="120" height="20" fill="#3a7e7a"/><rect x="250" y="86" width="120" height="30" fill="#5a5aa0"/><rect x="250" y="116" width="120" height="4" fill="#e8e8e8"/><rect x="250" y="120" width="120" height="30" fill="#8a8a8a"/><rect x="250" y="150" width="120" height="20" fill="#6f1c7c"/><circle cx="310" cy="97" r="11" fill="#3c8a80" stroke="#fff" stroke-width="1"/><line x1="310" y1="178" x2="310" y2="232" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><line x1="310" y1="232" x2="310" y2="180" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><circle cx="310" cy="280" r="11" fill="#3c8a80" stroke="#fff" stroke-width="1"/><rect x="440" y="40" width="120" height="26" fill="#4a66f5"/><rect x="440" y="66" width="120" height="20" fill="#3a7e7a"/><rect x="440" y="86" width="120" height="30" fill="#5a5aa0"/><rect x="440" y="116" width="120" height="4" fill="#e8e8e8"/><rect x="440" y="120" width="120" height="30" fill="#8a8a8a"/><rect x="440" y="150" width="120" height="20" fill="#6f1c7c"/><circle cx="500" cy="97" r="11" fill="#8a4fb0" stroke="#fff" stroke-width="1"/><line x1="500" y1="178" x2="500" y2="232" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><line x1="500" y1="232" x2="500" y2="180" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><circle cx="500" cy="280" r="11" fill="#8a4fb0" stroke="#fff" stroke-width="1"/><rect x="40" y="240" width="540" height="80" rx="8" fill="#1b3150" stroke="#56c2e6" stroke-width="1.5"/><text x="310" y="340" fill="#8a96ab" font-size="11.5" text-anchor="middle" font-weight="400">커널 코드·데이터는 신뢰할 수 없는 프로세스로부터 보호됨</text><text x="310" y="30" fill="#72cf8f" font-size="11.5" text-anchor="middle" font-weight="400">독립 프로세스 = private VAS + thread(s)</text><text x="215" y="210" fill="#56c2e6" font-size="10.5" text-anchor="middle" font-weight="400">protected system calls</text><text x="405" y="210" fill="#56c2e6" font-size="10.5" text-anchor="middle" font-weight="400">upcalls (signals)</text><text x="310" y="316" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="700">Protected OS kernel — 공유 자원 접근 중재</text></svg><figcaption>슬라이드 6 · 프로세스와 커널</figcaption></figure></div>
+<h3>Key Concepts (슬라이드 7)</h3>
+<div class="tbl"><table><tr><th>개념</th><th>정의</th></tr>
+<tr><td><b>Process</b></td><td>프로그램의 실행 — virtual address space + 하나 이상의 thread + 약간의 OS kernel state</td></tr>
+<tr><td><b>VAS</b></td><td>프로세스/스레드의 실행 문맥. 데이터·코드를 주소 지정하는 <b>namespace</b>를 정의</td></tr>
+<tr><td><b>Kernel</b></td><td>하드웨어를 <b>직접</b> 제어하고 핵심 <b>privileged OS function</b>을 구현. 최신 하드웨어는 커널이 <b>untrusted user code</b>로부터 자신을 보호하는 기능을 제공. 모든 하드웨어 장치에 대한 가장 기본적인 수준의 제어</td></tr>
+<tr><td><b>File</b></td><td>(슬라이드에서 항목만 제시)</td></tr></table></div>
+</div></section><section id="s03" class="sec"><header class="sh"><span class="num">03</span><div><h2>커널과 이중 모드 (Dual-Mode)</h2><span class="sl">슬라이드 9–11</span></div></header><div class="card">
+<div class="split"><div>
+<h3>What is Kernel? (슬라이드 9)</h3>
+<ul><li>시스템 전체를 완전히 제어하는 OS의 중심 요소</li>
+<li><b>Memory-resident</b>: 커널 코드는 별도의 메모리 영역에 적재되어 애플리케이션으로부터 <b>보호</b>됨</li>
+<li>핵심 시스템 기능: CPU 스케줄링, context switching, IPC, 메모리 관리, 예외(인터럽트) 핸들러</li>
+<li>CPU와 OS는 <b>dual-mode operation</b>(user mode &amp; kernel mode)을 지원</li></ul>
+</div><figure><svg viewBox="0 0 420 400" role="img" aria-label="Linux 커널 아키텍처" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="90" y="40" width="240" height="38" rx="6" fill="#16203a" stroke="#3b5bdb" stroke-width="1.5"/><text x="210" y="64" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="400">User Applications</text><rect x="90" y="100" width="240" height="38" rx="6" fill="#16203a" stroke="#3b5bdb" stroke-width="1.5"/><text x="210" y="124" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="400">GNU C Library (glibc)</text><rect x="90" y="180" width="240" height="38" rx="6" fill="#16203a" stroke="#b8962e" stroke-width="1.5"/><text x="210" y="204" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="400">System Call Interface</text><rect x="90" y="236" width="240" height="38" rx="6" fill="#16203a" stroke="#b8962e" stroke-width="1.5"/><text x="210" y="260" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="400">Kernel</text><rect x="90" y="292" width="240" height="38" rx="6" fill="#16203a" stroke="#7a8a5a" stroke-width="1.5"/><text x="210" y="316" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="400">Architecture-Dependent Kernel Code</text><line x1="210" y1="78" x2="210" y2="100" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="210" y1="138" x2="210" y2="180" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="210" y1="218" x2="210" y2="236" stroke="#8a96ab" stroke-width="1.5"/><line x1="210" y1="274" x2="210" y2="292" stroke="#8a96ab" stroke-width="1.5"/><line x1="40" y1="160" x2="380" y2="160" stroke="#56c2e6" stroke-width="1.5" stroke-dasharray="4 4"/><rect x="40" y="344" width="340" height="32" rx="6" fill="#1a2a1a" stroke="#72cf8f" stroke-width="1.5"/><text x="210" y="365" fill="#72cf8f" font-size="11.5" text-anchor="middle" font-weight="700">Hardware Platform</text><text x="345" y="100" fill="#72cf8f" font-size="12" text-anchor="start" font-weight="700">User</text><text x="345" y="116" fill="#72cf8f" font-size="12" text-anchor="start" font-weight="700">Space</text><text x="345" y="248" fill="#f0b44c" font-size="12" text-anchor="start" font-weight="700">Kernel</text><text x="345" y="264" fill="#f0b44c" font-size="12" text-anchor="start" font-weight="700">Space</text><line x1="70" y1="70" x2="70" y2="190" stroke="#8a96ab" stroke-width="1.2"/><line x1="70" y1="190" x2="90" y2="196" stroke="#8a96ab" stroke-width="1.2" marker-end="url(#ah)"/><text x="66" y="130" fill="#8a96ab" font-size="9.5" text-anchor="end" font-weight="400">직접 호출 가능</text></svg><figcaption>슬라이드 9 · GNU/Linux 구조</figcaption></figure></div>
+<div class="split"><div>
+<h3>모드 결정 방식 (슬라이드 10)</h3>
+<ul><li>프로세서 제어 레지스터의 특정 비트로 결정</li>
+<li>x86: <b>CS 레지스터의 하위 2비트</b> = <b>CPL</b>(Current Privilege Level)</li>
+<li><b>0</b> = 최고 권한(kernel mode), <b>3</b> = 최저 권한(user mode)</li>
+<li>Level 1, 2는 존재하지만 Linux는 사용하지 않음</li></ul>
+</div><figure><svg viewBox="0 0 580 420" role="img" aria-label="Protection rings" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><circle cx="210" cy="210" r="180" fill="#8fe58f" stroke="#222" stroke-width="1"/><text x="210" y="44" fill="#1a1a1a" font-size="12" text-anchor="middle" font-weight="700">Ring 3</text><circle cx="210" cy="210" r="145" fill="#f7f08a" stroke="#222" stroke-width="1"/><text x="210" y="78" fill="#1a1a1a" font-size="12" text-anchor="middle" font-weight="700">Ring 2</text><circle cx="210" cy="210" r="110" fill="#f9c98a" stroke="#222" stroke-width="1"/><text x="210" y="113" fill="#1a1a1a" font-size="12" text-anchor="middle" font-weight="700">Ring 1</text><circle cx="210" cy="210" r="72" fill="#f58a8a" stroke="#222" stroke-width="1"/><text x="210" y="150" fill="#1a1a1a" font-size="12" text-anchor="middle" font-weight="700">Ring 0</text><text x="210" y="214" fill="#1a1a1a" font-size="14" text-anchor="middle" font-weight="700">Kernel</text><text x="210" y="300" fill="#1a1a1a" font-size="11" text-anchor="middle" font-weight="400">Device drivers</text><text x="210" y="336" fill="#1a1a1a" font-size="11" text-anchor="middle" font-weight="400">Device drivers</text><text x="210" y="372" fill="#1a1a1a" font-size="11" text-anchor="middle" font-weight="400">Applications</text><text x="470" y="40" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400">Least privileged</text><rect x="450" y="52" width="40" height="44" fill="#8fe58f" stroke="#222"/><text x="505" y="79" fill="#8a96ab" font-size="11" text-anchor="start" font-weight="400">Ring 3</text><rect x="450" y="96" width="40" height="44" fill="#f7f08a" stroke="#222"/><text x="505" y="123" fill="#8a96ab" font-size="11" text-anchor="start" font-weight="400">Ring 2</text><rect x="450" y="140" width="40" height="44" fill="#f9c98a" stroke="#222"/><text x="505" y="167" fill="#8a96ab" font-size="11" text-anchor="start" font-weight="400">Ring 1</text><rect x="450" y="184" width="40" height="44" fill="#f58a8a" stroke="#222"/><text x="505" y="211" fill="#8a96ab" font-size="11" text-anchor="start" font-weight="400">Ring 0</text><text x="470" y="248" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400">Most privileged</text><text x="470" y="290" fill="#f0b44c" font-size="11" text-anchor="middle" font-weight="400">Linux: Ring 0 = kernel</text><text x="470" y="308" fill="#72cf8f" font-size="11" text-anchor="middle" font-weight="400">Ring 3 = user</text><text x="470" y="326" fill="#8a96ab" font-size="11" text-anchor="middle" font-weight="400">(Ring 1·2 미사용)</text></svg><figcaption>슬라이드 10 · Protection rings</figcaption></figure></div>
+<div class="split"><div>
+<h3>왜 필요한가 (슬라이드 11)</h3>
+<ul><li>버그가 있거나 악의적인 프로그램이 나쁜 일을 하지 못하게 막음</li>
+<li>최소 두 가지 모드를 <b>하드웨어</b>가 구분<br>— User Mode: 사용자(애플리케이션)를 대신해 실행<br>— Kernel Mode: OS를 대신해 실행</li>
+<li>두 개의 mode bit: <code>00</code> = kernel, <code>11</code> = user</li>
+<li>reset 시 kernel mode로 시작 → user mode 설정 → interrupt/fault 시 kernel mode 복귀</li></ul>
+</div><figure><svg viewBox="0 0 580 240" role="img" aria-label="모드 상태 전이" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><ellipse cx="190" cy="120" rx="70" ry="38" fill="#16203a" stroke="#f0b44c" stroke-width="2"/><ellipse cx="440" cy="120" rx="70" ry="38" fill="#16203a" stroke="#72cf8f" stroke-width="2"/><text x="190" y="116" fill="#f0b44c" font-size="13" text-anchor="middle" font-weight="700">Kernel</text><text x="190" y="133" fill="#f0b44c" font-size="11" text-anchor="middle" font-weight="400">Mode (00)</text><text x="440" y="116" fill="#72cf8f" font-size="13" text-anchor="middle" font-weight="700">User</text><text x="440" y="133" fill="#72cf8f" font-size="11" text-anchor="middle" font-weight="400">Mode (11)</text><path d="M 420 83 Q 315 20 212 83" fill="none" stroke="#ec6d78" stroke-width="2" marker-end="url(#ah)"/><text x="315" y="40" fill="#ec6d78" font-size="11" text-anchor="middle" font-weight="400">interrupt or fault (또는 system call)</text><path d="M 212 157 Q 315 220 420 157" fill="none" stroke="#56c2e6" stroke-width="2" marker-end="url(#ah)"/><text x="315" y="212" fill="#56c2e6" font-size="11" text-anchor="middle" font-weight="400">set user mode</text><path d="M 50 170 Q 70 110 118 115" fill="none" stroke="#8a96ab" stroke-width="2" marker-end="url(#ah)"/><text x="50" y="190" fill="#8a96ab" font-size="11" text-anchor="middle" font-weight="400">reset</text></svg><figcaption>슬라이드 11 · 모드 상태 전이</figcaption></figure></div>
+</div></section><section id="s04" class="sec"><header class="sh"><span class="num">04</span><div><h2>커널 모드 권한과 주소 공간</h2><span class="sl">슬라이드 12–14</span></div></header><div class="card">
+<h3>User vs. Kernel Mode (슬라이드 12)</h3>
+<div class="tbl"><table><tr><th>구분</th><th>Kernel mode</th><th>User mode</th></tr>
+<tr><td>성격</td><td>신뢰된(OS) 코드를 실행하는 프로세서의 <b>특수 모드</b></td><td>사용자 애플리케이션이 실행되는 모드</td></tr>
+<tr><td>하드웨어 접근</td><td><b>전체 접근</b> — CPU·메모리와 직접 상호작용</td><td>H/W가 할 수 있는 일을 <b>제한</b></td></tr>
+<tr><td>명령어</td><td>특정 기계 명령어는 kernel mode에서만 가능</td><td>privileged instruction 실행 불가</td></tr>
+<tr><td>메모리 상주</td><td>주 메모리에 <b>적재되어 계속 상주</b></td><td>—</td></tr></table></div>
+<div class="split"><div>
+<h3>Kernel Mode Privileges (슬라이드 13)</h3>
+<ul><li><b>Privileged instructions</b>: 사용자 앱이 인터럽트를 disable/enable 하거나 메모리 매핑을 바꾸면 안 됨</li>
+<li><b>Privileged memory / I/O access</b>: kernel mode에서만 접근 가능한 메모리·I/O 영역 — critical section, 커널 자료구조(IVT, page table …)</li>
+<li><b>Separate stacks and register sets</b>: MIPS는 “shadow” register set으로 인터럽트 처리 시 load/store 오버헤드 감소</li></ul>
+<h3>Process Address Space (슬라이드 14)</h3>
+<ul><li>32-bit 기준 4GB 중 <code>0xC0000000</code>(CONFIG_PAGE_OFFSET) 이상 = <b>커널 주소</b></li>
+<li>커널 영역 중 kernel code/data, physical memory는 <b>모든 프로세스에 동일</b>, ptables·task/mm struct·kernel stack은 <b>프로세스마다 다름</b></li>
+<li>사용자 영역: .text(32-bit 시작 <code>0x08048000</code>, 64-bit <code>0x00400000</code>) → .data → .bss → heap(↑ brk) → shared libs → stack(↓ %esp)</li></ul>
+</div><figure><svg viewBox="20 66 460 434" role="img" aria-label="32-bit 프로세스 주소 공간" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="150" y="440" width="210" height="18" rx="0" fill="#161c28" stroke="#8a96ab" stroke-width="1"/><rect x="150" y="412" width="210" height="28" fill="#3a3020" stroke="#f0b44c" stroke-width="1"/><text x="255.0" y="430.0" fill="#f0b44c" font-size="10.5" text-anchor="middle" font-weight="400">Program text (.text)</text><rect x="150" y="388" width="210" height="24" fill="#2a2a4a" stroke="#a08cf0" stroke-width="1"/><text x="255.0" y="404.0" fill="#a08cf0" font-size="10.5" text-anchor="middle" font-weight="400">Initialized data (.data)</text><rect x="150" y="364" width="210" height="24" fill="#2a2a4a" stroke="#a08cf0" stroke-width="1"/><text x="255.0" y="380.0" fill="#a08cf0" font-size="10.5" text-anchor="middle" font-weight="400">Uninitialized data (.bss)</text><rect x="150" y="332" width="210" height="32" fill="#1f3a2a" stroke="#72cf8f" stroke-width="1"/><text x="255.0" y="352.0" fill="#72cf8f" font-size="10.5" text-anchor="middle" font-weight="400">Runtime heap (malloc)  ↑ brk</text><rect x="150" y="292" width="210" height="40" fill="#1a2130" stroke="#8a96ab" stroke-width="1"/><rect x="150" y="256" width="210" height="36" fill="#1f3a2a" stroke="#72cf8f" stroke-width="1"/><text x="255.0" y="278.0" fill="#72cf8f" font-size="10.5" text-anchor="middle" font-weight="400">Memory mapped region (shared libs)</text><rect x="150" y="216" width="210" height="40" fill="#1a2130" stroke="#8a96ab" stroke-width="1"/><rect x="150" y="186" width="210" height="30" fill="#1f3a2a" stroke="#72cf8f" stroke-width="1"/><text x="255.0" y="205.0" fill="#72cf8f" font-size="10.5" text-anchor="middle" font-weight="400">User stack  ↓ %esp</text><rect x="150" y="156" width="210" height="30" fill="#3a1f24" stroke="#ec6d78" stroke-width="1"/><text x="255.0" y="175.0" fill="#ec6d78" font-size="10.5" text-anchor="middle" font-weight="400">Kernel code and data</text><rect x="150" y="126" width="210" height="30" fill="#3a1f24" stroke="#ec6d78" stroke-width="1"/><text x="255.0" y="145.0" fill="#ec6d78" font-size="10.5" text-anchor="middle" font-weight="400">Physical memory</text><rect x="150" y="86" width="210" height="40" fill="#3a1f24" stroke="#ec6d78" stroke-width="1"/><text x="255.0" y="110.0" fill="#ec6d78" font-size="10.5" text-anchor="middle" font-weight="400">Process-specific (ptables, task/mm, kstack)</text><line x1="142" y1="86" x2="142" y2="458" stroke="#8a96ab" stroke-width="1.2"/><line x1="136" y1="458" x2="142" y2="458" stroke="#d8dee9" stroke-width="1.2"/><text x="132" y="462" fill="#d8dee9" font-size="11" text-anchor="end" font-weight="400" font-family="Menlo, Courier New, monospace">0x00000000</text><line x1="136" y1="440" x2="142" y2="440" stroke="#d8dee9" stroke-width="1.2"/><text x="132" y="444" fill="#d8dee9" font-size="11" text-anchor="end" font-weight="400" font-family="Menlo, Courier New, monospace">0x08048000</text><line x1="136" y1="186" x2="142" y2="186" stroke="#d8dee9" stroke-width="1.2"/><text x="132" y="190" fill="#d8dee9" font-size="11" text-anchor="end" font-weight="400" font-family="Menlo, Courier New, monospace">0xC0000000</text><line x1="136" y1="86" x2="142" y2="86" stroke="#d8dee9" stroke-width="1.2"/><text x="132" y="90" fill="#d8dee9" font-size="11" text-anchor="end" font-weight="400" font-family="Menlo, Courier New, monospace">0xFFFFFFFF</text><line x1="142" y1="186" x2="368" y2="186" stroke="#ec6d78" stroke-width="2" stroke-dasharray="6 4"/><text x="370" y="190" fill="#ec6d78" font-size="10.5" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">PAGE_OFFSET</text><text x="370" y="130.0" fill="#ec6d78" font-size="12" text-anchor="start" font-weight="700">Kernel</text><text x="370" y="146.0" fill="#ec6d78" font-size="12" text-anchor="start" font-weight="700">virtual mem</text><text x="370" y="162.0" fill="#8a96ab" font-size="10.5" text-anchor="start" font-weight="400">(1GB)</text><text x="370" y="300" fill="#72cf8f" font-size="12" text-anchor="start" font-weight="700">Process</text><text x="370" y="316" fill="#72cf8f" font-size="12" text-anchor="start" font-weight="700">virtual mem</text><text x="370" y="332" fill="#8a96ab" font-size="10.5" text-anchor="start" font-weight="400">(3GB)</text><text x="255.0" y="480" fill="#8a96ab" font-size="10" text-anchor="middle" font-weight="400">y축: 가상 주소 (32-bit) · 구간 높이는 개략적</text></svg><figcaption>슬라이드 13–14 · 주소 공간 (구간 크기는 개략적)</figcaption></figure></div>
+</div></section><section id="s05" class="sec"><header class="sh"><span class="num">05</span><div><h2>모드 전환과 시스템 콜</h2><span class="sl">슬라이드 15–19</span></div></header><div class="card">
+<div class="split"><div>
+<h3>Mode Transition (슬라이드 15)</h3>
+<ul><li>User mode: 사용자 앱의 무해한 코드 실행</li>
+<li>Kernel mode (= system / supervisor / privileged mode): 커널 코드 실행, privileged instruction 실행 가능</li>
+<li>Kernel mode 진입 조건: <b>system call 호출</b> 또는 <b>fault/interrupt 발생</b></li>
+<li>예: <code>fork()</code>(system call), divide by zero · page fault(fault), timer interrupt(H/W interrupt)</li></ul>
+</div><figure><svg viewBox="0 0 700 290" role="img" aria-label="모드 전환" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="30" y="30" width="560" height="110" rx="6" fill="#1c2230" stroke="#8a96ab" stroke-width="1.5"/><rect x="30" y="160" width="560" height="110" rx="6" fill="#132a3a" stroke="#56c2e6" stroke-width="1.5"/><text x="44" y="52" fill="#8a96ab" font-size="11" text-anchor="start" font-weight="400">user process</text><text x="44" y="182" fill="#56c2e6" font-size="11" text-anchor="start" font-weight="400">kernel</text><rect x="50" y="74" width="140" height="32" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="120" y="95" fill="#d8dee9" font-size="10.5" text-anchor="middle" font-weight="400">user process executing</text><rect x="220" y="74" width="110" height="32" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="275" y="95" fill="#d8dee9" font-size="10.5" text-anchor="middle" font-weight="400">calls system call</text><rect x="400" y="74" width="160" height="32" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="480" y="95" fill="#d8dee9" font-size="10.5" text-anchor="middle" font-weight="400">return from system call</text><line x1="190" y1="90" x2="220" y2="90" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><rect x="260" y="220" width="150" height="32" rx="6" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="335" y="241" fill="#d8dee9" font-size="10.5" text-anchor="middle" font-weight="400">execute system call</text><path d="M 275 106 L 300 218" fill="none" stroke="#f0b44c" stroke-width="2" marker-end="url(#ah)"/><path d="M 380 218 L 470 108" fill="none" stroke="#72cf8f" stroke-width="2" marker-end="url(#ah)"/><text x="250" y="190" fill="#f0b44c" font-size="10.5" text-anchor="middle" font-weight="400">trap: mode bit = 0</text><text x="470" y="190" fill="#72cf8f" font-size="10.5" text-anchor="middle" font-weight="400">return: mode bit = 1</text><text x="600" y="90" fill="#72cf8f" font-size="10.5" text-anchor="start" font-weight="400">user mode (1)</text><text x="600" y="220" fill="#f0b44c" font-size="10.5" text-anchor="start" font-weight="400">kernel mode (0)</text></svg><figcaption>슬라이드 15 · trap(mode bit 0) → return(mode bit 1)</figcaption></figure></div>
+<h3>System Calls (슬라이드 17)</h3>
+<ul><li>실행 중인 프로그램과 OS 사이의 <b>인터페이스</b></li>
+<li>OS로 제어를 이동(jump)시키면서 <b>동시에 하드웨어 권한 레벨을 올림</b> — OS에 어떤 작업을 수행해 달라는 <b>요청</b></li>
+<li>user mode 앱이 kernel mode 코드를 호출하는 <b>통제된 방법</b>이자 <b>구조화된 진입점</b></li>
+<li>예: <code>ioctl()</code>, <code>mknod()</code>, <code>mount()</code>, <code>fork()</code>, <code>execve()</code>, <code>wait()</code>, <code>exit()</code>, <code>kill()</code>, <code>chmod()</code></li></ul>
+<div class="tbl"><table><tr><th>비교</th><th>System call</th><th>Procedure call</th></tr>
+<tr><td>제어 이동</td><td>OS(커널)로 이동</td><td>같은 프로그램 내 함수로 이동</td></tr>
+<tr><td>권한 레벨</td><td>하드웨어 권한 레벨 상승 (user → kernel)</td><td>변화 없음 (같은 모드)</td></tr>
+<tr><td>진입점</td><td>OS가 정한 구조화된·통제된 진입점</td><td>임의 함수 주소</td></tr></table></div>
+<h3>파라미터 전달 3가지 방법 (슬라이드 18)</h3>
+<pre class="code"><code><span class="kw">s<span class="kw">size_t</span></span> <span class="fn">read</span>(<span class="kw">int</span> fd, <span class="kw">void</span> *buf, size_t count);</code></pre>
+<ol><li><b>Register</b>에 직접 전달</li>
+<li>메모리 <b>table</b>에 저장하고 table 주소를 레지스터로 전달</li>
+<li>프로그램이 <b>stack</b>에 push, OS가 pop</li></ol>
+<ul><li>x86: <code>INT 0x80</code> (0–255, 0x00–0xff) — 인자는 <b>EAX</b> 또는 <b>stack</b></li>
+<li>MIPS: <code>syscall</code> — OS가 정한 특정 레지스터에 인자 배치</li></ul>
+<h3>Windows vs Unix System Calls (슬라이드 19)</h3>
+<div class="tbl"><table><tr><th>분류</th><th>Windows</th><th>Unix</th></tr>
+<tr><td>Process control</td><td>CreateProcess() · ExitProcess() · WaitForSingleObject()</td><td>fork() · exit() · wait()</td></tr>
+<tr><td>File management</td><td>CreateFile() · ReadFile() · WriteFile() · CloseHandle()</td><td>open() · read() · write() · close()</td></tr>
+<tr><td>Device management</td><td>SetConsoleMode() · ReadConsole() · WriteConsole()</td><td>ioctl() · read() · write()</td></tr>
+<tr><td>Information maintenance</td><td>GetCurrentProcessID() · SetTimer() · Sleep()</td><td>getpid() · alarm() · sleep()</td></tr>
+<tr><td>Communications</td><td>CreatePipe() · CreateFileMapping() · MapViewOfFile()</td><td>pipe() · shm_open() · mmap()</td></tr>
+<tr class="hl"><td><b>Protection</b></td><td>SetFileSecurity() · InitializeSecurityDescriptor() · SetSecurityDescriptorGroup()</td><td><b>chmod() · umask() · chown()</b></td></tr></table></div>
+</div></section><section id="s06" class="sec"><header class="sh"><span class="num">06</span><div><h2>예외 처리 (Exception Handling)</h2><span class="sl">슬라이드 20–21</span></div></header><div class="card">
+<div class="split"><div>
+<p><b>Exception</b>의 종류: <b>System call (= trap)</b>, Fault, H/W interrupt. 예외 발생 시 하드웨어는 다음을 수행합니다.</p>
+<ol><li><b>Save</b>: 프로세스를 복원할 수 있도록 상태 저장 — 현재/문제를 일으킨 명령어의 PC(IP)</li>
+<li><b>Handler 호출</b>: error / interrupt / syscall을 처리할 handler 루틴 — 원인 식별 후 처리, 필요시 추가 상태 저장</li>
+<li><b>Restore</b>: 상태를 복원하고 원래 애플리케이션으로 복귀 (복구 불가능하면 <b>kill</b>)</li></ol>
+<h3>Error Detection &amp; Handling (슬라이드 21)</h3>
+<ul><li>사용자 프로그램이 <b>illegal</b> 명령어(privileged 또는 존재하지 않는 명령어)를 실행하거나 <b>forbidden</b> 메모리 영역에 접근</li>
+<li>→ software interrupt 발생 → interrupt handler가 trap</li>
+<li>→ OS로 제어 이동: 에러 메시지 출력, 필요시 log(core) 파일 덤프, 문제 프로그램 종료 (Fault Handling)</li></ul>
+</div><figure><svg viewBox="0 0 580 190" role="img" aria-label="예외 처리 3단계" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="30" y="70" width="150" height="64" rx="6" fill="#16203a" stroke="#56c2e6" stroke-width="1.5"/><text x="105" y="98" fill="#56c2e6" font-size="12.5" text-anchor="middle" font-weight="700">① Save state</text><text x="105" y="118" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">PC(IP) 저장</text><line x1="180" y1="102" x2="210" y2="102" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><rect x="210" y="70" width="150" height="64" rx="6" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="285" y="98" fill="#f0b44c" font-size="12.5" text-anchor="middle" font-weight="700">② Call handler</text><text x="285" y="118" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">원인 식별·처리</text><line x1="360" y1="102" x2="390" y2="102" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><rect x="390" y="70" width="150" height="64" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="465" y="98" fill="#72cf8f" font-size="12.5" text-anchor="middle" font-weight="700">③ Restore / Kill</text><text x="465" y="118" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">복귀 또는 종료</text><text x="290" y="40" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="400">Exception = system call(trap) · fault · H/W interrupt</text><text x="290" y="170" fill="#ec6d78" font-size="11" text-anchor="middle" font-weight="400">복구 불가능 시 → 에러 메시지, core dump, 프로세스 종료</text></svg><figcaption>슬라이드 20 · 예외 처리 3단계</figcaption></figure></div>
+</div></section><section id="s07" class="sec"><header class="sh"><span class="num">07</span><div><h2>Man pages와 Linux 명령어</h2><span class="sl">슬라이드 23–24</span></div></header><div class="card">
+<div class="tbl"><table><tr><th>Section</th><th>Description</th></tr>
+<tr><td>1</td><td>실행 프로그램 또는 shell 명령어</td></tr>
+<tr class="hl"><td>2</td><td><b>System calls</b> (커널이 제공하는 함수)</td></tr>
+<tr class="hl"><td>3</td><td><b>Library calls</b> (프로그램 라이브러리 내 함수)</td></tr>
+<tr><td>4</td><td>Special files (주로 /dev)</td></tr>
+<tr><td>5</td><td>파일 형식과 규약 — 예: /etc/passwd</td></tr>
+<tr><td>6</td><td>Games</td></tr>
+<tr><td>7</td><td>Miscellaneous — 예: man(7), groff(7)</td></tr>
+<tr><td>8</td><td>시스템 관리 명령어 (주로 root 전용)</td></tr>
+<tr><td>9</td><td>Kernel routines [비표준]</td></tr></table></div>
+<p><b>슬라이드 Quiz</b>: 같은 이름이라도 섹션이 다름 — <code>/usr/bin/passwd</code>(명령어) → <code>man 1 passwd</code>, <code>/etc/passwd</code>(파일 형식) → <code>man 5 passwd</code>. <code>system()</code>, <code>execve()</code>, <code>execlp()</code>도 섹션 2(system call)와 3(library call) 중 어디에 속하는지 구분해 볼 것.</p>
+<pre class="code"><code><span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">apt-get</span> <span class="ar">install</span> <span class="ar">manpages</span> <span class="ar">manpages-dev</span> <span class="ar">manpages-posix</span> <span class="ar">manpages-posix-dev</span></code></pre>
+<h3>실습 명령어 (슬라이드 24)</h3>
+<div class="two"><pre class="code"><code><span class="pr">$ </span><span class="cm">uname</span> <span class="op">-a</span>
+<span class="pr">$ </span><span class="cm">id</span>
+<span class="pr">$ </span><span class="cm">who</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-i</span> <span class="ar">/usr</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">/usr</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">/etc/passwd</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">/usr/bin/passwd</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">/usr/bin/su</span>
+<span class="pr">$ </span><span class="cm">cd</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span>
+<span class="pr">$ </span><span class="cm">touch</span> <span class="ar">file1</span> <span class="ar">prog1</span> <span class="ar">file3</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span>
+<span class="pr">$ </span><span class="cm">chmod</span> <span class="ar">0755</span> <span class="ar">file1</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">file1</span></code></pre><pre class="code"><code><span class="pr">$ </span><span class="cm">chmod</span> <span class="ar">4755</span> <span class="ar">prog1</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">prog1</span>
+<span class="pr">$ </span><span class="cm">chown</span> <span class="ar">student_2</span> <span class="ar">file1</span>
+<span class="pr">$ </span><span class="cm">chown</span> <span class="ar">student_5</span> <span class="ar">file3</span>
+<span class="pr">$ </span><span class="cm">groups</span>
+<span class="pr">$ </span><span class="cm">chgrp</span> <span class="ar">student_3</span> <span class="ar">file1</span>
+<span class="pr">$ </span><span class="cm">whereis</span> <span class="ar">su</span>
+<span class="pr">$ </span><span class="cm">whereis</span> <span class="ar">passwd</span>
+<span class="pr">$ </span><span class="cm">file</span> <span class="ar">/etc/passwd</span>
+<span class="pr">$ </span><span class="cm">file</span> <span class="ar">/usr/bin/passwd</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">/etc/shadow</span>
+<span class="pr">$ </span><span class="cm">ps</span>
+<span class="pr">$ </span><span class="cm">chsh</span>
+<span class="pr">$ </span><span class="cm">ps</span>
+<span class="pr">$ </span><span class="cm">exit</span></code></pre></div>
+</div></section><section id="s08" class="sec"><header class="sh"><span class="num">08</span><div><h2>사용자와 그룹</h2><span class="sl">슬라이드 25–30</span></div></header><div class="card">
+<div class="split"><div>
+<h3>Users (슬라이드 25)</h3>
+<ul><li>각 사용자는 <b>고유한 user ID</b>를 가짐</li><li>UID는 <code>/etc/passwd</code>에 저장</li>
+<li>UID 0 = root, 1–99 = 사전 정의 계정, 100–999 = 시스템/관리 계정 (슬라이드 51)</li></ul>
+</div><figure><svg viewBox="0 0 620 200" role="img" aria-label="UID 범위" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><line x1="50" y1="110" x2="575" y2="110" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><rect x="60" y="90" width="40" height="40" rx="3" fill="#3a1f24" stroke="#ec6d78" stroke-width="1.5"/><rect x="110" y="90" width="110" height="40" rx="3" fill="#2a2a4a" stroke="#a08cf0" stroke-width="1.5"/><rect x="240" y="90" width="140" height="40" rx="3" fill="#3a3020" stroke="#f0b44c" stroke-width="1.5"/><rect x="400" y="90" width="160" height="40" rx="3" fill="#1f3a2a" stroke="#72cf8f" stroke-width="1.5"/><line x1="60" y1="130" x2="60" y2="138" stroke="#d8dee9" stroke-width="1.2"/><text x="60" y="154" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">0</text><line x1="110" y1="130" x2="110" y2="138" stroke="#d8dee9" stroke-width="1.2"/><text x="110" y="154" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">1</text><line x1="220" y1="130" x2="220" y2="138" stroke="#d8dee9" stroke-width="1.2"/><text x="220" y="154" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">99</text><line x1="240" y1="130" x2="240" y2="138" stroke="#d8dee9" stroke-width="1.2"/><text x="240" y="154" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">100</text><line x1="380" y1="130" x2="380" y2="138" stroke="#d8dee9" stroke-width="1.2"/><text x="380" y="154" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">999</text><line x1="400" y1="130" x2="400" y2="138" stroke="#d8dee9" stroke-width="1.2"/><text x="400" y="154" fill="#d8dee9" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">1000</text><text x="80" y="80" fill="#ec6d78" font-size="11" text-anchor="middle" font-weight="700">root</text><text x="165" y="80" fill="#a08cf0" font-size="11" text-anchor="middle" font-weight="700">predefined</text><text x="310" y="80" fill="#f0b44c" font-size="11" text-anchor="middle" font-weight="700">system accounts</text><text x="480" y="80" fill="#72cf8f" font-size="11" text-anchor="middle" font-weight="700">일반 사용자</text><text x="310" y="186" fill="#8a96ab" font-size="10" text-anchor="middle" font-weight="400">x축: UID 값 (구간 표시용 비선형 눈금)</text><text x="480" y="154" fill="#72cf8f" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">1000 ~</text></svg><figcaption>슬라이드 51 · UID 구간</figcaption></figure></div>
+<pre class="code"><code><span class="ou">root:x:0:0:root:/root:/bin/bash</span>
+<span class="ou">seed:x:1000:1000:SEED,,,:/home/seed:/bin/bash</span>
+<span class="pr">seed@VM:~$ </span><span class="cm">id</span>
+<span class="ou">uid=1000(seed) gid=1000(seed) groups=1000(seed)</span>
+<span class="pr">root@VM:~# </span><span class="cm">id</span>
+<span class="ou">uid=0(root) gid=0(root) groups=0(root)</span></code></pre>
+<h3>UID, GID (슬라이드 26)</h3>
+<div class="two"><pre class="code"><code><span class="pr">$ </span><span class="cm">more</span> <span class="ar">/etc/passwd</span>
+<span class="ou">root:x:0:0:root:/root:/bin/bash</span>
+<span class="ou">bin:x:1:1:bin:/bin:/sbin/nologin</span>
+<span class="ou">daemon:x:2:2:daemon:/sbin:/sbin/nologin</span>
+<span class="ou">adm:x:3:4:adm:/var/adm:/sbin/nologin</span>
+<span class="ou">lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin</span>
+<span class="ou">sync:x:5:0:sync:/sbin:/bin/sync</span>
+<span class="ou">shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown</span>
+<span class="ou">halt:x:7:0:halt:/sbin:/sbin/halt</span>
+<span class="ou">swsec:x:1000:1000:swsec2022:/home/swsec:/bin/bash</span>
+<span class="ou">sec_11:x:1001:1001:,,,:/home/sec_11:/bin/bash</span>
+<span class="ou">sec_12:x:1002:1001:,,,:/home/sec_12:/bin/bash</span>
+<span class="ou">sec_13:x:1003:1001:,,,:/home/sec_13:/bin/bash</span>
+<span class="ou">sec_14:x:1004:1001:,,,:/home/sec_14:/bin/bash</span>
+<span class="ou">sec_15:x:1005:1001:,,,:/home/sec_15:/bin/bash</span>
+<span class="ou">sec_16:x:1006:1001:,,,:/home/sec_16:/bin/bash</span></code></pre><pre class="code"><code><span class="pr">$ </span><span class="cm">more</span> <span class="ar">/etc/group</span>
+<span class="ou">root:x:0:</span>
+<span class="ou">bin:x:1:</span>
+<span class="ou">daemon:x:2:</span>
+<span class="ou">sys:x:3:</span>
+<span class="ou">sudo:x:27:swsec</span>
+<span class="ou">swsec:x:1000:</span>
+<span class="ou">student_swsec_1:x:1001:</span>
+<span class="ou">student_swsec_2:x:1002:</span>
+<span class="ou">sec_11:x:1003:</span>
+<span class="ou">sec_12:x:1004:</span>
+<span class="ou">sec_13:x:1005:</span>
+<span class="ou">sec_14:x:1006:</span></code></pre></div>
+<pre class="code"><code><span class="pr">$ </span><span class="cm">id</span>
+<span class="ou">uid=1000(swsec) gid=1000(swsec) groups=1000(swsec),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),116(lxd)</span>
+<span class="pr">$ </span><span class="cm">id</span>
+<span class="ou">uid=1001(sec_11) gid=1001(student_swsec_1) groups=1001(student_swsec_1)</span></code></pre>
+<p class="note">sec_11~sec_16은 UID는 각기 다르지만 <b>primary GID는 모두 1001</b>(student_swsec_1)입니다. swsec은 group 27(sudo)에 속해 있어 sudo를 사용할 수 있습니다.</p>
+<h3>Group (슬라이드 27)</h3>
+<ul><li>사용자의 집합을 표현, 그룹 단위로 권한 부여</li><li>한 사용자는 <b>여러</b> 그룹에 속할 수 있음</li><li><b>primary group</b>은 /etc/passwd의 GID 필드</li></ul>
+<div class="two"><pre class="code"><code><span class="pr">seed@VM:~$ </span><span class="cm">grep</span> <span class="ar">seed</span> <span class="ar">/etc/group</span>
+<span class="ou">adm:x:4:syslog,seed</span>
+<span class="ou">sudo:x:27:seed</span>
+<span class="ou">plugdev:x:46:seed</span>
+<span class="ou">lpadmin:x:120:seed</span>
+<span class="ou">lxd:x:131:seed</span>
+<span class="ou">seed:x:1000:</span>
+<span class="ou">docker:x:136:seed</span></code></pre><pre class="code"><code><span class="pr">seed@VM:~$ </span><span class="cm">groups</span>
+<span class="ou">seed adm sudo plugdev lpadmin lxd docker</span>
+<span class="pr">seed@VM:~$ </span><span class="cm">id</span>
+<span class="ou">uid=1000(seed) gid=1000(seed) groups=1000(seed),4(adm),27(sudo),46(plugdev),120(lpadmin),131(lxd),136(docker)</span></code></pre></div>
+<h3>사용자·그룹 관리 (슬라이드 28)</h3>
+<ul><li>사용자 추가: ① /etc/passwd에 직접 추가 ② <code>adduser</code> 명령어</li><li><b>su</b> = <b>S</b>witch to another <b>u</b>ser (대상 사용자의 비밀번호 필요)</li></ul>
+<pre class="code"><code><span class="pr">seed@VM:~$ </span><span class="cm">su</span> <span class="ar">bob</span>
+<span class="ou">Password:</span>
+<span class="ou">bob@VM:/home/seed$</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">groupadd</span> <span class="ar">alpha</span><span class="co">  # create a group alpha</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">usermod</span> <span class="op">-a</span> <span class="op">-G</span> <span class="ar">alpha</span> <span class="ar">seed</span><span class="co">  # add seed to alpha</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">usermod</span> <span class="op">-a</span> <span class="op">-G</span> <span class="ar">alpha</span> <span class="ar">bob</span><span class="co">  # add bob to alpha</span></code></pre>
+<h3>Superuser (슬라이드 29–30)</h3>
+<ul><li>사용자는 <i>username</i>(shmat, UID 13630), <i>group name</i>(prof, GID 30), <i>password</i>를 가짐</li>
+<li>root = 관리자/superuser (<b>UID 0</b>): 모든 파일·시스템 자원 읽기/쓰기, OS 수정, 다른 사용자로 전환(그 UID로 명령 실행)</li>
+<li>root는 모든 파일의 owner처럼 동작하는 “God”</li>
+<li>이름이 “root”일 필요 없음 — <b>UID가 0이면 root</b>, 여러 root 계정도 가능</li>
+<li>슬라이드 질문: superuser는 비밀번호를 읽을 수 있는가? — 저장되는 것은 평문이 아니라 <b>해시</b> (섹션 13)</li></ul>
+</div></section><section id="s09" class="sec"><header class="sh"><span class="num">09</span><div><h2>파일 권한과 umask</h2><span class="sl">슬라이드 32–35</span></div></header><div class="card">
+<h3>Traditional Permission Model (슬라이드 32)</h3>
+<div class="tbl"><table><tr><th>권한</th><th>파일</th><th>디렉터리</th></tr>
+<tr><td><b>r</b></td><td>내용 보기</td><td>목록 보기 (<code>ls</code>)</td></tr>
+<tr><td><b>w</b></td><td>내용 변경</td><td>내부에 파일·하위 디렉터리 생성</td></tr>
+<tr><td><b>x</b></td><td>프로그램/스크립트 실행</td><td>디렉터리 진입 (<code>cd</code>, traverse)</td></tr></table></div>
+<div class="split"><div>
+<h3>File Permissions (슬라이드 33–34)</h3>
+<ul><li>모든 파일은 owner와 group을 가짐, owner(또는 root)가 권한 설정</li>
+<li>owner / group / everybody 각각 r·w·x → 각 3비트를 8진수(0–7)로 변환</li>
+<li>파일 타입: <code>-</code> 일반, <code>d</code> 디렉터리, <code>b</code> 블록, <code>c</code> 문자, <code>l</code> 심볼릭 링크, <code>p</code> 파이프, <code>s</code> 소켓</li>
+<li>특수 비트: <b>s</b> setuid/setgid (디렉터리면 파일이 디렉터리 소유자의 gid를 가짐), <b>t</b> sticky bit (디렉터리면 append-only)</li></ul>
+</div><figure><svg viewBox="0 0 720 205" role="img" aria-label="권한 비트" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="60" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#56c2e6" stroke-width="1.5"/><text x="76" y="87" fill="#56c2e6" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">-</text><rect x="96" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="112" y="87" fill="#f0b44c" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">r</text><rect x="132" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="148" y="87" fill="#f0b44c" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">w</text><rect x="168" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="184" y="87" fill="#f0b44c" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">-</text><rect x="204" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="220" y="87" fill="#72cf8f" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">r</text><rect x="240" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="256" y="87" fill="#72cf8f" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">-</text><rect x="276" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="292" y="87" fill="#72cf8f" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">-</text><rect x="312" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#a08cf0" stroke-width="1.5"/><text x="328" y="87" fill="#a08cf0" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">r</text><rect x="348" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#a08cf0" stroke-width="1.5"/><text x="364" y="87" fill="#a08cf0" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">-</text><rect x="384" y="60" width="32" height="40" rx="4" fill="#16203a" stroke="#a08cf0" stroke-width="1.5"/><text x="400" y="87" fill="#a08cf0" font-size="18" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">-</text><text x="420" y="87" fill="#8a96ab" font-size="12" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">1 shmat prof 116 midterm.tex</text><text x="76" y="130" fill="#56c2e6" font-size="11" text-anchor="middle" font-weight="400">type</text><text x="150" y="130" fill="#f0b44c" font-size="11" text-anchor="middle" font-weight="400">owner (u)</text><text x="258" y="130" fill="#72cf8f" font-size="11" text-anchor="middle" font-weight="400">group (g)</text><text x="366" y="130" fill="#a08cf0" font-size="11" text-anchor="middle" font-weight="400">other (o)</text><text x="150" y="150" fill="#f0b44c" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">rw- = 110 = 6</text><text x="258" y="150" fill="#72cf8f" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">r-- = 100 = 4</text><text x="366" y="150" fill="#a08cf0" font-size="11" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">r-- = 100 = 4</text><text x="258" y="185" fill="#d8dee9" font-size="13" text-anchor="middle" font-weight="700">→ 8진수 0644</text><text x="258" y="40" fill="#8a96ab" font-size="11" text-anchor="middle" font-weight="400">ls -l 출력의 앞 10글자</text></svg><figcaption>슬라이드 34 · -rw-r--r-- = 0644</figcaption></figure></div>
+<pre class="code"><code><span class="ou">-rw-r--r-- 1 markstam markstam 767 Feb 6 19:31 cs286.txt</span>
+<span class="ou">drwxr-xr-x 40 markstam markstam 1360 Jan 25 17:33 docs</span></code></pre>
+<p class="note">슬라이드 24 실습: <code>chmod 0755 file1</code> → <code>-rwxr-xr-x</code>, <code>chmod 4755 prog1</code> → 앞자리 4가 setuid 비트이므로 owner의 x 자리가 <code>s</code>로 표시 (<code>-rwsr-xr-x</code>).</p>
+<div class="split"><div>
+<h3>Default Permissions — umask (슬라이드 35)</h3>
+<p><b>umask</b>는 새 파일의 기본 권한을 결정합니다. 파일의 초기값 0666에서 umask에 켜진 비트를 끕니다.</p>
+<div class="tbl"><table><tr><th>umask</th><th>계산</th><th>결과</th></tr>
+<tr><td>0002</td><td>110 110 110 → 110 110 100</td><td><code>-rw-rw-r--</code> (t1)</td></tr>
+<tr><td>0022</td><td>110 110 110 → 110 100 100</td><td><code>-rw-r--r--</code> (t2)</td></tr>
+<tr><td>0777</td><td>모든 비트 제거</td><td><code>----------</code> (t3)</td></tr></table></div>
+</div><figure><svg viewBox="0 0 500 200" role="img" aria-label="umask 계산" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><text x="30" y="50" fill="#d8dee9" font-size="12.5" text-anchor="start" font-weight="700">Initial (0666)</text><text x="200" y="50" fill="#d8dee9" font-size="14" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">110 110 110</text><text x="350" y="50" fill="#8a96ab" font-size="13" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">rw- rw- rw-</text><text x="30" y="94" fill="#ec6d78" font-size="12.5" text-anchor="start" font-weight="700">umask (0022)</text><text x="200" y="94" fill="#ec6d78" font-size="14" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">000 010 010</text><text x="30" y="152" fill="#72cf8f" font-size="12.5" text-anchor="start" font-weight="700">Final (0644)</text><text x="200" y="152" fill="#72cf8f" font-size="14" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">110 100 100</text><text x="350" y="152" fill="#8a96ab" font-size="13" text-anchor="start" font-weight="400" font-family="Menlo, Courier New, monospace">rw- r-- r--</text><line x1="30" y1="130" x2="470" y2="130" stroke="#8a96ab" stroke-width="1.2" stroke-dasharray="5 3"/><text x="250" y="180" fill="#56c2e6" font-size="12" text-anchor="middle" font-weight="400">Final = Initial AND (NOT umask)</text></svg><figcaption>슬라이드 35 · umask 0022 적용</figcaption></figure></div>
+<pre class="code"><code><span class="pr">$ </span><span class="cm">umask</span>
+<span class="ou">0002</span>
+<span class="pr">$ </span><span class="cm">touch</span> <span class="ar">t1</span>
+<span class="pr">$ </span><span class="cm">umask</span> <span class="ar">0022</span>
+<span class="pr">$ </span><span class="cm">touch</span> <span class="ar">t2</span>
+<span class="pr">$ </span><span class="cm">umask</span> <span class="ar">0777</span>
+<span class="pr">$ </span><span class="cm">touch</span> <span class="ar">t3</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">t*</span>
+<span class="ou">-rw-rw-r-- 1 seed seed 0 Feb  6 16:23 t1</span>
+<span class="ou">-rw-r--r-- 1 seed seed 0 Feb  6 16:24 t2</span>
+<span class="ou">---------- 1 seed seed 0 Feb  6 16:24 t3</span></code></pre>
+</div></section><section id="s10" class="sec"><header class="sh"><span class="num">10</span><div><h2>Access Control List (ACL)</h2><span class="sl">슬라이드 36–37</span></div></header><div class="card">
+<ul><li><b>Fine-grained ACL</b>: <b>개별</b> 사용자/그룹 단위로 권한 부여</li><li>전통적 권한 모델과 <b>공존</b></li><li>ACL이 정의된 파일은 <code>ls -l</code>에서 권한 문자열 뒤에 <b><code>+</code></b> 표시</li></ul>
+<div class="two"><pre class="code"><code><span class="pr">$ </span><span class="cm">getfacl</span> <span class="ar">example</span>
+<span class="co"># file: example</span>
+<span class="co"># owner: seed</span>
+<span class="co"># group: seed</span>
+<span class="ou">user::rw-</span>
+<span class="ou">group::rw-</span>
+<span class="ou">other::r--</span></code></pre><pre class="code"><code><span class="pr">$ </span><span class="cm">setfacl</span> <span class="op">-m</span> <span class="ar">u:alice:r--</span> <span class="ar">example</span>
+<span class="pr">$ </span><span class="cm">setfacl</span> <span class="op">-m</span> <span class="ar">g:faculty:rw-</span> <span class="ar">example</span>
+<span class="pr">$ </span><span class="cm">getfacl</span> <span class="ar">example</span>
+<span class="co"># file: example</span>
+<span class="co"># owner: seed</span>
+<span class="co"># group: seed</span>
+<span class="ou">user::rw-</span>
+<span class="ou">user:alice:r--</span>
+<span class="ou">group::rw-</span>
+<span class="ou">group:faculty:rw-</span>
+<span class="ou">mask::rw-</span>
+<span class="ou">other::r--</span></code></pre></div>
+<pre class="code"><code><span class="co"># setfacl {-m, -x} {u, g}:&lt;name&gt;:[r, w, x] &lt;file, directory&gt;</span>
+<span class="ou">-rw-rw-r--+ 1 seed seed 1050 Feb  7 10:57 example</span></code></pre>
+<div class="tbl"><table><tr><th>비교</th><th>Traditional model</th><th>ACL</th></tr>
+<tr><td>대상</td><td>owner / group / other 3종류</td><td>임의의 개별 user·group</td></tr>
+<tr><td>명령어</td><td>chmod, chown, chgrp</td><td>setfacl (-m 추가/수정, -x 삭제), getfacl</td></tr>
+<tr><td>표시</td><td>-rw-rw-r--</td><td>-rw-rw-r--<b>+</b></td></tr></table></div>
+</div></section><section id="s11" class="sec"><header class="sh"><span class="num">11</span><div><h2>권한 실행: sudo와 POSIX Capabilities</h2><span class="sl">슬라이드 39–45</span></div></header><div class="card">
+<p>특권으로 명령을 실행하는 세 가지 메커니즘: <b>Set-uid 프로그램</b>(별도 챕터), <b>sudo</b>, <b>POSIX capabilities</b>.</p>
+<h3>sudo (슬라이드 40–42)</h3>
+<ul><li>sudo = <b>Super-user Do</b>: 명령을 superuser로 실행</li><li>사용자는 <code>/etc/sudoers</code>에서 <b>인가</b>되어 있어야 함 — <code>%sudo</code>는 <b>그룹 이름</b>, /etc/group의 <code>sudo:x:27:seed</code></li>
+<li>Ubuntu 20.04에서 root 계정은 기본 <b>잠김</b> → root 로그인 불가</li>
+<li>root shell 얻기: <code>sudo -s</code>, <code>sudo bash</code>, <code>sudo su</code> — 하지만 root shell보다 <b>개별 명령에 sudo 사용 권장</b></li>
+<li><code>sudo -u bob</code>: root 대신 다른 사용자로 실행</li></ul>
+<pre class="code"><code><span class="pr">$ </span><span class="cm">more</span> <span class="ar">/etc/sudoers</span>
+<span class="ou">more: cannot open /etc/sudoers: Permission denied</span>
+<span class="pr">$ </span><span class="cm">ls</span> <span class="op">-l</span> <span class="ar">/etc/sudoers</span>
+<span class="ou">-r--r----- 1 root root 755 Feb 3 2020 /etc/sudoers</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">more</span> <span class="ar">/etc/sudoers</span>
+<span class="ou">[sudo] password for swsec:</span>
+<span class="co"># This file MUST be edited with the &#x27;visudo&#x27; command as root.</span>
+<span class="ou">root ALL=(ALL:ALL) ALL</span>
+<span class="ou">%sudo ALL=(ALL:ALL) ALL</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">-u</span> <span class="ar">bob</span> <span class="ar">id</span>
+<span class="ou">uid=1001(bob) gid=1001(bob) groups=1001(bob),1004(alpha)</span></code></pre>
+<div class="tbl"><table><tr><th>비교</th><th>su</th><th>sudo</th></tr>
+<tr><td>의미</td><td>Switch user — 다른 사용자로 전환</td><td>Super-user do — 명령을 superuser(또는 -u 사용자)로 실행</td></tr>
+<tr><td>필요한 비밀번호</td><td>전환 대상 사용자의 비밀번호 (슬라이드 28)</td><td>자기 자신의 비밀번호 (<code>[sudo] password for swsec</code>)</td></tr>
+<tr><td>인가 조건</td><td>대상 계정 비밀번호를 알면 됨</td><td>/etc/sudoers에 인가 (sudo 그룹 등)</td></tr></table></div>
+<div class="split"><div>
+<h3>POSIX Capabilities (슬라이드 43–45)</h3>
+<ul><li>root 권한을 더 작은 단위(<b>capabilities</b>)로 분할 — <code>man capabilities</code></li>
+<li><code>CAP_CHOWN</code>: 파일 UID/GID 임의 변경</li>
+<li><code>CAP_DAC_OVERRIDE</code>: 파일 read/write/execute 권한 검사 우회</li>
+<li><code>CAP_DAC_READ_SEARCH</code>: 파일 read 권한 검사 우회</li>
+<li><code>CAP_NET_RAW</code>: RAW·PACKET 소켓 사용</li>
+<li>Wireshark: GUI는 비특권, sniffing은 특권을 가진 <b>dumpcap</b>이 담당 / ping: raw socket → CAP_NET_RAW</li></ul>
+</div><figure><svg viewBox="0 0 580 230" role="img" aria-label="capability 사례" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="30" y="40" width="200" height="60" rx="6" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="130" y="66" fill="#72cf8f" font-size="12.5" text-anchor="middle" font-weight="700">Wireshark GUI</text><text x="130" y="86" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">비특권 (unprivileged)</text><rect x="300" y="40" width="240" height="60" rx="6" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="420" y="66" fill="#f0b44c" font-size="12.5" text-anchor="middle" font-weight="700">dumpcap (sniffing)</text><text x="420" y="86" fill="#8a96ab" font-size="10" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">cap_net_admin, cap_net_raw+eip</text><line x1="230" y1="70" x2="300" y2="70" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><rect x="300" y="130" width="240" height="50" rx="6" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="420" y="152" fill="#f0b44c" font-size="12" text-anchor="middle" font-weight="700" font-family="Menlo, Courier New, monospace">/usr/bin/ping</text><text x="420" y="170" fill="#8a96ab" font-size="10" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">cap_net_raw+ep (raw socket)</text><text x="290" y="215" fill="#56c2e6" font-size="11.5" text-anchor="middle" font-weight="400">root 전체 권한 대신 필요한 capability만 부여</text></svg><figcaption>슬라이드 45 · Case study</figcaption></figure></div>
+<pre class="code"><code><span class="ou">getcap [-v] [-n] [-r] [-h] filename [ ... ]</span>
+<span class="ou">setcap [-q] [-n &lt;rootid&gt;] [-v] {capabilities|-|-r} filename [ ... capabilitiesN fileN ]</span></code></pre>
+<h3>Setting File Capabilities (슬라이드 44)</h3>
+<pre class="code"><code><span class="pr">$ </span><span class="cm">cp</span> <span class="ar">/bin/bash</span> <span class="ar">./mybash</span>
+<span class="pr">$ </span><span class="cm">./mybash</span>
+<span class="pr">$ </span><span class="cm">cat</span> <span class="ar">&lt;</span> <span class="ar">/etc/shadow</span>
+<span class="ou">mybash: /etc/shadow: Permission denied</span><span class="co">  # Failed</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">setcap</span> <span class="ar">CAP_DAC_READ_SEARCH=ep</span> <span class="ar">mybash</span>
+<span class="pr">$ </span><span class="cm">./mybash</span>
+<span class="pr">$ </span><span class="cm">getpcaps</span> <span class="ar">$$</span><span class="co">  # List the capability of the current process</span>
+<span class="ou">65331: = cap_dac_read_search+ep</span>
+<span class="pr">$ </span><span class="cm">cat</span> <span class="ar">&lt;</span> <span class="ar">/etc/shadow</span><span class="co">  # Bash will open this file for read</span>
+<span class="ou">root:!:18590:0:99999:7:::</span>
+<span class="ou">daemon:*:18474:0:99999:7:::</span>
+<span class="ou">bin:*:18474:0:99999:7:::</span>
+<span class="ou">sys:*:18474:0:99999:7:::</span>
+<span class="pr">$ </span><span class="cm">cat</span> <span class="ar">&gt;</span> <span class="ar">/zzzz</span><span class="co">  # Bash will open this file for write</span>
+<span class="ou">mybash: /zzzz: Permission denied</span></code></pre>
+<p class="note">CAP_DAC_READ_SEARCH는 <b>read</b> 권한 검사만 우회하므로 /etc/shadow 읽기는 성공하지만 <code>/zzzz</code> 쓰기는 여전히 거부됩니다. 필요한 권한만 부여하는 capability의 핵심을 보여주는 예시입니다.</p>
+<div class="tbl"><table><tr><th>메커니즘</th><th>부여 범위</th><th>슬라이드 예</th></tr>
+<tr><td>Set-uid</td><td>프로그램 파일에 setuid 비트 (별도 챕터)</td><td>chmod 4755 prog1</td></tr>
+<tr><td>sudo</td><td>인가된 사용자에게 superuser 권한 전체</td><td>%sudo ALL=(ALL:ALL) ALL</td></tr>
+<tr><td>Capabilities</td><td>root 권한의 일부 단위만</td><td>ping = cap_net_raw+ep</td></tr></table></div>
+</div></section><section id="s12" class="sec"><header class="sh"><span class="num">12</span><div><h2>사용자 인증 (Authentication)</h2><span class="sl">슬라이드 47–49</span></div></header><div class="card">
+<ul><li>인증 = 사용자의 신원을 확인하는 과정</li></ul>
+<div class="tbl"><table><tr><th>요소</th><th>근거</th><th>예</th></tr>
+<tr><td>Knows</td><td>사용자가 <b>아는 것</b></td><td>password</td></tr>
+<tr><td>Has</td><td>사용자가 <b>가진 것</b></td><td>ID card</td></tr>
+<tr><td>Is / Does</td><td>사용자 <b>자체 / 행동</b></td><td>fingerprint</td></tr></table></div>
+<p>여러 요소를 결합하면 <b>Multi-factor authentication</b>.</p>
+<h3>Passwords (슬라이드 48)</h3>
+<ul><li>매우 흔하지만 매우 <b>쉽게 추측</b>됨</li><li>원래 평문 저장 → 매우 나쁜 방식, 오늘날은 <b>해시</b>로 저장</li>
+<li>단, challenge/response 같은 일부 네트워크 인증은 평문(또는 동등한 것)이 필요</li>
+<li>관련 파일: <code>/etc/passwd</code>, <code>/etc/shadow</code>, <code>/etc/group</code></li></ul>
+<div class="tbl"><table><tr><th>파일</th><th>형식 (슬라이드 49)</th><th>예</th></tr>
+<tr><td>/etc/passwd</td><td><code>login:x:userid:groupid:gecos:homedir:shell</code></td><td><code>root:x:0:0:root:/root:/bin/bash</code></td></tr>
+<tr><td>/etc/shadow</td><td><code>login:password:password aging fields</code></td><td><code>root:pB8msP1fCbCqc:13904:0:99999:7:::</code></td></tr>
+<tr><td>/etc/group</td><td><code>groupname:grouppassword:groupid:secondarymembers</code></td><td><code>apache:x:48:jack,nisburgh</code></td></tr></table></div>
+<p class="note">group password는 그룹에 대한 임시 접근을 허용하지만 거의 사용되지 않으며 기본 설정되지 않습니다.</p>
+</div></section><section id="s13" class="sec"><header class="sh"><span class="num">13</span><div><h2>/etc/passwd와 /etc/shadow</h2><span class="sl">슬라이드 50–56</span></div></header><div class="card">
+<h3>/etc/passwd (슬라이드 50–52)</h3>
+<p>각 항목은 사용자 계정 정보. <b>비밀번호는 여기 저장되지 않음</b>(예전엔 저장됐음).</p>
+<figure class="wide"><svg viewBox="0 0 688 150" role="img" aria-label="/etc/passwd 필드" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="20" y="40" width="65.19999999999999" height="30" rx="4" fill="#16203a" stroke="#56c2e6" stroke-width="1.5"/><text x="52.599999999999994" y="60" fill="#56c2e6" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">oracle</text><line x1="52.599999999999994" y1="72" x2="52.599999999999994" y2="100" stroke="#56c2e6" stroke-width="1.2"/><text x="52.599999999999994" y="115" fill="#56c2e6" font-size="10.5" text-anchor="middle" font-weight="400">1 Username</text><text x="90.19999999999999" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="97.19999999999999" y="40" width="19.2" height="30" rx="4" fill="#16203a" stroke="#ec6d78" stroke-width="1.5"/><text x="106.79999999999998" y="60" fill="#ec6d78" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">x</text><line x1="106.79999999999998" y1="72" x2="106.79999999999998" y2="100" stroke="#ec6d78" stroke-width="1.2"/><text x="106.79999999999998" y="133" fill="#ec6d78" font-size="10.5" text-anchor="middle" font-weight="400">2 Password</text><text x="121.39999999999999" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="128.39999999999998" y="40" width="46.8" height="30" rx="4" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="151.79999999999998" y="60" fill="#f0b44c" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">1021</text><line x1="151.79999999999998" y1="72" x2="151.79999999999998" y2="100" stroke="#f0b44c" stroke-width="1.2"/><text x="151.79999999999998" y="115" fill="#f0b44c" font-size="10.5" text-anchor="middle" font-weight="400">3 UID</text><text x="180.2" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="187.2" y="40" width="46.8" height="30" rx="4" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="210.6" y="60" fill="#f0b44c" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">1020</text><line x1="210.6" y1="72" x2="210.6" y2="100" stroke="#f0b44c" stroke-width="1.2"/><text x="210.6" y="133" fill="#f0b44c" font-size="10.5" text-anchor="middle" font-weight="400">4 GID</text><text x="239.0" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="246.0" y="40" width="111.19999999999999" height="30" rx="4" fill="#16203a" stroke="#8a96ab" stroke-width="1.5"/><text x="301.6" y="60" fill="#8a96ab" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">Oracle user</text><line x1="301.6" y1="72" x2="301.6" y2="100" stroke="#8a96ab" stroke-width="1.2"/><text x="301.6" y="115" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">5 Info</text><text x="362.2" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="369.2" y="40" width="194.0" height="30" rx="4" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="466.2" y="60" fill="#72cf8f" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">/data/network/oracle</text><line x1="466.2" y1="72" x2="466.2" y2="100" stroke="#72cf8f" stroke-width="1.2"/><text x="466.2" y="133" fill="#72cf8f" font-size="10.5" text-anchor="middle" font-weight="400">6 Home</text><text x="568.2" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="575.2" y="40" width="92.8" height="30" rx="4" fill="#16203a" stroke="#a08cf0" stroke-width="1.5"/><text x="621.6" y="60" fill="#a08cf0" font-size="13" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">/bin/bash</text><line x1="621.6" y1="72" x2="621.6" y2="100" stroke="#a08cf0" stroke-width="1.2"/><text x="621.6" y="115" fill="#a08cf0" font-size="10.5" text-anchor="middle" font-weight="400">7 Shell</text></svg><figcaption>슬라이드 51 · 7개 필드</figcaption></figure>
+<ol><li><b>Username</b>: 로그인 시 사용</li><li><b>Password</b>: <code>x</code> = 암호화된 비밀번호가 /etc/shadow에 저장됨</li>
+<li><b>UID</b>: 0 = root, 1–99 = 사전 정의 계정, 100–999 = 시스템·관리 계정</li><li><b>GID</b>: primary group ID (/etc/group)</li>
+<li><b>User ID Info</b>: comment 필드</li><li><b>Home directory</b>: 없으면 <code>/</code></li>
+<li><b>Command/shell</b>: 로그인 후 첫 명령. 보통 shell이지만 <b>shell일 필요는 없음</b></li></ol>
+<pre class="code"><code><span class="ou">daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin</span>
+<span class="ou">tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">su</span> <span class="ar">sec_11</span>
+<span class="pr">$ </span><span class="cm">id</span>
+<span class="ou">uid=1001(sec_11) gid=1001(student_swsec_1) groups=1001(student_swsec_1)</span>
+<span class="pr">$ </span><span class="cm">exit</span>
+<span class="pr">$ </span><span class="cm">sudo</span> <span class="cm">su</span> <span class="ar">bin</span>
+<span class="ou">This account is currently not available.</span></code></pre>
+<p class="note">마지막 필드가 <code>/usr/sbin/nologin</code> 또는 <code>/bin/false</code>인 계정은 로그인 셸이 없어 <code>su</code>로도 전환되지 않습니다.</p>
+<h3>/etc/shadow (슬라이드 53–56)</h3>
+<p>왜 /etc/passwd 대신 별도 파일에 저장할까? — /etc/passwd는 누구나 읽을 수 있는 계정 정보 파일이고, 해시는 root만 읽을 수 있는 shadow로 분리됩니다(슬라이드 44에서 일반 bash는 /etc/shadow 읽기 거부).</p>
+<figure class="wide"><svg viewBox="0 0 680 150" role="img" aria-label="/etc/shadow 필드" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><rect x="16" y="40" width="46.8" height="30" rx="4" fill="#16203a" stroke="#a08cf0" stroke-width="1.5"/><text x="39.4" y="60" fill="#a08cf0" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">user</text><line x1="39.4" y1="72" x2="39.4" y2="96" stroke="#a08cf0" stroke-width="1.2"/><text x="39.4" y="110" fill="#a08cf0" font-size="10.5" text-anchor="middle" font-weight="400">login</text><text x="67.8" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="74.8" y="40" width="37.599999999999994" height="30" rx="4" fill="#16203a" stroke="#56c2e6" stroke-width="1.5"/><text x="93.6" y="60" fill="#56c2e6" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">$1$</text><line x1="93.6" y1="72" x2="93.6" y2="96" stroke="#56c2e6" stroke-width="1.2"/><text x="93.6" y="128" fill="#56c2e6" font-size="10.5" text-anchor="middle" font-weight="400">알고리즘 id</text><rect x="114.39999999999999" y="40" width="92.8" height="30" rx="4" fill="#16203a" stroke="#56c2e6" stroke-width="1.5"/><text x="160.79999999999998" y="60" fill="#56c2e6" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">.pj1GQnU$</text><line x1="160.79999999999998" y1="72" x2="160.79999999999998" y2="96" stroke="#56c2e6" stroke-width="1.2"/><text x="160.79999999999998" y="110" fill="#56c2e6" font-size="10.5" text-anchor="middle" font-weight="400">salt</text><rect x="209.2" y="40" width="129.6" height="30" rx="4" fill="#16203a" stroke="#56c2e6" stroke-width="1.5"/><text x="274.0" y="60" fill="#56c2e6" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">ZWEt3P2/Cpbq…</text><line x1="274.0" y1="72" x2="274.0" y2="96" stroke="#56c2e6" stroke-width="1.2"/><text x="274.0" y="128" fill="#56c2e6" font-size="10.5" text-anchor="middle" font-weight="400">hash</text><text x="343.79999999999995" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="350.79999999999995" y="40" width="56.0" height="30" rx="4" fill="#16203a" stroke="#72cf8f" stroke-width="1.5"/><text x="378.79999999999995" y="60" fill="#72cf8f" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">18556</text><line x1="378.79999999999995" y1="72" x2="378.79999999999995" y2="96" stroke="#72cf8f" stroke-width="1.2"/><text x="378.79999999999995" y="110" fill="#72cf8f" font-size="10.5" text-anchor="middle" font-weight="400">last change</text><text x="411.79999999999995" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="418.79999999999995" y="40" width="34" height="30" rx="4" fill="#16203a" stroke="#f0b44c" stroke-width="1.5"/><text x="435.79999999999995" y="60" fill="#f0b44c" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">0</text><line x1="435.79999999999995" y1="72" x2="435.79999999999995" y2="96" stroke="#f0b44c" stroke-width="1.2"/><text x="435.79999999999995" y="128" fill="#f0b44c" font-size="10.5" text-anchor="middle" font-weight="400">min</text><text x="457.79999999999995" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="464.79999999999995" y="40" width="56.0" height="30" rx="4" fill="#16203a" stroke="#ec6d78" stroke-width="1.5"/><text x="492.79999999999995" y="60" fill="#ec6d78" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">99999</text><line x1="492.79999999999995" y1="72" x2="492.79999999999995" y2="96" stroke="#ec6d78" stroke-width="1.2"/><text x="492.79999999999995" y="110" fill="#ec6d78" font-size="10.5" text-anchor="middle" font-weight="400">max</text><text x="525.8" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="532.8" y="40" width="34" height="30" rx="4" fill="#16203a" stroke="#ec6d78" stroke-width="1.5"/><text x="549.8" y="60" fill="#ec6d78" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">7</text><line x1="549.8" y1="72" x2="549.8" y2="96" stroke="#ec6d78" stroke-width="1.2"/><text x="549.8" y="128" fill="#ec6d78" font-size="10.5" text-anchor="middle" font-weight="400">warn</text><text x="571.8" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="578.8" y="40" width="34" height="30" rx="4" fill="#16203a" stroke="#8a96ab" stroke-width="1.5"/><text x="595.8" y="60" fill="#8a96ab" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">·</text><line x1="595.8" y1="72" x2="595.8" y2="96" stroke="#8a96ab" stroke-width="1.2"/><text x="595.8" y="110" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">inactive</text><text x="617.8" y="60" fill="#d8dee9" font-size="14" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">:</text><rect x="624.8" y="40" width="34" height="30" rx="4" fill="#16203a" stroke="#8a96ab" stroke-width="1.5"/><text x="641.8" y="60" fill="#8a96ab" font-size="12.5" text-anchor="middle" font-weight="400" font-family="Menlo, Courier New, monospace">·</text><line x1="641.8" y1="72" x2="641.8" y2="96" stroke="#8a96ab" stroke-width="1.2"/><text x="641.8" y="128" fill="#8a96ab" font-size="10.5" text-anchor="middle" font-weight="400">expire</text><line x1="66" y1="150" x2="66" y2="150" stroke="#8a96ab" stroke-width="1.5"/></svg><figcaption>슬라이드 54 · $id$salt$hash + aging 필드</figcaption></figure>
+<div class="tbl"><table><tr><th>#</th><th>필드</th><th>의미</th></tr>
+<tr><td>1</td><td>Username</td><td>로그인 이름</td></tr>
+<tr><td>2</td><td>Password</td><td><code>$id$salt$hashed</code> 형식의 암호화된 비밀번호</td></tr>
+<tr><td>3</td><td>Last change</td><td>1970-01-01 이후 마지막 변경일까지 일수</td></tr>
+<tr><td>4</td><td>Minimum</td><td>변경 간 최소 일수</td></tr>
+<tr><td>5</td><td>Maximum</td><td>비밀번호 유효 최대 일수 (이후 강제 변경)</td></tr>
+<tr><td>6</td><td>Warn</td><td>만료 전 경고 일수</td></tr>
+<tr><td>7</td><td>Inactive</td><td>만료 후 계정 비활성화까지 일수</td></tr>
+<tr><td>8</td><td>Expire</td><td>1970-01-01 이후 계정 비활성화 절대 날짜</td></tr></table></div>
+<div class="tbl"><table><tr><th>$id$</th><th>알고리즘</th><th>salt 길이 (슬라이드 54)</th></tr>
+<tr><td><code>$1$</code></td><td>MD5</td><td>2 byte</td></tr><tr><td><code>$2a$</code>, <code>$2y$</code></td><td>Blowfish</td><td>—</td></tr>
+<tr><td><code>$5$</code></td><td>SHA-256</td><td>16 byte</td></tr><tr><td><code>$6$</code></td><td>SHA-512</td><td>16 byte</td></tr></table></div>
+<h3>Salt의 목적 (슬라이드 53)</h3>
+<ul><li><b>brute-force 공격 무력화</b> — dictionary attack, rainbow table attack</li>
+<li>아래 세 항목은 <b>같은 비밀번호</b>지만 salt가 달라 해시가 모두 다름</li></ul>
+<pre class="code"><code><span class="ou">seed:$6$n8DimvsbIgU0OxbD$YZ0h1EA...(omitted)...wFd0:18590:0:</span>
+<span class="ou">alice:$6$.1CMCeSFZd8/8QZl$QhfhId...(omitted)...Sga.:18664:0:</span>
+<span class="ou">bob:$6$NOLhqomO3yNwyFsZ$K.Ql/KnP...(omitted)...b8v.:18664:0:</span></code></pre>
+</div></section><section id="s14" class="sec"><header class="sh"><span class="num">14</span><div><h2>비밀번호 생성·검증과 계정 잠금</h2><span class="sl">슬라이드 57–59</span></div></header><div class="card">
+<div class="split"><div>
+<h3>Creation &amp; Verification (슬라이드 57–58)</h3>
+<ul><li><b>생성</b>: 평문 비밀번호 + <b>random salt</b> → 해시 함수(iteration count <i>n</i>회 반복) → <b>salt + hash</b> 저장</li>
+<li><b>검증</b>: 입력된 평문 + <b>저장된 salt</b> → 같은 해싱 → 저장된 hash와 <b>일치하는지</b> 비교</li>
+<li>평문은 저장되지 않으므로 root라도 파일에서 비밀번호 자체를 읽을 수는 없음</li></ul>
+</div><figure><svg viewBox="0 0 720 250" role="img" aria-label="비밀번호 생성과 검증" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a96ab"/></marker></defs><text x="150" y="28" fill="#d8dee9" font-size="13" text-anchor="middle" font-weight="700">Password Creation</text><text x="460" y="28" fill="#d8dee9" font-size="13" text-anchor="middle" font-weight="700">Password Verification</text><rect x="30" y="44" width="110" height="40" rx="6" fill="#e0525f33" stroke="#e0525f" stroke-width="1.5"/><text x="85.0" y="68.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Plaintext PW</text><rect x="170" y="44" width="110" height="40" rx="6" fill="#4a6cf533" stroke="#4a6cf5" stroke-width="1.5"/><text x="225.0" y="68.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Random Salt</text><rect x="30" y="120" width="250" height="36" rx="6" fill="#e89a2c33" stroke="#e89a2c" stroke-width="1.5"/><text x="155.0" y="142.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Hashing (반복 n회)</text><rect x="30" y="196" width="70" height="36" rx="6" fill="#4a6cf533" stroke="#4a6cf5" stroke-width="1.5"/><text x="65.0" y="218.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Salt</text><rect x="104" y="196" width="176" height="36" rx="6" fill="#3fa05a33" stroke="#3fa05a" stroke-width="1.5"/><text x="192.0" y="218.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Hash</text><line x1="85" y1="84" x2="85" y2="120" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="225" y1="84" x2="225" y2="120" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="155" y1="156" x2="155" y2="196" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><rect x="340" y="44" width="110" height="40" rx="6" fill="#e0525f33" stroke="#e0525f" stroke-width="1.5"/><text x="395.0" y="68.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Plaintext PW</text><rect x="470" y="44" width="110" height="40" rx="6" fill="#4a6cf533" stroke="#4a6cf5" stroke-width="1.5"/><text x="525.0" y="68.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Stored Salt</text><rect x="340" y="120" width="240" height="36" rx="6" fill="#e89a2c33" stroke="#e89a2c" stroke-width="1.5"/><text x="460.0" y="142.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Hashing</text><rect x="600" y="110" width="90" height="46" rx="6" fill="#3fa05a33" stroke="#3fa05a" stroke-width="1.5"/><text x="645.0" y="137.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Stored Hash</text><rect x="340" y="196" width="350" height="36" rx="6" fill="#8a4fd033" stroke="#8a4fd0" stroke-width="1.5"/><text x="515.0" y="218.0" fill="#d8dee9" font-size="11.5" text-anchor="middle" font-weight="700">Do they match?</text><line x1="395" y1="84" x2="395" y2="120" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="525" y1="84" x2="525" y2="120" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="460" y1="156" x2="460" y2="196" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/><line x1="645" y1="156" x2="645" y2="196" stroke="#8a96ab" stroke-width="1.5" marker-end="url(#ah)"/></svg><figcaption>슬라이드 58 · 생성과 검증</figcaption></figure></div>
+<h3>Locking Account (슬라이드 59)</h3>
+<p>/etc/shadow의 password 필드에 <b>유효하지 않은 값</b>을 넣어 잠급니다.</p>
+<div class="tbl"><table><tr><th>값</th><th>의미</th></tr>
+<tr><td><code>*</code></td><td>관례상 로그인 용도가 아닌 계정 (bin, daemon, sshd)</td></tr>
+<tr><td><code>!</code></td><td>계정 <b>잠김</b> (locked)</td></tr>
+<tr><td><code>!!</code></td><td>잠김 — 특히 계정은 생성되었지만 <b>아직 비밀번호가 설정되지 않음</b></td></tr></table></div>
+<pre class="code"><code><span class="ou">root:!:18590:0:99999:7:::</span></code></pre>
+<p class="note">Ubuntu 20.04에서 root 로그인이 불가능한 이유(슬라이드 41)가 바로 이 <code>!</code>입니다.</p>
+</div></section><section id="s15" class="sec"><header class="sh"><span class="num">15</span><div><h2>핵심 요약</h2><span class="sl">슬라이드 전체</span></div></header><div class="card">
+<div class="sum">
+<div><h4>커널과 모드</h4><p>커널은 H/W를 직접 제어하는 메모리 상주 코드. x86 CPL(CS 하위 2비트) 0 = kernel, 3 = user. Linux는 ring 0·3만 사용.</p></div>
+<div><h4>모드 전환</h4><p>system call(trap)·fault·interrupt로 kernel mode 진입(mode bit 0), 처리 후 return(mode bit 1). 예외 처리 = save → handler → restore/kill.</p></div>
+<div><h4>시스템 콜</h4><p>제어 이동 + 권한 상승을 동시에 하는 통제된 진입점. 인자 전달: register / memory table / stack. x86 INT 0x80, MIPS syscall.</p></div>
+<div><h4>사용자·그룹</h4><p>UID 0 = root(이름 무관, 여러 개 가능). primary GID는 /etc/passwd, 보조 그룹은 /etc/group. su = 사용자 전환.</p></div>
+<div><h4>파일 권한</h4><p>type + owner/group/other × rwx. 새 파일 = 0666 AND NOT umask. ACL은 개별 사용자/그룹 권한, ls -l에 + 표시.</p></div>
+<div><h4>특권 실행</h4><p>Set-uid, sudo(/etc/sudoers 인가), POSIX capabilities(root 권한 분할: CAP_NET_RAW, CAP_DAC_READ_SEARCH …).</p></div>
+<div><h4>인증 파일</h4><p>/etc/passwd 7필드(x = shadow에 저장), /etc/shadow = $id$salt$hash + aging 필드. $1$ MD5, $5$ SHA-256, $6$ SHA-512.</p></div>
+<div><h4>Salt · 잠금</h4><p>Salt로 같은 비밀번호도 다른 해시 → dictionary·rainbow table 공격 방어. * = 로그인 불가 계정, ! / !! = 잠김(!!는 비밀번호 미설정).</p></div>
+</div>
+</div></section></main></div><script>
+(function(){var links=[].slice.call(document.querySelectorAll('nav a'));var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))});
+function upd(){var y=window.scrollY+120,cur=0;for(var i=0;i<secs.length;i++){if(secs[i]&&secs[i].offsetTop<=y)cur=i}
+links.forEach(function(a,i){a.classList.toggle('active',i===cur)})}
+window.addEventListener('scroll',upd,{passive:true});upd();})();
+</script></body></html>
