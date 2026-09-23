@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제1장-2 · 컴퓨터 네트워크와 인터넷(2)</title>
+<style>
+:root{
+  --bg:#0a0e1a; --surface:#111827; --surface2:#1a2234; --border:#1f2a40; --border2:#33415c;
+  --text:#e5e7eb; --muted:#94a3b8; --dim:#64748b;
+  --accent:#60a5fa; --amber:#f59e0b; --violet:#a78bfa; --ok:#34d399; --danger:#f87171;
+  --f-body:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --f-code:'Menlo','Courier New',monospace;
+  --f-head:'Impact','Arial Narrow',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);line-height:1.7;font-size:16px}
+a{color:var(--accent)}
+.layout{display:grid;grid-template-columns:250px 1fr;max-width:1320px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 18px;border-right:1px solid var(--border)}
+.toc h2{font-family:var(--f-head);font-weight:400;font-size:22px;letter-spacing:.5px;margin:0 0 4px}
+.toc .sub{color:var(--dim);font-size:13px;margin-bottom:18px}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc a{display:flex;gap:10px;align-items:baseline;padding:7px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;border-left:3px solid transparent}
+.toc a .n{font-family:var(--f-head);font-size:15px;color:var(--dim);min-width:22px}
+.toc a:hover{background:var(--surface);color:var(--text)}
+.toc a.active{background:var(--surface2);color:var(--text);border-left-color:var(--accent)}
+.toc a.active .n{color:var(--accent)}
+main{padding:36px 40px 80px;min-width:0}
+header.hero{padding:10px 0 30px;border-bottom:1px solid var(--border);margin-bottom:34px}
+.hero .chap{font-family:var(--f-head);font-size:64px;line-height:1;color:var(--accent);letter-spacing:1px}
+.hero h1{font-size:30px;margin:10px 0 6px;font-weight:800}
+.hero p{color:var(--muted);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:13px;padding:4px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--border2);color:var(--muted)}
+section.sec{margin-bottom:56px}
+.sec-h{display:flex;align-items:baseline;gap:16px;margin-bottom:16px}
+.sec-h .num{font-family:var(--f-head);font-size:48px;line-height:1;color:var(--border2)}
+.sec-h h2{font-size:24px;margin:0;font-weight:800}
+.sec-h .ref{margin-left:auto;font-size:12.5px;color:var(--dim);white-space:nowrap}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:18px}
+.card h3{margin:0 0 10px;font-size:18px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:center}
+.fig{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px}
+.fig figcaption{font-size:12.5px;color:var(--dim);text-align:center;margin-top:6px}
+figure{margin:0}
+ul.pts{margin:0;padding-left:20px} ul.pts li{margin:4px 0}
+.muted{color:var(--muted)}
+.kbd{font-family:var(--f-code);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:1px 6px;font-size:.92em}
+.formula{font-family:var(--f-code);font-size:18px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;margin:12px 0;text-align:center;color:var(--amber)}
+.note{border:1px dashed var(--border2);border-radius:10px;padding:10px 14px;color:var(--muted);font-size:14px;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+.tbl{overflow-x:auto}
+th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:700;background:var(--surface2)}
+td code,.formula code{font-family:var(--f-code)}
+pre.code{font-family:var(--f-code);font-size:12.5px;line-height:1.6;background:#070a13;border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:0;color:#cbd5e1}
+pre.code .hl-line{display:inline-block;width:100%;background:rgba(245,158,11,.12)}
+.c-ln{color:var(--dim)} .c-host{color:#7dd3fc} .c-ip{color:var(--violet)} .c-num{color:var(--amber)} .c-kw{color:var(--dim)} .c-err{color:var(--danger)} .c-cm{color:var(--ok)}
+/* svg text */
+svg .t,svg .lbl{font-family:var(--f-body);font-size:13px;fill:var(--text)}
+svg .tick{font-family:var(--f-body);font-size:12px;fill:var(--muted)}
+svg .axl{font-family:var(--f-body);font-size:13px;fill:var(--muted);font-weight:700}
+svg .pdu{font-family:var(--f-code);font-size:11px;fill:var(--text)}
+svg .strong{font-weight:700}
+svg .red{fill:var(--danger)} svg .amb{fill:var(--amber)} svg .vio{fill:var(--violet)} svg .grn{fill:var(--ok)}
+svg .grid{stroke:var(--border);stroke-width:1}
+svg .axis{stroke:var(--muted);stroke-width:1.5}
+/* interactive */
+.ctrl{margin-top:14px;background:var(--surface2);border-radius:10px;padding:12px 14px}
+.ctrl label{font-size:14px;color:var(--muted);display:block}
+.ctrl input[type=range]{width:100%}
+.readout{font-family:var(--f-code);font-size:15px;margin-top:6px}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.calc label{font-size:13px;color:var(--muted)}
+.calc input{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:7px 9px;font-family:var(--f-code)}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+.res div{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.res b{display:block;font-family:var(--f-code);font-size:20px;color:var(--amber)}
+.res span{font-size:12.5px;color:var(--muted)}
+.tag{display:inline-block;white-space:nowrap;font-size:12px;padding:2px 8px;border-radius:6px;margin-right:6px;font-weight:700}
+.tag.b{background:rgba(96,165,250,.15);color:var(--accent)} .tag.a{background:rgba(245,158,11,.15);color:var(--amber)}
+.tag.v{background:rgba(167,139,250,.15);color:var(--violet)} .tag.g{background:rgba(52,211,153,.15);color:var(--ok)} .tag.r{background:rgba(248,113,113,.15);color:var(--danger)}
+.timeline{border-left:2px solid var(--border2);margin-left:6px;padding-left:20px}
+.era{position:relative;margin-bottom:18px}
+.era::before{content:"";position:absolute;left:-27px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--violet);border:2px solid var(--bg)}
+.era h4{margin:0 0 4px;font-size:16px;color:var(--violet)}
+.era ul{margin:0;padding-left:18px;font-size:14.5px}
+.sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.sumgrid .card{margin:0}
+.sumgrid h4{margin:0 0 8px;font-size:15px}
+.sumgrid .n{font-family:var(--f-head);color:var(--accent);margin-right:8px}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border)}
+  .toc ol{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  main{padding:26px 18px 60px}
+  .split{grid-template-columns:1fr}
+  .hero .chap{font-size:48px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <h2>CONTENTS</h2>
+  <div class="sub">제1장-2 · 컴퓨터 네트워크와 인터넷(2)</div>
+  <ol>
+    <li><a href="#s01"><span class="n">01</span>패킷 큐잉과 손실</a></li>
+    <li><a href="#s02"><span class="n">02</span>패킷지연의 4가지 유형</a></li>
+    <li><a href="#s03"><span class="n">03</span>큐잉지연과 트래픽 강도</a></li>
+    <li><a href="#s04"><span class="n">04</span>실제 인터넷 지연 (tracert)</a></li>
+    <li><a href="#s05"><span class="n">05</span>프로토콜 계층화</a></li>
+    <li><a href="#s06"><span class="n">06</span>인터넷 프로토콜 스택</a></li>
+    <li><a href="#s07"><span class="n">07</span>캡슐화 (Encapsulation)</a></li>
+    <li><a href="#s08"><span class="n">08</span>공격받는 네트워크</a></li>
+    <li><a href="#s09"><span class="n">09</span>인터넷 역사</a></li>
+    <li><a href="#s10"><span class="n">10</span>핵심 요약</a></li>
+  </ol>
+</nav>
+<main>
+<header class="hero">
+  <div class="chap">CHAP 1 — PART 2</div>
+  <h1>컴퓨터 네트워크와 인터넷 (2)</h1>
+  <p>지연·손실·처리율 → 프로토콜 계층 → 네트워크 보안 → 인터넷 역사 &nbsp;·&nbsp; 최승식</p>
+  <div class="chips"><span class="chip">1.4 지연·손실·처리율</span><span class="chip">1.5 프로토콜 계층</span><span class="chip">1.6 공격받는 네트워크</span><span class="chip">1.7 인터넷 역사</span></div>
+</header>
+
+<!-- 01 -->
+<section class="sec" id="s01">
+  <div class="sec-h"><span class="num">01</span><h2>패킷 큐잉과 손실</h2><span class="ref">1.4 · 슬라이드 2</span></div>
+  <div class="card split">
+    <div>
+      <h3>패킷은 라우터 버퍼에 큐잉된다</h3>
+      <ul class="pts">
+        <li><b style="color:var(--danger)">패킷 도착율이 링크 출력용량을 초과할 때</b> 패킷은 버퍼에 쌓인다.</li>
+        <li>버퍼에 큐잉된 패킷은 자기 <b>순서를 기다린다</b> → <span class="tag a">지연</span></li>
+        <li>현재 링크로 나가고 있는 패킷도 전송 시간을 소비 → <span class="tag a">지연</span></li>
+        <li>빈(available) 버퍼가 없으면 새로 도착한 패킷은 <b>폐기</b>된다 → <span class="tag r">손실</span></li>
+      </ul>
+      <div class="note">즉, 지연(delay)과 손실(loss)의 공통 원인은 <b>출력 링크 앞의 버퍼(큐)</b>이다.</div>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="라우터 버퍼 큐잉 다이어그램" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="54" y="76" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="64" y="98" width="12" height="5" fill="var(--accent)"/><rect x="58" y="103" width="24" height="3" rx="1" fill="var(--accent)"/><text x="70.0" y="124.0" class="lbl" text-anchor="middle" >A</text><rect x="54" y="201" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="64" y="223" width="12" height="5" fill="var(--accent)"/><rect x="58" y="228" width="24" height="3" rx="1" fill="var(--accent)"/><text x="70.0" y="249.0" class="lbl" text-anchor="middle" >B</text><path d="M86,90 H150 V150 H262" stroke="var(--muted)" stroke-width="2" fill="none"/><path d="M86,215 H150 V150" stroke="var(--muted)" stroke-width="2" fill="none"/><rect x="100" y="72" width="12" height="12" fill="var(--accent)" stroke="#0a0e1a" stroke-width="1"/><rect x="118" y="197" width="12" height="12" fill="var(--ok)" stroke="#0a0e1a" stroke-width="1"/><rect x="156" y="120" width="12" height="12" fill="var(--ok)" stroke="#0a0e1a" stroke-width="1"/><ellipse cx="300" cy="156" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><ellipse cx="300" cy="150" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><path d="M288,144 L312,156 M312,144 L288,156" stroke="var(--text)" stroke-width="2"/><line x1="338" y1="150" x2="492" y2="150" stroke="var(--muted)" stroke-width="2"/><ellipse cx="530" cy="156" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><ellipse cx="530" cy="150" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><path d="M518,144 L542,156 M542,144 L518,156" stroke="var(--text)" stroke-width="2"/><rect x="262" y="162" width="12" height="16" fill="none" stroke="var(--text)" stroke-width="1"/><rect x="274" y="162" width="12" height="16" fill="none" stroke="var(--text)" stroke-width="1"/><rect x="286" y="162" width="12" height="16" fill="none" stroke="var(--text)" stroke-width="1"/><rect x="298" y="162" width="12" height="16" fill="var(--ok)" stroke="var(--text)" stroke-width="1"/><rect x="310" y="162" width="12" height="16" fill="var(--accent)" stroke="var(--text)" stroke-width="1"/><rect x="322" y="162" width="12" height="16" fill="var(--ok)" stroke="var(--text)" stroke-width="1"/><rect x="340" y="142" width="12" height="14" fill="var(--ok)" stroke="#0a0e1a" stroke-width="1"/><line x1="400" y1="70" x2="352" y2="138" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/><text x="400.0" y="56.0" class="lbl" text-anchor="middle" >전송 중인 패킷 <tspan fill="var(--danger)">(지연)</tspan></text><line x1="340" y1="235" x2="312" y2="182" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/><text x="360.0" y="252.0" class="lbl" text-anchor="middle" >큐잉 중인 패킷 <tspan fill="var(--danger)">(지연)</tspan></text><line x1="200" y1="240" x2="272" y2="182" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/><text x="215.0" y="282.0" class="lbl" text-anchor="middle" >빈 버퍼: 여유 없으면 도착 패킷 폐기 <tspan fill="var(--danger)">(손실)</tspan></text></svg><figcaption>호스트 A·B → 라우터 버퍼 → 출력 링크</figcaption></figure>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="sec" id="s02">
+  <div class="sec-h"><span class="num">02</span><h2>패킷지연의 4가지 유형</h2><span class="ref">슬라이드 3</span></div>
+  <div class="card split">
+    <div>
+      <h3>한 노드에서 발생하는 네 가지 지연</h3>
+      <ul class="pts">
+        <li><span class="tag v">① 노드처리</span> 비트 오류 검사, 출력 링크 결정</li>
+        <li><span class="tag g">② 큐잉</span> 출력 링크에서 전송을 기다리는 시간 — 라우터의 <b>혼잡 정도</b>에 좌우</li>
+        <li><span class="tag r">③ 전송</span> 패킷의 모든 비트를 링크로 내보내는 시간 = <code class="kbd">L/R</code></li>
+        <li><span class="tag a">④ 전파</span> 비트가 물리 링크를 따라 이동하는 시간 = <code class="kbd">d/s</code></li>
+      </ul>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 600 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="패킷지연 4가지 유형 다이어그램" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="54" y="66" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="64" y="88" width="12" height="5" fill="var(--accent)"/><rect x="58" y="93" width="24" height="3" rx="1" fill="var(--accent)"/><text x="70.0" y="114.0" class="lbl" text-anchor="middle" >A</text><rect x="54" y="186" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="64" y="208" width="12" height="5" fill="var(--accent)"/><rect x="58" y="213" width="24" height="3" rx="1" fill="var(--accent)"/><text x="70.0" y="234.0" class="lbl" text-anchor="middle" >B</text><path d="M86,80 H150 V140 H262" stroke="var(--muted)" stroke-width="2" fill="none"/><path d="M86,200 H150 V140" stroke="var(--muted)" stroke-width="2" fill="none"/><ellipse cx="300" cy="146" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><ellipse cx="300" cy="140" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><path d="M288,134 L312,146 M312,134 L288,146" stroke="var(--text)" stroke-width="2"/><rect x="278" y="152" width="12" height="14" fill="none" stroke="var(--text)" stroke-width="1"/><rect x="290" y="152" width="12" height="14" fill="var(--ok)" stroke="var(--text)" stroke-width="1"/><rect x="302" y="152" width="12" height="14" fill="var(--ok)" stroke="var(--text)" stroke-width="1"/><rect x="314" y="152" width="12" height="14" fill="var(--ok)" stroke="var(--text)" stroke-width="1"/><rect x="338" y="132" width="12" height="14" fill="var(--accent)" stroke="#0a0e1a" stroke-width="1"/><line x1="352" y1="140" x2="492" y2="140" stroke="var(--muted)" stroke-width="2"/><rect x="420" y="133" width="12" height="14" fill="var(--ok)" stroke="#0a0e1a" stroke-width="1"/><ellipse cx="530" cy="146" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><ellipse cx="530" cy="140" rx="38" ry="16" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><path d="M518,134 L542,146 M542,134 L518,146" stroke="var(--text)" stroke-width="2"/><text x="345.0" y="82.0" class="lbl red" text-anchor="middle" >③ 전송 (transmission)</text><line x1="345" y1="90" x2="345" y2="128" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#arR)"/><line x1="362" y1="112" x2="486" y2="112" stroke="var(--amber)" stroke-width="1.5" marker-start="url(#arA)" marker-end="url(#arA)"/><text x="424.0" y="104.0" class="lbl amb" text-anchor="middle" >④ 전파 (propagation)</text><line x1="250" y1="195" x2="290" y2="195" stroke="var(--violet)" stroke-width="1.5" marker-start="url(#ar)" marker-end="url(#ar)"/><text x="250.0" y="222.0" class="lbl vio" text-anchor="middle" >① 노드 처리</text><text x="250.0" y="240.0" class="lbl vio" text-anchor="middle" >(nodal processing)</text><line x1="360" y1="205" x2="318" y2="170" stroke="var(--ok)" stroke-width="1.5" marker-end="url(#ar)"/><text x="380.0" y="222.0" class="lbl grn" text-anchor="middle" >② 큐잉 (queueing)</text></svg><figcaption>A·B → 라우터 → 다음 라우터 구간의 지연 위치</figcaption></figure>
+  </div>
+  <div class="card">
+    <h3>지연 유형 비교</h3>
+    <div class="tbl"><table>
+      <tr><th>유형</th><th>무엇에 쓰이는 시간인가</th><th>결정 요인</th><th>식</th></tr>
+      <tr><td><span class="tag v">① 노드처리</span></td><td>check bit errors, determine output link</td><td>라우터 처리</td><td>—</td></tr>
+      <tr><td><span class="tag g">② 큐잉</span></td><td>출력 링크에서 전송 대기</td><td>라우터 혼잡도 (congestion level)</td><td>La/R 에 따라 변화 (03 참고)</td></tr>
+      <tr><td><span class="tag r">③ 전송</span></td><td>비트들을 링크로 밀어내는 시간</td><td>R = 링크 대역폭(bps), L = 패킷 길이(bits)</td><td><code>L / R</code></td></tr>
+      <tr><td><span class="tag a">④ 전파</span></td><td>링크 위를 비트가 이동하는 시간</td><td>d = 물리 링크 길이, s = 매체 내 전파속도(~2×10<sup>8</sup> m/s)</td><td><code>d / s</code></td></tr>
+    </table></div>
+    <div class="note"><b>③ 전송 vs ④ 전파</b>: 전송지연은 <b>패킷 길이와 대역폭</b>에만 의존하고 거리와 무관하다. 전파지연은 <b>링크 길이와 전파속도</b>에만 의존하고 패킷 길이와 무관하다.</div>
+  </div>
+  <div class="card">
+    <h3>전송지연 · 전파지연 계산기</h3>
+    <p class="muted" style="margin:0">슬라이드 3의 두 공식 <code class="kbd">L/R</code>, <code class="kbd">d/s</code>를 그대로 적용합니다. (값을 바꾸면 즉시 계산 — JS 미지원 환경에서는 기본값 결과가 표시됩니다)</p>
+    <div class="calc">
+      <div><label>L 패킷 길이 (bits)</label><input id="cL" type="number" value="12000"></div>
+      <div><label>R 링크 대역폭 (bps)</label><input id="cR" type="number" value="10000000"></div>
+      <div><label>d 링크 길이 (m)</label><input id="cD" type="number" value="2000000"></div>
+      <div><label>s 전파속도 (m/s)</label><input id="cS" type="number" value="200000000"></div>
+    </div>
+    <div class="res">
+      <div><b id="oT">1.200 ms</b><span>전송지연 L/R</span></div>
+      <div><b id="oP">10.000 ms</b><span>전파지연 d/s</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="sec" id="s03">
+  <div class="sec-h"><span class="num">03</span><h2>큐잉지연과 트래픽 강도</h2><span class="ref">슬라이드 4</span></div>
+  <div class="card split">
+    <div>
+      <h3>트래픽 강도 (traffic intensity)</h3>
+      <ul class="pts">
+        <li><b>R</b>: 링크 대역폭 (bps)</li>
+        <li><b>L</b>: 패킷 길이 (bits)</li>
+        <li><b>a</b>: 패킷 도착률</li>
+      </ul>
+      <div class="formula">traffic intensity = La / R</div>
+      <ul class="pts">
+        <li><b style="color:var(--ok)">La/R = 0</b> : 큐잉지연이 없음 (한산한 도로)</li>
+        <li><b style="color:var(--amber)">La/R 값이 1로 접근</b> : 지연이 점차 커짐 (정체된 도로)</li>
+        <li><b style="color:var(--danger)">La/R &gt; 1</b> : 지연이 무한대로 발산</li>
+      </ul>
+      <div class="ctrl">
+        <label for="rho">La/R 조절</label>
+        <input type="range" id="rho" min="0" max="1.2" step="0.01" value="0.5">
+        <div class="readout" id="rhoOut">La/R = 0.50 → 지연이 점차 커지는 구간</div>
+      </div>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 580 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="트래픽 강도와 평균 큐잉지연 그래프" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="461.7" y="40" width="78.3" height="260" fill="rgba(248,113,113,.08)"/><line x1="70.0" y1="40" x2="70.0" y2="300" class="grid"/><text x="70.0" y="320.0" class="tick" text-anchor="middle" >0.0</text><line x1="148.3" y1="40" x2="148.3" y2="300" class="grid"/><text x="148.3" y="320.0" class="tick" text-anchor="middle" >0.2</text><line x1="226.7" y1="40" x2="226.7" y2="300" class="grid"/><text x="226.7" y="320.0" class="tick" text-anchor="middle" >0.4</text><line x1="305.0" y1="40" x2="305.0" y2="300" class="grid"/><text x="305.0" y="320.0" class="tick" text-anchor="middle" >0.6</text><line x1="383.3" y1="40" x2="383.3" y2="300" class="grid"/><text x="383.3" y="320.0" class="tick" text-anchor="middle" >0.8</text><line x1="461.7" y1="40" x2="461.7" y2="300" class="grid"/><text x="461.7" y="320.0" class="tick" text-anchor="middle" >1.0</text><line x1="540.0" y1="40" x2="540.0" y2="300" class="grid"/><text x="540.0" y="320.0" class="tick" text-anchor="middle" >1.2</text><line x1="70" y1="300.0" x2="540" y2="300.0" class="grid"/><text x="60.0" y="304.0" class="tick" text-anchor="end" >0</text><line x1="70" y1="248.0" x2="540" y2="248.0" class="grid"/><text x="60.0" y="252.0" class="tick" text-anchor="end" >2</text><line x1="70" y1="196.0" x2="540" y2="196.0" class="grid"/><text x="60.0" y="200.0" class="tick" text-anchor="end" >4</text><line x1="70" y1="144.0" x2="540" y2="144.0" class="grid"/><text x="60.0" y="148.0" class="tick" text-anchor="end" >6</text><line x1="70" y1="92.0" x2="540" y2="92.0" class="grid"/><text x="60.0" y="96.0" class="tick" text-anchor="end" >8</text><line x1="70" y1="40.0" x2="540" y2="40.0" class="grid"/><text x="60.0" y="44.0" class="tick" text-anchor="end" >10</text><line x1="70" y1="300" x2="540" y2="300" class="axis"/><line x1="70" y1="40" x2="70" y2="300" class="axis"/><polyline points="70.0,300.0 73.9,299.7 77.8,299.5 81.8,299.2 85.7,298.9 89.6,298.6 93.5,298.3 97.4,298.0 101.3,297.7 105.2,297.4 109.2,297.1 113.1,296.8 117.0,296.5 120.9,296.1 124.8,295.8 128.8,295.4 132.7,295.0 136.6,294.7 140.5,294.3 144.4,293.9 148.3,293.5 152.2,293.1 156.2,292.7 160.1,292.2 164.0,291.8 167.9,291.3 171.8,290.9 175.8,290.4 179.7,289.9 183.6,289.4 187.5,288.9 191.4,288.3 195.3,287.8 199.3,287.2 203.2,286.6 207.1,286.0 211.0,285.4 214.9,284.7 218.8,284.1 222.8,283.4 226.7,282.7 230.6,281.9 234.5,281.2 238.4,280.4 242.3,279.6 246.3,278.7 250.2,277.9 254.1,276.9 258.0,276.0 261.9,275.0 265.8,274.0 269.8,272.9 273.7,271.8 277.6,270.7 281.5,269.5 285.4,268.2 289.3,266.9 293.3,265.5 297.2,264.1 301.1,262.6 305.0,261.0 308.9,259.3 312.8,257.6 316.8,255.7 320.7,253.8 324.6,251.7 328.5,249.5 332.4,247.2 336.3,244.7 340.3,242.1 344.2,239.3 348.1,236.3 352.0,233.1 355.9,229.7 359.8,226.0 363.8,222.0 367.7,217.7 371.6,213.0 375.5,207.8 379.4,202.2 383.3,196.0 387.3,189.2 391.2,181.6 395.1,173.1 399.0,163.5 402.9,152.7 406.8,140.3 410.8,126.0 414.7,109.3 418.6,89.6 422.5,66.0 426.0,40.3" fill="none" stroke="var(--danger)" stroke-width="3"/><line x1="461.7" y1="40" x2="461.7" y2="300" stroke="var(--amber)" stroke-dasharray="6 5" stroke-width="2"/><text x="500.8" y="62.0" class="lbl red" text-anchor="middle" >La/R &gt; 1</text><text x="500.8" y="80.0" class="lbl red" text-anchor="middle" >지연 발산(∞)</text><text x="167.9" y="263.6" class="lbl grn" text-anchor="middle" >La/R ~ 0 : 지연 거의 없음</text><text x="312.8" y="149.2" class="lbl amb" text-anchor="middle" >La/R → 1 : 급격히 증가</text><text x="305.0" y="344.0" class="axl" text-anchor="middle" >트래픽 강도 La/R</text><text x="22" y="170.0" class="axl" text-anchor="middle" transform="rotate(-90 22 170.0)">평균 큐잉지연 (상대값)</text><g id="qMarker"><line id="qV" x1="265.8" y1="300" x2="265.8" y2="274.0" stroke="var(--accent)" stroke-dasharray="3 3"/><circle id="qDot" cx="265.8" cy="274.0" r="7" fill="var(--accent)" stroke="#0a0e1a" stroke-width="2"/></g></svg><figcaption>슬라이드 4 그래프 개형 재현 (y축은 상대값 · 정성적 곡선)</figcaption></figure>
+  </div>
+  <div class="note">La는 초당 도착하는 비트 수(bits/s), R은 초당 내보낼 수 있는 비트 수(bps)이므로 La/R은 "들어오는 양 ÷ 나갈 수 있는 양"이다. 1을 넘으면 큐가 끝없이 길어진다.</div>
+</section>
+
+<!-- 04 -->
+<section class="sec" id="s04">
+  <div class="sec-h"><span class="num">04</span><h2>"Real" Internet delays and routes</h2><span class="ref">슬라이드 5</span></div>
+  <div class="card">
+    <h3>tracert: gaia.cs.umass.edu → www.eurecom.fr</h3>
+    <p class="muted" style="margin-top:0">각 행: 홉 번호, 라우터 이름(IP), 해당 라우터까지 <b>세 번 측정한 지연</b>. <code class="kbd">*</code> 는 응답 없음 (probe 손실 또는 라우터 무응답).</p>
+<pre class="code"><span class="c-cm"># Three delay measurements from gaia.cs.umass.edu to each router</span>
+<span><span class="c-ln"> 1</span>  <span class="c-host">cs-gw</span> (<span class="c-ip">128.119.240.254</span>)  <span class="c-num">1</span> <span class="c-kw">ms</span>  <span class="c-num">1</span> <span class="c-kw">ms</span>  <span class="c-num">2</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 2</span>  <span class="c-host">border1-rt-fa5-1-0.gw.umass.edu</span> (<span class="c-ip">128.119.3.145</span>)  <span class="c-num">1</span> <span class="c-kw">ms</span>  <span class="c-num">1</span> <span class="c-kw">ms</span>  <span class="c-num">2</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 3</span>  <span class="c-host">cht-vbns.gw.umass.edu</span> (<span class="c-ip">128.119.3.130</span>)  <span class="c-num">6</span> <span class="c-kw">ms</span> <span class="c-num">5</span> <span class="c-kw">ms</span> <span class="c-num">5</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 4</span>  <span class="c-host">jn1-at1-0-0-19.wor.vbns.net</span> (<span class="c-ip">204.147.132.129</span>)  <span class="c-num">16</span> <span class="c-kw">ms</span> <span class="c-num">11</span> <span class="c-kw">ms</span> <span class="c-num">13</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 5</span>  <span class="c-host">jn1-so7-0-0-0.wae.vbns.net</span> (<span class="c-ip">204.147.136.136</span>)  <span class="c-num">21</span> <span class="c-kw">ms</span> <span class="c-num">18</span> <span class="c-kw">ms</span> <span class="c-num">18</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 6</span>  <span class="c-host">abilene-vbns.abilene.ucaid.edu</span> (<span class="c-ip">198.32.11.9</span>)  <span class="c-num">22</span> <span class="c-kw">ms</span>  <span class="c-num">18</span> <span class="c-kw">ms</span>  <span class="c-num">22</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 7</span>  <span class="c-host">nycm-wash.abilene.ucaid.edu</span> (<span class="c-ip">198.32.8.46</span>)  <span class="c-num">22</span> <span class="c-kw">ms</span>  <span class="c-num">22</span> <span class="c-kw">ms</span>  <span class="c-num">22</span> <span class="c-kw">ms</span></span>
+<span class="hl-line"><span class="c-ln"> 8</span>  <span class="c-host">62.40.103.253</span> (<span class="c-ip">62.40.103.253</span>)  <span class="c-num">104</span> <span class="c-kw">ms</span> <span class="c-num">109</span> <span class="c-kw">ms</span> <span class="c-num">106</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln"> 9</span>  <span class="c-host">de2-1.de1.de.geant.net</span> (<span class="c-ip">62.40.96.129</span>)  <span class="c-num">109</span> <span class="c-kw">ms</span> <span class="c-num">102</span> <span class="c-kw">ms</span> <span class="c-num">104</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">10</span>  <span class="c-host">de.fr1.fr.geant.net</span> (<span class="c-ip">62.40.96.50</span>)  <span class="c-num">113</span> <span class="c-kw">ms</span> <span class="c-num">121</span> <span class="c-kw">ms</span> <span class="c-num">114</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">11</span>  <span class="c-host">renater-gw.fr1.fr.geant.net</span> (<span class="c-ip">62.40.103.54</span>)  <span class="c-num">112</span> <span class="c-kw">ms</span>  <span class="c-num">114</span> <span class="c-kw">ms</span>  <span class="c-num">112</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">12</span>  <span class="c-host">nio-n2.cssi.renater.fr</span> (<span class="c-ip">193.51.206.13</span>)  <span class="c-num">111</span> <span class="c-kw">ms</span>  <span class="c-num">114</span> <span class="c-kw">ms</span>  <span class="c-num">116</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">13</span>  <span class="c-host">nice.cssi.renater.fr</span> (<span class="c-ip">195.220.98.102</span>)  <span class="c-num">123</span> <span class="c-kw">ms</span>  <span class="c-num">125</span> <span class="c-kw">ms</span>  <span class="c-num">124</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">14</span>  <span class="c-host">r3t2-nice.cssi.renater.fr</span> (<span class="c-ip">195.220.98.110</span>)  <span class="c-num">126</span> <span class="c-kw">ms</span>  <span class="c-num">126</span> <span class="c-kw">ms</span>  <span class="c-num">124</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">15</span>  <span class="c-host">eurecom-valbonne.r3t2.ft.net</span> (<span class="c-ip">193.48.50.54</span>)  <span class="c-num">135</span> <span class="c-kw">ms</span>  <span class="c-num">128</span> <span class="c-kw">ms</span>  <span class="c-num">133</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">16</span>  <span class="c-host">194.214.211.25</span> (<span class="c-ip">194.214.211.25</span>)  <span class="c-num">126</span> <span class="c-kw">ms</span>  <span class="c-num">128</span> <span class="c-kw">ms</span>  <span class="c-num">126</span> <span class="c-kw">ms</span></span>
+<span><span class="c-ln">17</span>  <span class="c-err">* * *</span></span>
+<span><span class="c-ln">18</span>  <span class="c-err">* * *</span></span>
+<span><span class="c-ln">19</span>  <span class="c-host">fantasia.eurecom.fr</span> (<span class="c-ip">193.55.113.142</span>)  <span class="c-num">132</span> <span class="c-kw">ms</span>  <span class="c-num">128</span> <span class="c-kw">ms</span>  <span class="c-num">136</span> <span class="c-kw">ms</span></span></pre>
+  </div>
+  <div class="card split">
+    <div>
+      <h3>홉별 지연 시각화</h3>
+      <ul class="pts">
+        <li>점: 세 측정값의 평균, 세로선: 최솟값~최댓값</li>
+        <li><b>7 → 8 홉</b>에서 약 22 ms → 약 106 ms로 급증: 슬라이드에 표시된 <span class="tag a">trans-oceanic link</span> (대양 횡단 링크) 구간</li>
+        <li>17, 18 홉은 <code class="kbd">* * *</code> (응답 없음) → 점선으로 연결</li>
+        <li>같은 홉이라도 세 번의 측정값이 조금씩 다름 (예: 4홉 16/11/13 ms)</li>
+      </ul>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 580 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tracert 홉별 지연 그래프" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><line x1="70" y1="300.0" x2="540" y2="300.0" class="grid"/><text x="60.0" y="304.0" class="tick" text-anchor="end" >0</text><line x1="70" y1="262.9" x2="540" y2="262.9" class="grid"/><text x="60.0" y="266.9" class="tick" text-anchor="end" >20</text><line x1="70" y1="225.7" x2="540" y2="225.7" class="grid"/><text x="60.0" y="229.7" class="tick" text-anchor="end" >40</text><line x1="70" y1="188.6" x2="540" y2="188.6" class="grid"/><text x="60.0" y="192.6" class="tick" text-anchor="end" >60</text><line x1="70" y1="151.4" x2="540" y2="151.4" class="grid"/><text x="60.0" y="155.4" class="tick" text-anchor="end" >80</text><line x1="70" y1="114.3" x2="540" y2="114.3" class="grid"/><text x="60.0" y="118.3" class="tick" text-anchor="end" >100</text><line x1="70" y1="77.1" x2="540" y2="77.1" class="grid"/><text x="60.0" y="81.1" class="tick" text-anchor="end" >120</text><line x1="70" y1="40.0" x2="540" y2="40.0" class="grid"/><text x="60.0" y="44.0" class="tick" text-anchor="end" >140</text><text x="70.0" y="320.0" class="tick" text-anchor="middle" >1</text><text x="96.1" y="320.0" class="tick" text-anchor="middle" >2</text><text x="122.2" y="320.0" class="tick" text-anchor="middle" >3</text><text x="148.3" y="320.0" class="tick" text-anchor="middle" >4</text><text x="174.4" y="320.0" class="tick" text-anchor="middle" >5</text><text x="200.6" y="320.0" class="tick" text-anchor="middle" >6</text><text x="226.7" y="320.0" class="tick" text-anchor="middle" >7</text><text x="252.8" y="320.0" class="tick" text-anchor="middle" >8</text><text x="278.9" y="320.0" class="tick" text-anchor="middle" >9</text><text x="305.0" y="320.0" class="tick" text-anchor="middle" >10</text><text x="331.1" y="320.0" class="tick" text-anchor="middle" >11</text><text x="357.2" y="320.0" class="tick" text-anchor="middle" >12</text><text x="383.3" y="320.0" class="tick" text-anchor="middle" >13</text><text x="409.4" y="320.0" class="tick" text-anchor="middle" >14</text><text x="435.6" y="320.0" class="tick" text-anchor="middle" >15</text><text x="461.7" y="320.0" class="tick" text-anchor="middle" >16</text><text x="487.8" y="320.0" class="tick" text-anchor="middle" >17</text><text x="487.8" y="292.0" class="lbl red" text-anchor="middle" >*</text><text x="513.9" y="320.0" class="tick" text-anchor="middle" >18</text><text x="513.9" y="292.0" class="lbl red" text-anchor="middle" >*</text><text x="540.0" y="320.0" class="tick" text-anchor="middle" >19</text><rect x="226.7" y="40" width="26.1" height="260" fill="rgba(245,158,11,.12)"/><text x="239.7" y="56.0" class="lbl amb" text-anchor="middle" >대양 횡단</text><text x="239.7" y="72.0" class="lbl amb" text-anchor="middle" >링크</text><line x1="70" y1="300" x2="540" y2="300" class="axis"/><line x1="70" y1="40" x2="70" y2="300" class="axis"/><polyline points="70.0,297.5 96.1,297.5 122.2,290.1 148.3,275.2 174.4,264.7 200.6,261.6 226.7,259.1 252.8,102.5 278.9,105.0 305.0,84.6 331.1,90.8 357.2,88.9 383.3,69.7 409.4,67.2 435.6,54.9 461.7,64.8" fill="none" stroke="var(--accent)" stroke-width="2.5"/><line x1="461.7" y1="64.8" x2="540.0" y2="54.9" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 5"/><line x1="70.0" y1="296.3" x2="70.0" y2="298.1" stroke="var(--muted)" stroke-width="1.5"/><circle cx="70.0" cy="297.5" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 1: 평균 1.3 ms (최소 1, 최대 2)</title></circle><line x1="96.1" y1="296.3" x2="96.1" y2="298.1" stroke="var(--muted)" stroke-width="1.5"/><circle cx="96.1" cy="297.5" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 2: 평균 1.3 ms (최소 1, 최대 2)</title></circle><line x1="122.2" y1="288.9" x2="122.2" y2="290.7" stroke="var(--muted)" stroke-width="1.5"/><circle cx="122.2" cy="290.1" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 3: 평균 5.3 ms (최소 5, 최대 6)</title></circle><line x1="148.3" y1="270.3" x2="148.3" y2="279.6" stroke="var(--muted)" stroke-width="1.5"/><circle cx="148.3" cy="275.2" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 4: 평균 13.3 ms (최소 11, 최대 16)</title></circle><line x1="174.4" y1="261.0" x2="174.4" y2="266.6" stroke="var(--muted)" stroke-width="1.5"/><circle cx="174.4" cy="264.7" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 5: 평균 19.0 ms (최소 18, 최대 21)</title></circle><line x1="200.6" y1="259.1" x2="200.6" y2="266.6" stroke="var(--muted)" stroke-width="1.5"/><circle cx="200.6" cy="261.6" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 6: 평균 20.7 ms (최소 18, 최대 22)</title></circle><line x1="226.7" y1="259.1" x2="226.7" y2="259.1" stroke="var(--muted)" stroke-width="1.5"/><circle cx="226.7" cy="259.1" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 7: 평균 22.0 ms (최소 22, 최대 22)</title></circle><line x1="252.8" y1="97.6" x2="252.8" y2="106.9" stroke="var(--muted)" stroke-width="1.5"/><circle cx="252.8" cy="102.5" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 8: 평균 106.3 ms (최소 104, 최대 109)</title></circle><line x1="278.9" y1="97.6" x2="278.9" y2="110.6" stroke="var(--muted)" stroke-width="1.5"/><circle cx="278.9" cy="105.0" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 9: 평균 105.0 ms (최소 102, 최대 109)</title></circle><line x1="305.0" y1="75.3" x2="305.0" y2="90.1" stroke="var(--muted)" stroke-width="1.5"/><circle cx="305.0" cy="84.6" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 10: 평균 116.0 ms (최소 113, 최대 121)</title></circle><line x1="331.1" y1="88.3" x2="331.1" y2="92.0" stroke="var(--muted)" stroke-width="1.5"/><circle cx="331.1" cy="90.8" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 11: 평균 112.7 ms (최소 112, 최대 114)</title></circle><line x1="357.2" y1="84.6" x2="357.2" y2="93.9" stroke="var(--muted)" stroke-width="1.5"/><circle cx="357.2" cy="88.9" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 12: 평균 113.7 ms (최소 111, 최대 116)</title></circle><line x1="383.3" y1="67.9" x2="383.3" y2="71.6" stroke="var(--muted)" stroke-width="1.5"/><circle cx="383.3" cy="69.7" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 13: 평균 124.0 ms (최소 123, 최대 125)</title></circle><line x1="409.4" y1="66.0" x2="409.4" y2="69.7" stroke="var(--muted)" stroke-width="1.5"/><circle cx="409.4" cy="67.2" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 14: 평균 125.3 ms (최소 124, 최대 126)</title></circle><line x1="435.6" y1="49.3" x2="435.6" y2="62.3" stroke="var(--muted)" stroke-width="1.5"/><circle cx="435.6" cy="54.9" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 15: 평균 132.0 ms (최소 128, 최대 135)</title></circle><line x1="461.7" y1="62.3" x2="461.7" y2="66.0" stroke="var(--muted)" stroke-width="1.5"/><circle cx="461.7" cy="64.8" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 16: 평균 126.7 ms (최소 126, 최대 128)</title></circle><line x1="540.0" y1="47.4" x2="540.0" y2="62.3" stroke="var(--muted)" stroke-width="1.5"/><circle cx="540.0" cy="54.9" r="4.5" fill="var(--accent)" stroke="#0a0e1a"><title>hop 19: 평균 132.0 ms (최소 128, 최대 136)</title></circle><text x="305.0" y="344.0" class="axl" text-anchor="middle" >홉(hop) 번호</text><text x="22" y="170.0" class="axl" text-anchor="middle" transform="rotate(-90 22 170.0)">왕복 지연 (ms)</text></svg><figcaption>슬라이드 5 tracert 실측값 (점에 커서를 올리면 수치 표시)</figcaption></figure>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="sec" id="s05">
+  <div class="sec-h"><span class="num">05</span><h2>프로토콜 계층과 서비스 모델</h2><span class="ref">1.5 · 슬라이드 6</span></div>
+  <div class="card">
+    <ul class="pts">
+      <li>인터넷은 매우 복잡한 시스템 → <b>항공기 여행과정</b>의 예처럼 단계별로 나누어 이해</li>
+      <li>프로토콜을 <b>계층(layer)</b>으로 조직</li>
+      <li><b>서비스 모델</b>: 한 계층이 상위 계층으로 제공하는 서비스</li>
+      <li><b>프로토콜 스택</b>: 인터넷 — 애플리케이션, 트랜스포트, 네트워크, 링크, 물리 계층 (5계층) / OSI 7계층</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>프로토콜 계층화의 장점 vs 단점</h3>
+    <div class="tbl"><table>
+      <tr><th style="width:50%"><span class="tag g">장점</span></th><th><span class="tag r">단점</span></th></tr>
+      <tr><td>시스템 구성요소의 <b>갱신을 용이</b>하게 함</td><td>한 계층의 기능이 하위 계층과 <b>중복</b>됨<br>한 계층에서 <b>타 계층의 정보가 필요</b>한 경우 발생</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="sec" id="s06">
+  <div class="sec-h"><span class="num">06</span><h2>인터넷 프로토콜 스택</h2><span class="ref">슬라이드 7</span></div>
+  <div class="card split">
+    <div>
+      <div class="tbl"><table>
+        <tr><th>계층</th><th>역할</th><th>대표 프로토콜</th></tr>
+        <tr><td><span class="tag b">application</span></td><td>네트워크 애플리케이션 지원</td><td>FTP, SMTP, HTTP, IMAP</td></tr>
+        <tr><td><span class="tag a">transport</span></td><td>프로세스와 프로세스 간 데이터 전달</td><td>TCP, UDP</td></tr>
+        <tr><td><span class="tag v">network</span></td><td>출발지와 목적지 간 데이터그램 라우팅</td><td>IP, routing protocols</td></tr>
+        <tr><td><span class="tag g">link</span></td><td>이웃 노드 간 데이터 프레임 이동</td><td>PPP, Ethernet</td></tr>
+        <tr><td><span class="tag" style="background:#1f2937;color:var(--muted)">physical</span></td><td>프레임 내부 각 비트의 노드 간 이동</td><td>—</td></tr>
+      </table></div>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 520 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="인터넷 프로토콜 스택 5계층" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="60" y="40" width="200" height="48" rx="6" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><text x="160.0" y="62.0" class="lbl strong" text-anchor="middle" >application</text><text x="160.0" y="79.0" class="tick" text-anchor="middle" >애플리케이션</text><text x="290.0" y="70.0" class="lbl" text-anchor="start" >FTP, SMTP, HTTP, IMAP</text><rect x="60" y="96" width="200" height="48" rx="6" fill="var(--surface2)" stroke="var(--amber)" stroke-width="2"/><text x="160.0" y="118.0" class="lbl strong" text-anchor="middle" >transport</text><text x="160.0" y="135.0" class="tick" text-anchor="middle" >트랜스포트</text><text x="290.0" y="126.0" class="lbl" text-anchor="start" >TCP, UDP</text><rect x="60" y="152" width="200" height="48" rx="6" fill="var(--surface2)" stroke="var(--violet)" stroke-width="2"/><text x="160.0" y="174.0" class="lbl strong" text-anchor="middle" >network</text><text x="160.0" y="191.0" class="tick" text-anchor="middle" >네트워크</text><text x="290.0" y="182.0" class="lbl" text-anchor="start" >IP, routing protocols</text><rect x="60" y="208" width="200" height="48" rx="6" fill="var(--surface2)" stroke="var(--ok)" stroke-width="2"/><text x="160.0" y="230.0" class="lbl strong" text-anchor="middle" >link</text><text x="160.0" y="247.0" class="tick" text-anchor="middle" >링크</text><text x="290.0" y="238.0" class="lbl" text-anchor="start" >PPP, Ethernet</text><rect x="60" y="264" width="200" height="48" rx="6" fill="var(--surface2)" stroke="var(--muted)" stroke-width="2"/><text x="160.0" y="286.0" class="lbl strong" text-anchor="middle" >physical</text><text x="160.0" y="303.0" class="tick" text-anchor="middle" >물리</text><text x="290.0" y="294.0" class="lbl" text-anchor="start" >—</text><line x1="30" y1="40" x2="30" y2="316" stroke="var(--muted)" stroke-width="2" marker-start="url(#ar)" marker-end="url(#ar)"/><text x="30.0" y="30.0" class="tick" text-anchor="middle" >상위</text><text x="30.0" y="334.0" class="tick" text-anchor="middle" >하위</text></svg><figcaption>인터넷 5계층 스택</figcaption></figure>
+  </div>
+  <div class="note"><b>transport vs network</b>: transport는 <b>프로세스 ↔ 프로세스</b>(종단 호스트 내부의 프로그램 간), network는 <b>출발지 호스트 ↔ 목적지 호스트</b> 간 라우팅. <b>link</b>는 그 경로 중 <b>이웃 노드 한 구간</b>만 담당.</div>
+</section>
+
+<!-- 07 -->
+<section class="sec" id="s07">
+  <div class="sec-h"><span class="num">07</span><h2>캡슐화 (Encapsulation)</h2><span class="ref">슬라이드 8</span></div>
+  <div class="card">
+    <figure class="fig"><svg viewBox="0 0 1020 370" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="캡슐화 과정 다이어그램" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><text x="290.0" y="40.0" class="lbl strong" text-anchor="middle" >source</text><rect x="230" y="60" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="290.0" y="85.0" class="tick" text-anchor="middle" >application</text><rect x="230" y="108" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="290.0" y="133.0" class="tick" text-anchor="middle" >transport</text><rect x="230" y="156" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="290.0" y="181.0" class="tick" text-anchor="middle" >network</text><rect x="230" y="204" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="290.0" y="229.0" class="tick" text-anchor="middle" >link</text><rect x="230" y="252" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="290.0" y="277.0" class="tick" text-anchor="middle" >physical</text><text x="470.0" y="40.0" class="lbl strong" text-anchor="middle" >switch</text><rect x="420" y="204" width="100" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="470.0" y="229.0" class="tick" text-anchor="middle" >link</text><rect x="420" y="252" width="100" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="470.0" y="277.0" class="tick" text-anchor="middle" >physical</text><text x="620.0" y="40.0" class="lbl strong" text-anchor="middle" >router</text><rect x="570" y="156" width="100" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="620.0" y="181.0" class="tick" text-anchor="middle" >network</text><rect x="570" y="204" width="100" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="620.0" y="229.0" class="tick" text-anchor="middle" >link</text><rect x="570" y="252" width="100" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="620.0" y="277.0" class="tick" text-anchor="middle" >physical</text><text x="800.0" y="40.0" class="lbl strong" text-anchor="middle" >destination</text><rect x="740" y="60" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="800.0" y="85.0" class="tick" text-anchor="middle" >application</text><rect x="740" y="108" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="800.0" y="133.0" class="tick" text-anchor="middle" >transport</text><rect x="740" y="156" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="800.0" y="181.0" class="tick" text-anchor="middle" >network</text><rect x="740" y="204" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="800.0" y="229.0" class="tick" text-anchor="middle" >link</text><rect x="740" y="252" width="120" height="40" rx="4" fill="var(--surface)" stroke="var(--border2)" stroke-width="1.5"/><text x="800.0" y="277.0" class="tick" text-anchor="middle" >physical</text><rect x="170" y="69" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="190.0" y="84.0" class="pdu" text-anchor="middle" >M</text><text x="162.0" y="85.0" class="tick red" text-anchor="end" >message</text><rect x="870" y="69" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="890.0" y="84.0" class="pdu" text-anchor="middle" >M</text><rect x="140" y="117" width="30" height="22" fill="var(--surface2)" stroke="var(--amber)" stroke-width="1.8"/><text x="155.0" y="132.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">t</tspan></text><rect x="170" y="117" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="190.0" y="132.0" class="pdu" text-anchor="middle" >M</text><text x="132.0" y="133.0" class="tick red" text-anchor="end" >segment</text><rect x="870" y="117" width="30" height="22" fill="var(--surface2)" stroke="var(--amber)" stroke-width="1.8"/><text x="885.0" y="132.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">t</tspan></text><rect x="900" y="117" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="920.0" y="132.0" class="pdu" text-anchor="middle" >M</text><rect x="110" y="165" width="30" height="22" fill="var(--surface2)" stroke="var(--violet)" stroke-width="1.8"/><text x="125.0" y="180.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">n</tspan></text><rect x="140" y="165" width="30" height="22" fill="var(--surface2)" stroke="var(--amber)" stroke-width="1.8"/><text x="155.0" y="180.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">t</tspan></text><rect x="170" y="165" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="190.0" y="180.0" class="pdu" text-anchor="middle" >M</text><text x="102.0" y="181.0" class="tick red" text-anchor="end" >datagram</text><rect x="870" y="165" width="30" height="22" fill="var(--surface2)" stroke="var(--violet)" stroke-width="1.8"/><text x="885.0" y="180.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">n</tspan></text><rect x="900" y="165" width="30" height="22" fill="var(--surface2)" stroke="var(--amber)" stroke-width="1.8"/><text x="915.0" y="180.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">t</tspan></text><rect x="930" y="165" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="950.0" y="180.0" class="pdu" text-anchor="middle" >M</text><rect x="80" y="213" width="30" height="22" fill="var(--surface2)" stroke="var(--ok)" stroke-width="1.8"/><text x="95.0" y="228.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">l</tspan></text><rect x="110" y="213" width="30" height="22" fill="var(--surface2)" stroke="var(--violet)" stroke-width="1.8"/><text x="125.0" y="228.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">n</tspan></text><rect x="140" y="213" width="30" height="22" fill="var(--surface2)" stroke="var(--amber)" stroke-width="1.8"/><text x="155.0" y="228.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">t</tspan></text><rect x="170" y="213" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="190.0" y="228.0" class="pdu" text-anchor="middle" >M</text><text x="72.0" y="229.0" class="tick red" text-anchor="end" >frame</text><rect x="870" y="213" width="30" height="22" fill="var(--surface2)" stroke="var(--ok)" stroke-width="1.8"/><text x="885.0" y="228.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">l</tspan></text><rect x="900" y="213" width="30" height="22" fill="var(--surface2)" stroke="var(--violet)" stroke-width="1.8"/><text x="915.0" y="228.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">n</tspan></text><rect x="930" y="213" width="30" height="22" fill="var(--surface2)" stroke="var(--amber)" stroke-width="1.8"/><text x="945.0" y="228.0" class="pdu" text-anchor="middle" >H<tspan baseline-shift="sub" font-size="9">t</tspan></text><rect x="960" y="213" width="40" height="22" fill="var(--surface2)" stroke="var(--accent)" stroke-width="1.8"/><text x="980.0" y="228.0" class="pdu" text-anchor="middle" >M</text><path d="M290,100 V310 H470 V208 V310 H620 V160 V310 H800 V100" fill="none" stroke="var(--danger)" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arR)" opacity=".85"/><text x="470.0" y="330.0" class="tick" text-anchor="middle" >스위치: 링크 계층까지 처리</text><text x="620.0" y="346.0" class="tick" text-anchor="middle" >라우터: 네트워크 계층까지 처리</text><text x="800.0" y="330.0" class="tick" text-anchor="middle" >수신 측: 역캡슐화(헤더 제거)</text><text x="120.0" y="330.0" class="tick" text-anchor="middle" >송신 측: 계층마다 헤더 추가</text></svg><figcaption>source → switch → router → destination (빨간 선: 데이터가 거치는 계층 경로)</figcaption></figure>
+  </div>
+  <div class="card split">
+    <div>
+      <h3>계층별 PDU 이름</h3>
+      <div class="tbl"><table>
+        <tr><th>계층</th><th>단위</th><th>구성</th></tr>
+        <tr><td>application</td><td><b>message</b></td><td><code>M</code></td></tr>
+        <tr><td>transport</td><td><b>segment</b></td><td><code><span style="color:var(--amber)">Ht</span> + M</code></td></tr>
+        <tr><td>network</td><td><b>datagram</b></td><td><code><span style="color:var(--violet)">Hn</span> + Ht + M</code></td></tr>
+        <tr><td>link</td><td><b>frame</b></td><td><code><span style="color:var(--ok)">Hl</span> + Hn + Ht + M</code></td></tr>
+      </table></div>
+    </div>
+    <div>
+      <h3>장비별 처리 계층</h3>
+      <ul class="pts">
+        <li><b>송신 호스트</b>: 5계층 전부 — 내려가며 헤더(Ht → Hn → Hl) 추가</li>
+        <li><b>스위치</b>: link, physical (2계층까지)</li>
+        <li><b>라우터</b>: network, link, physical (3계층까지) — Hn을 보고 경로 결정</li>
+        <li><b>수신 호스트</b>: 5계층 전부 — 올라가며 헤더 제거, 최종적으로 M 전달</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section class="sec" id="s08">
+  <div class="sec-h"><span class="num">08</span><h2>공격받는 네트워크</h2><span class="ref">1.6 · 슬라이드 9–11</span></div>
+  <div class="card split">
+    <div>
+      <h3>Denial of Service (DoS)</h3>
+      <p>네트워크, 호스트 혹은 다른 기반구조의 요소들을 <b>정상적인 사용자들이 사용할 수 없게</b> 하는 것.</p>
+      <ol class="pts">
+        <li>select target — 공격 대상 선정</li>
+        <li>break into hosts around the network — 네트워크 곳곳의 호스트에 침입</li>
+        <li>send packets toward target from compromised hosts — <b>감염된 호스트</b>들이 대상에게 패킷 전송</li>
+      </ol>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 560 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DoS 공격 다이어그램" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="266" y="135" width="28" height="56" rx="3" fill="#0e7490" stroke="var(--accent)" stroke-width="2"/><rect x="274" y="151" width="12" height="20" fill="#1e40af"/><text x="280.0" y="213.0" class="lbl strong" text-anchor="middle" >target</text><rect x="264.0" y="27.5" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="274.0" y="49.5" width="12" height="5" fill="var(--danger)"/><rect x="268.0" y="54.5" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="280.0" y1="58.3" x2="280.0" y2="135.0" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="367.15631177732905" y="51.08640119469399" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="377.15631177732905" y="73.08640119469399" width="12" height="5" fill="var(--danger)"/><rect x="371.15631177732905" y="78.08640119469399" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="367.8" y1="78.7" x2="297.6" y2="140.7" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="430.9104186097994" y="112.83640119469399" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="440.9104186097994" y="134.836401194694" width="12" height="5" fill="var(--danger)"/><rect x="434.9104186097994" y="139.836401194694" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="422.0" y1="132.0" x2="308.5" y2="155.7" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="430.9104186097994" y="189.163598805306" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="440.9104186097994" y="211.163598805306" width="12" height="5" fill="var(--danger)"/><rect x="434.9104186097994" y="216.163598805306" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="422.0" y1="198.0" x2="308.5" y2="174.3" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="367.15631177732905" y="250.91359880530604" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="377.15631177732905" y="272.91359880530604" width="12" height="5" fill="var(--accent)"/><rect x="371.15631177732905" y="277.91359880530604" width="24" height="3" rx="1" fill="var(--accent)"/><line x1="367.8" y1="251.3" x2="297.6" y2="189.3" stroke="var(--text)" stroke-width="2" marker-end="url(#ar)"/><rect x="264.0" y="274.5" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="274.0" y="296.5" width="12" height="5" fill="var(--danger)"/><rect x="268.0" y="301.5" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="280.0" y1="271.7" x2="280.0" y2="195.0" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="160.84368822267098" y="250.91359880530604" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="170.84368822267098" y="272.91359880530604" width="12" height="5" fill="var(--danger)"/><rect x="164.84368822267098" y="277.91359880530604" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="192.2" y1="251.3" x2="262.4" y2="189.3" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="97.08958139020055" y="189.163598805306" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="107.08958139020055" y="211.163598805306" width="12" height="5" fill="var(--danger)"/><rect x="101.08958139020055" y="216.163598805306" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="138.0" y1="198.0" x2="251.5" y2="174.3" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="97.08958139020052" y="112.83640119469402" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="107.08958139020052" y="134.83640119469402" width="12" height="5" fill="var(--danger)"/><rect x="101.08958139020052" y="139.83640119469402" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="138.0" y1="132.0" x2="251.5" y2="155.7" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><rect x="160.84368822267095" y="51.086401194694005" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="170.84368822267095" y="73.086401194694" width="12" height="5" fill="var(--danger)"/><rect x="164.84368822267095" y="78.086401194694" width="24" height="3" rx="1" fill="var(--danger)"/><line x1="192.2" y1="78.7" x2="262.4" y2="140.7" stroke="var(--danger)" stroke-width="2.5" marker-end="url(#arR)"/><text x="40.0" y="318.0" class="tick" text-anchor="start" ><tspan fill="var(--danger)">■</tspan> 감염된 호스트   <tspan fill="var(--accent)">■</tspan> 정상 사용자</text></svg><figcaption>슬라이드 9 — 감염 호스트들이 target에 패킷 집중</figcaption></figure>
+  </div>
+  <div class="card split">
+    <div>
+      <h3>Packet sniffing</h3>
+      <ul class="pts">
+        <li>broadcast media (shared Ethernet, wireless) 환경</li>
+        <li>지나가는 <b>모든 패킷의 사본을 기록</b>하는 <b>수동적인 수신자</b></li>
+        <li>B → A 로 가는 패킷을 C가 복사해 본다</li>
+      </ul>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 580 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="패킷 스니핑 다이어그램" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="84" y="50" width="26" height="50" rx="3" fill="#0e7490" stroke="var(--accent)" stroke-width="2"/><rect x="91" y="64" width="12" height="18" fill="#1e40af"/><text x="70.0" y="78.0" class="lbl strong" text-anchor="end" >A</text><line x1="97" y1="100" x2="97" y2="150" stroke="var(--muted)" stroke-width="2"/><line x1="97" y1="150" x2="480" y2="150" stroke="var(--muted)" stroke-width="2"/><rect x="314" y="56" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="324" y="78" width="12" height="5" fill="var(--danger)"/><rect x="318" y="83" width="24" height="3" rx="1" fill="var(--danger)"/><text x="362.0" y="70.0" class="lbl strong" text-anchor="start" >C</text><line x1="330" y1="94" x2="330" y2="150" stroke="var(--muted)" stroke-width="2"/><rect x="464" y="176" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="474" y="198" width="12" height="5" fill="var(--accent)"/><rect x="468" y="203" width="24" height="3" rx="1" fill="var(--accent)"/><text x="508.0" y="196.0" class="lbl strong" text-anchor="start" >B</text><line x1="480" y1="150" x2="480" y2="176" stroke="var(--muted)" stroke-width="2"/><ellipse cx="200" cy="196" rx="28" ry="11" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><ellipse cx="200" cy="190" rx="28" ry="11" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><path d="M188,184 L212,196 M212,184 L188,196" stroke="var(--text)" stroke-width="2"/><line x1="200" y1="150" x2="200" y2="179" stroke="var(--muted)" stroke-width="2"/><line x1="200" y1="207" x2="200" y2="240" stroke="var(--muted)" stroke-width="2"/><rect x="200" y="122" width="44" height="20" fill="var(--surface2)" stroke="var(--text)"/><text x="222.0" y="136.0" class="pdu" text-anchor="middle" fill="var(--text)">src:B</text><rect x="244" y="122" width="48" height="20" fill="var(--surface2)" stroke="var(--text)"/><text x="268.0" y="136.0" class="pdu" text-anchor="middle" >dest:A</text><rect x="292" y="122" width="58" height="20" fill="var(--surface2)" stroke="var(--text)"/><text x="321.0" y="136.0" class="pdu" text-anchor="middle" >payload</text><path d="M480,176 V132 H352" fill="none" stroke="var(--muted)" stroke-width="2"/><line x1="198" y1="132" x2="112" y2="132" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/><line x1="300" y1="120" x2="318" y2="98" stroke="var(--danger)" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arR)"/><text x="262.0" y="112.0" class="tick red" text-anchor="middle" >copy</text><text x="300.0" y="270.0" class="lbl red" text-anchor="middle" >B→A 패킷을 C가 몰래 복사(수동적 수신)</text></svg><figcaption>슬라이드 10</figcaption></figure>
+  </div>
+  <div class="card split">
+    <div>
+      <h3>IP spoofing</h3>
+      <ul class="pts">
+        <li><b>위장된 소스 어드레스</b>로 전송</li>
+        <li>신뢰하는 사람인 것처럼 위장</li>
+        <li>C가 보낸 패킷인데 <code class="kbd">src:B</code>로 적혀 있어 A는 B가 보낸 것으로 인식</li>
+      </ul>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 580 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IP 스푸핑 다이어그램" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><rect x="84" y="50" width="26" height="50" rx="3" fill="#0e7490" stroke="var(--accent)" stroke-width="2"/><rect x="91" y="64" width="12" height="18" fill="#1e40af"/><text x="70.0" y="78.0" class="lbl strong" text-anchor="end" >A</text><line x1="97" y1="100" x2="97" y2="150" stroke="var(--muted)" stroke-width="2"/><line x1="97" y1="150" x2="480" y2="150" stroke="var(--muted)" stroke-width="2"/><rect x="314" y="56" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--danger)" stroke-width="2"/><rect x="324" y="78" width="12" height="5" fill="var(--danger)"/><rect x="318" y="83" width="24" height="3" rx="1" fill="var(--danger)"/><text x="362.0" y="70.0" class="lbl strong" text-anchor="start" >C</text><line x1="330" y1="94" x2="330" y2="150" stroke="var(--muted)" stroke-width="2"/><rect x="464" y="176" width="32" height="22" rx="3" fill="var(--surface2)" stroke="var(--accent)" stroke-width="2"/><rect x="474" y="198" width="12" height="5" fill="var(--accent)"/><rect x="468" y="203" width="24" height="3" rx="1" fill="var(--accent)"/><text x="508.0" y="196.0" class="lbl strong" text-anchor="start" >B</text><line x1="480" y1="150" x2="480" y2="176" stroke="var(--muted)" stroke-width="2"/><ellipse cx="200" cy="196" rx="28" ry="11" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><ellipse cx="200" cy="190" rx="28" ry="11" fill="#1e3a5f" stroke="var(--accent)" stroke-width="2"/><path d="M188,184 L212,196 M212,184 L188,196" stroke="var(--text)" stroke-width="2"/><line x1="200" y1="150" x2="200" y2="179" stroke="var(--muted)" stroke-width="2"/><line x1="200" y1="207" x2="200" y2="240" stroke="var(--muted)" stroke-width="2"/><rect x="170" y="122" width="44" height="20" fill="var(--surface2)" stroke="var(--text)"/><text x="192.0" y="136.0" class="pdu" text-anchor="middle" fill="var(--danger)">src:B</text><rect x="214" y="122" width="48" height="20" fill="var(--surface2)" stroke="var(--text)"/><text x="238.0" y="136.0" class="pdu" text-anchor="middle" >dest:A</text><rect x="262" y="122" width="58" height="20" fill="var(--surface2)" stroke="var(--text)"/><text x="291.0" y="136.0" class="pdu" text-anchor="middle" >payload</text><path d="M330,94 V132 H322" fill="none" stroke="var(--danger)" stroke-width="2"/><line x1="168" y1="132" x2="112" y2="132" stroke="var(--danger)" stroke-width="2" marker-end="url(#arR)"/><text x="300.0" y="270.0" class="lbl red" text-anchor="middle" >C가 출발지를 B로 위장하여 A에게 전송</text></svg><figcaption>슬라이드 11</figcaption></figure>
+  </div>
+  <div class="card">
+    <h3>세 가지 공격 비교</h3>
+    <div class="tbl"><table>
+      <tr><th>공격</th><th>슬라이드 정의</th><th>공격 방식</th></tr>
+      <tr><td><b>DoS</b></td><td>정상적인 사용자들이 네트워크·호스트·기반구조를 사용할 수 없게 함</td><td>select target → break into hosts → 감염된 호스트들이 target으로 패킷 전송</td></tr>
+      <tr><td><b>Packet sniffing</b></td><td>지나가는 모든 패킷의 사본을 기록하는 <b>수동적인</b> 수신자</td><td>broadcast media(shared Ethernet, wireless)에서 B→A 패킷을 C가 기록</td></tr>
+      <tr><td><b>IP spoofing</b></td><td>위장된 소스 어드레스로 전송</td><td>C가 src:B로 위장 → A는 신뢰하는 B로 인식</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- 09 -->
+<section class="sec" id="s09">
+  <div class="sec-h"><span class="num">09</span><h2>인터넷 역사</h2><span class="ref">1.7 · 슬라이드 12–15</span></div>
+  <div class="card split">
+    <div class="timeline">
+      <div class="era"><h4>1961–1972 · Early packet-switching principles</h4><ul>
+        <li>1961 Kleinrock — 큐잉 이론으로 패킷교환의 효율성 입증</li>
+        <li>1964 Baran — 군사 네트워크의 패킷교환</li>
+        <li>1967 ARPA가 ARPAnet 구상 · 1969 첫 ARPAnet 노드 가동</li>
+        <li>1972 ARPAnet 공개 시연, NCP(최초 host-host 프로토콜), 첫 e-mail, 15 nodes</li></ul></div>
+      <div class="era"><h4>1972–1980 · 독점 네트워크와 인터네트워크</h4><ul>
+        <li>1970~ ALOHAnet 위성 네트워크(하와이)</li>
+        <li>1974 Cerf &amp; Kahn — 네트워크 상호연결 구조</li>
+        <li>1976 이더넷 프로토콜(맷칼프와 보그스) · 1979 ARPAnet 200 nodes</li></ul></div>
+      <div class="era"><h4>1980–1990 · 네트워크 확산</h4><ul>
+        <li>1982 SMTP · 1983 TCP/IP 배치, DNS 정의 · 1985 FTP</li>
+        <li>1988 TCP 혼잡제어 · 100,000 hosts</li></ul></div>
+      <div class="era"><h4>1990, 2000's · 인터넷 급증</h4><ul>
+        <li>Early 1990's ARPAnet → MILNET, NSFnet · 1991 NSFnet 상용화</li>
+        <li>early 1990s Web: hypertext, HTML·HTTP(Berners-Lee), 1994 Mosaic→Netscape</li>
+        <li>late 1990's–2000's 메신저·P2P, 보안 부각, 5천만 host, Gbps 백본</li></ul></div>
+      <div class="era"><h4>2005 – present</h4><ul>
+        <li>~18B devices (2017), 스마트폰(iPhone 2007), 광대역·4G/5G/WiFi</li>
+        <li>SNS(Facebook ~2.5B), 서비스 제공자 자체 네트워크, 클라우드(AWS, Azure)</li>
+        <li>New services: AI 기반 IoT, cloud computing, blockchain</li></ul></div>
+    </div>
+    <figure class="fig"><svg viewBox="0 0 580 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="인터넷 연결 규모 성장 그래프" style="width:100%;display:block"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+</defs><line x1="80" y1="300.0" x2="540" y2="300.0" class="grid"/><text x="70" y="304.0" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">0</tspan></text><line x1="80" y1="276.4" x2="540" y2="276.4" class="grid"/><text x="70" y="280.4" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">1</tspan></text><line x1="80" y1="252.7" x2="540" y2="252.7" class="grid"/><text x="70" y="256.7" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">2</tspan></text><line x1="80" y1="229.1" x2="540" y2="229.1" class="grid"/><text x="70" y="233.1" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">3</tspan></text><line x1="80" y1="205.5" x2="540" y2="205.5" class="grid"/><text x="70" y="209.5" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">4</tspan></text><line x1="80" y1="181.8" x2="540" y2="181.8" class="grid"/><text x="70" y="185.8" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">5</tspan></text><line x1="80" y1="158.2" x2="540" y2="158.2" class="grid"/><text x="70" y="162.2" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">6</tspan></text><line x1="80" y1="134.5" x2="540" y2="134.5" class="grid"/><text x="70" y="138.5" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">7</tspan></text><line x1="80" y1="110.9" x2="540" y2="110.9" class="grid"/><text x="70" y="114.9" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">8</tspan></text><line x1="80" y1="87.3" x2="540" y2="87.3" class="grid"/><text x="70" y="91.3" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">9</tspan></text><line x1="80" y1="63.6" x2="540" y2="63.6" class="grid"/><text x="70" y="67.6" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">10</tspan></text><line x1="80" y1="40.0" x2="540" y2="40.0" class="grid"/><text x="70" y="44.0" class="tick" text-anchor="end">10<tspan baseline-shift="super" font-size="9">11</tspan></text><text x="80.0" y="320.0" class="tick" text-anchor="middle" >1965</text><line x1="80.0" y1="40" x2="80.0" y2="300" class="grid"/><text x="121.8" y="320.0" class="tick" text-anchor="middle" >1970</text><line x1="121.8" y1="40" x2="121.8" y2="300" class="grid"/><text x="163.6" y="320.0" class="tick" text-anchor="middle" >1975</text><line x1="163.6" y1="40" x2="163.6" y2="300" class="grid"/><text x="205.5" y="320.0" class="tick" text-anchor="middle" >1980</text><line x1="205.5" y1="40" x2="205.5" y2="300" class="grid"/><text x="247.3" y="320.0" class="tick" text-anchor="middle" >1985</text><line x1="247.3" y1="40" x2="247.3" y2="300" class="grid"/><text x="289.1" y="320.0" class="tick" text-anchor="middle" >1990</text><line x1="289.1" y1="40" x2="289.1" y2="300" class="grid"/><text x="330.9" y="320.0" class="tick" text-anchor="middle" >1995</text><line x1="330.9" y1="40" x2="330.9" y2="300" class="grid"/><text x="372.7" y="320.0" class="tick" text-anchor="middle" >2000</text><line x1="372.7" y1="40" x2="372.7" y2="300" class="grid"/><text x="414.5" y="320.0" class="tick" text-anchor="middle" >2005</text><line x1="414.5" y1="40" x2="414.5" y2="300" class="grid"/><text x="456.4" y="320.0" class="tick" text-anchor="middle" >2010</text><line x1="456.4" y1="40" x2="456.4" y2="300" class="grid"/><text x="498.2" y="320.0" class="tick" text-anchor="middle" >2015</text><line x1="498.2" y1="40" x2="498.2" y2="300" class="grid"/><text x="540.0" y="320.0" class="tick" text-anchor="middle" >2020</text><line x1="540.0" y1="40" x2="540.0" y2="300" class="grid"/><line x1="80" y1="300" x2="540" y2="300" class="axis"/><line x1="80" y1="40" x2="80" y2="300" class="axis"/><polyline points="138.5,272.2 197.1,245.6 272.4,181.8 372.7,118.0 514.9,57.6" fill="none" stroke="var(--violet)" stroke-width="2.5"/><circle cx="138.5" cy="272.2" r="5.5" fill="var(--violet)" stroke="#0a0e1a" stroke-width="2"><title>15 nodes (1972)</title></circle><text x="148.5" y="288.2" class="lbl" text-anchor="start" >15 nodes (1972)</text><circle cx="197.1" cy="245.6" r="5.5" fill="var(--violet)" stroke="#0a0e1a" stroke-width="2"><title>200 nodes (1979)</title></circle><text x="205.1" y="235.6" class="lbl" text-anchor="start" >200 nodes (1979)</text><circle cx="272.4" cy="181.8" r="5.5" fill="var(--violet)" stroke="#0a0e1a" stroke-width="2"><title>100,000 hosts (1988)</title></circle><text x="264.4" y="169.8" class="lbl" text-anchor="end" >100,000 hosts (1988)</text><circle cx="372.7" cy="118.0" r="5.5" fill="var(--violet)" stroke="#0a0e1a" stroke-width="2"><title>5천만 hosts (late 1990s–2000s)</title></circle><text x="364.7" y="106.0" class="lbl" text-anchor="end" >5천만 hosts (late 1990s–2000s)</text><circle cx="514.9" cy="57.6" r="5.5" fill="var(--violet)" stroke="#0a0e1a" stroke-width="2"><title>~18B devices (2017)</title></circle><text x="506.9" y="75.6" class="lbl" text-anchor="end" >~18B devices (2017)</text><text x="310.0" y="344.0" class="axl" text-anchor="middle" >연도</text><text x="22" y="170.0" class="axl" text-anchor="middle" transform="rotate(-90 22 170.0)">연결 규모 (log scale)</text></svg><figcaption>강의자료에 등장한 규모 수치 (nodes · hosts · devices 단위 혼재, log scale)</figcaption></figure>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="sec" id="s10">
+  <div class="sec-h"><span class="num">10</span><h2>핵심 요약</h2><span class="ref">전체</span></div>
+  <div class="sumgrid">
+    <div class="card"><h4><span class="n">01</span>큐잉과 손실</h4>도착율 &gt; 출력용량 → 버퍼 큐잉(지연). 버퍼가 가득 차면 도착 패킷 폐기(손실).</div>
+    <div class="card"><h4><span class="n">02</span>4가지 지연</h4>노드처리 · 큐잉 · 전송(<code>L/R</code>) · 전파(<code>d/s</code>). 전송은 거리 무관, 전파는 패킷 길이 무관.</div>
+    <div class="card"><h4><span class="n">03</span>트래픽 강도</h4><code>La/R</code> ≈ 0 지연 없음, → 1 급증, &gt; 1 발산.</div>
+    <div class="card"><h4><span class="n">04</span>tracert</h4>홉별 3회 측정. 대양 횡단 링크에서 지연 급증, <code>*</code> = 무응답.</div>
+    <div class="card"><h4><span class="n">05</span>계층화</h4>서비스 모델 = 상위 계층에 제공하는 서비스. 장점: 갱신 용이 / 단점: 기능 중복, 타 계층 정보 필요.</div>
+    <div class="card"><h4><span class="n">06</span>5계층 스택</h4>application · transport(프로세스 간) · network(호스트 간 라우팅) · link(이웃 노드 간) · physical(비트).</div>
+    <div class="card"><h4><span class="n">07</span>캡슐화</h4>message → segment(Ht) → datagram(Hn) → frame(Hl). 스위치 2계층, 라우터 3계층까지 처리.</div>
+    <div class="card"><h4><span class="n">08</span>공격</h4>DoS(감염 호스트로 폭주) · Sniffing(수동적 사본 기록) · Spoofing(출발지 위장).</div>
+    <div class="card"><h4><span class="n">09</span>역사</h4>패킷교환 원리(1961–72) → 인터네트워킹(72–80) → TCP/IP·DNS(80–90) → Web(90s) → 모바일·클라우드(2005~).</div>
+  </div>
+</section>
+</main>
+</div>
+<script>
+(function(){
+  // TOC active
+  var links=[].slice.call(document.querySelectorAll('#toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  function onScroll(){
+    var y=window.scrollY+120, cur=0;
+    secs.forEach(function(s,i){ if(s && s.offsetTop<=y) cur=i; });
+    if(window.innerHeight+window.scrollY>=document.body.scrollHeight-4) cur=secs.length-1;
+    links.forEach(function(a,i){a.classList.toggle('active',i===cur);});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  // queue slider
+  var G={"X0": 70, "X1": 540, "Y0": 40, "Y1": 300, "XMAX": 1.2, "YMAX": 10};
+  var r=document.getElementById('rho'),out=document.getElementById('rhoOut'),
+      dot=document.getElementById('qDot'),vl=document.getElementById('qV');
+  function gx(v){return G.X0+(v/G.XMAX)*(G.X1-G.X0);}
+  function gy(v){return G.Y1-(v/G.YMAX)*(G.Y1-G.Y0);}
+  function upd(){
+    var p=parseFloat(r.value), d, msg;
+    if(p<1){ d=p/(1-p); } else { d=Infinity; }
+    var yy=gy(Math.min(d,G.YMAX)), xx=gx(p);
+    dot.setAttribute('cx',xx); dot.setAttribute('cy',yy);
+    vl.setAttribute('x1',xx); vl.setAttribute('x2',xx); vl.setAttribute('y2',yy);
+    if(p<=0.05) msg='큐잉지연이 거의 없음';
+    else if(p<1) msg='1에 가까워질수록 지연이 점차 커짐';
+    else if(p===1) msg='경계값 — 지연이 무한히 커짐';
+    else msg='지연이 무한대로 발산';
+    out.textContent='La/R = '+p.toFixed(2)+' → '+msg;
+  }
+  r.addEventListener('input',upd); upd();
+  // calculator
+  function f(ms){ return ms>=1000? (ms/1000).toFixed(3)+' s' : ms.toFixed(3)+' ms'; }
+  function calc(){
+    var L=+document.getElementById('cL').value,R=+document.getElementById('cR').value,
+        D=+document.getElementById('cD').value,S=+document.getElementById('cS').value;
+    document.getElementById('oT').textContent = R>0? f(L/R*1000):'—';
+    document.getElementById('oP').textContent = S>0? f(D/S*1000):'—';
+  }
+  ['cL','cR','cD','cS'].forEach(function(id){document.getElementById(id).addEventListener('input',calc);});
+  calc();
+})();
+</script>
+</body>
+</html>
