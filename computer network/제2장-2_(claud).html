@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chap 2. Application Layer (2) — 정리</title>
+<style>
+:root{
+  --bg:#0a0e1a; --surface:#111827; --surface2:#1a2336; --border:#26324a;
+  --text:#e5e7eb; --muted:#94a3b8; --dim:#64748b;
+  --accent:#38bdf8; --accent2:#a78bfa; --warn:#fbbf24; --ok:#34d399; --bad:#f87171; --pink:#f472b6;
+  --font-body:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font-code:'Menlo','Courier New',monospace;
+  --font-head:'Impact','Arial Narrow',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.7;font-size:15px}
+a{color:var(--accent);text-decoration:none}
+.layout{display:flex;max-width:1400px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow-y:auto;width:250px;flex-shrink:0;padding:28px 16px;border-right:1px solid var(--border);background:var(--bg)}
+nav.toc h2{font-family:var(--font-head);letter-spacing:1px;font-size:20px;margin:0 0 14px;color:var(--accent);font-weight:normal}
+nav.toc a{display:flex;gap:10px;padding:7px 10px;border-radius:8px;color:var(--muted);font-size:14px;border-left:3px solid transparent}
+nav.toc a .n{font-family:var(--font-head);color:var(--dim);min-width:22px}
+nav.toc a:hover{background:var(--surface);color:var(--text)}
+nav.toc a.active{background:var(--surface2);color:var(--text);border-left-color:var(--accent)}
+nav.toc a.active .n{color:var(--accent)}
+main{flex:1;min-width:0;padding:32px 36px 80px}
+header.hero{padding:30px 32px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(135deg,#111827,#16203a);margin-bottom:34px}
+header.hero h1{font-family:var(--font-head);font-weight:normal;font-size:40px;letter-spacing:1px;margin:0;color:#fff}
+header.hero p{margin:6px 0 0;color:var(--muted)}
+section{margin-bottom:46px;scroll-margin-top:16px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.sec-head .num{font-family:var(--font-head);font-size:38px;color:var(--accent);line-height:1}
+.sec-head h2{margin:0;font-size:24px;font-weight:700}
+.sec-head .slide{margin-left:auto;font-size:12px;color:var(--dim);font-family:var(--font-code)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:18px}
+.card h3{margin:0 0 10px;font-size:17px;color:var(--accent)}
+.card h4{margin:14px 0 6px;font-size:15px;color:var(--accent2)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:24px;align-items:start}
+.fig{background:#0d1322;border:1px solid var(--border);border-radius:12px;padding:10px}
+.fig svg{width:100%;height:auto;display:block}
+.cap{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
+ul{padding-left:20px;margin:6px 0}
+li{margin:3px 0}
+.kw{color:var(--warn);font-weight:700}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);margin-right:4px;font-family:var(--font-code)}
+.note{border-left:3px solid var(--accent2);background:#151c30;padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px;color:#cbd5e1}
+pre{background:#0b1020;border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--font-code);font-size:13px;line-height:1.6;margin:10px 0}
+code{font-family:var(--font-code)}
+.ic{background:#0b1020;border:1px solid var(--border);border-radius:5px;padding:0 5px;font-size:13px;color:var(--pink)}
+.h-s{color:#60a5fa}.h-c{color:#f472b6}.h-num{color:#34d399;font-weight:700}.h-cmd{color:#fbbf24;font-weight:700}
+.h-str{color:#fca5a5}.h-key{color:#a78bfa}.h-val{color:#e2e8f0}.h-cm{color:#64748b;font-style:italic}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+th,td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--surface2);color:var(--accent);font-weight:700}
+td:first-child{color:var(--muted);font-weight:700;white-space:nowrap}
+.calc{font-family:var(--font-code);background:#0b1020;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13.5px;line-height:1.9}
+.calc b{color:var(--ok)}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.sum-grid .card{margin:0}
+.sum-grid .card .num{font-family:var(--font-head);color:var(--accent);font-size:22px}
+/* svg classes */
+.t{fill:#e5e7eb;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:12px}
+.tm{fill:#94a3b8;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:11px}
+.tc{fill:#e5e7eb;font-family:'Menlo','Courier New',monospace;font-size:10.5px}
+.tb{font-weight:700}
+.tdk{fill:#0a0e1a;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:11.5px;font-weight:700}
+@media (max-width:1000px){
+  .layout{display:block}
+  nav.toc{position:static;height:auto;width:auto;border-right:none;border-bottom:1px solid var(--border);display:block}
+  nav.toc .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:2px}
+  main{padding:22px 16px 60px}
+  .split{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <h2>CONTENTS</h2>
+  <div class="links">
+  <a href="#s01"><span class="n">01</span>HTTPS</a>
+  <a href="#s02"><span class="n">02</span>쿠키 (Cookie)</a>
+  <a href="#s03"><span class="n">03</span>웹 캐싱 · 서버측 캐싱</a>
+  <a href="#s04"><span class="n">04</span>웹캐싱 예 (지연 계산)</a>
+  <a href="#s05"><span class="n">05</span>조건부 GET · 단말측 캐싱</a>
+  <a href="#s06"><span class="n">06</span>인터넷 전자메일</a>
+  <a href="#s07"><span class="n">07</span>SMTP</a>
+  <a href="#s08"><span class="n">08</span>메일 포맷 · MIME</a>
+  <a href="#s09"><span class="n">09</span>메일 액세스 프로토콜</a>
+  <a href="#s10"><span class="n">10</span>비디오 스트리밍 · CDN</a>
+  <a href="#s11"><span class="n">11</span>Case Study: Netflix</a>
+  <a href="#s12"><span class="n">12</span>핵심 요약</a>
+  </div>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>CHAP 2. APPLICATION LAYER (2)</h1>
+  <p>HTTPS · 쿠키 · 웹 캐싱 · 조건부 GET · 전자메일(SMTP / MIME / POP · IMAP) · 비디오 스트리밍 & CDN — 최승식, 인천대학교 컴퓨터공학부</p>
+</header>
+
+<!-- ============ 01 HTTPS ============ -->
+<section id="s01">
+  <div class="sec-head"><span class="num">01</span><h2>HTTPS (HTTP Secure)</h2><span class="slide">Slide 2–3</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>HTTPS란</h3>
+        <ul>
+          <li>웹사이트와 사용자 간의 통신을 <span class="kw">암호화</span>하여 보안을 강화하는 프로토콜</li>
+          <li>HTTPS는 <span class="kw">포트 443</span> 사용 (HTTP는 포트 80)</li>
+          <li><span class="kw">TLS/SSL 암호화</span> 사용 (기존 SSL → TLS 1.0, 현재 TLS 1.3)</li>
+          <li>클라이언트와 서버의 보안 연결 설정을 위해 <span class="kw">TLS/SSL 핸드셰이크</span> 과정이 필요</li>
+        </ul>
+        <div class="note">그림 흐름: TCP 3-way handshake(SYN → SYN ACK → ACK, 약 50ms) 이후, 곧바로 TLS 핸드셰이크(ClientHello … Finished, 약 110ms)가 이어진다.</div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 580 370" role="img" aria-label="TCP 및 TLS 핸드셰이크 시퀀스">
+          <defs>
+            <marker id="m1b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#60a5fa"/></marker>
+            <marker id="m1y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#fbbf24"/></marker>
+          </defs>
+          <text x="165" y="30" text-anchor="middle" class="t tb" style="font-size:14px">Client</text>
+          <text x="375" y="30" text-anchor="middle" class="t tb" style="font-size:14px">Server</text>
+          <line x1="165" y1="42" x2="165" y2="345" stroke="#64748b" stroke-width="2"/>
+          <line x1="375" y1="42" x2="375" y2="345" stroke="#64748b" stroke-width="2"/>
+          <!-- SYN -->
+          <rect x="15" y="60" width="135" height="24" fill="#3b82c4"/><text x="82" y="76" text-anchor="middle" class="t tb">SYN</text>
+          <line x1="167" y1="72" x2="372" y2="102" stroke="#60a5fa" stroke-width="2" marker-end="url(#m1b)"/>
+          <!-- SYN ACK -->
+          <rect x="390" y="90" width="125" height="24" fill="#3b82c4"/><text x="452" y="106" text-anchor="middle" class="t tb">SYN ACK</text>
+          <line x1="373" y1="104" x2="168" y2="132" stroke="#60a5fa" stroke-width="2" marker-end="url(#m1b)"/>
+          <!-- ACK + ClientHello -->
+          <rect x="15" y="122" width="135" height="24" fill="#3b82c4"/><text x="82" y="138" text-anchor="middle" class="t tb">ACK</text>
+          <rect x="15" y="146" width="135" height="24" fill="#fbbf24"/><text x="82" y="162" text-anchor="middle" class="tdk">ClientHello</text>
+          <line x1="167" y1="152" x2="372" y2="186" stroke="#fbbf24" stroke-width="2" marker-end="url(#m1y)"/>
+          <!-- ServerHello -->
+          <rect x="390" y="172" width="125" height="52" fill="#fbbf24"/>
+          <text x="452" y="188" text-anchor="middle" class="tdk">ServerHello</text>
+          <text x="452" y="202" text-anchor="middle" class="tdk">Certificate</text>
+          <text x="452" y="216" text-anchor="middle" class="tdk">ServerHelloDone</text>
+          <line x1="373" y1="200" x2="168" y2="236" stroke="#fbbf24" stroke-width="2" marker-end="url(#m1y)"/>
+          <!-- ClientKeyExchange -->
+          <rect x="15" y="226" width="135" height="52" fill="#fbbf24"/>
+          <text x="82" y="242" text-anchor="middle" class="tdk">ClientKeyExchange</text>
+          <text x="82" y="256" text-anchor="middle" class="tdk">ChangeCipherSpec</text>
+          <text x="82" y="270" text-anchor="middle" class="tdk">Finished</text>
+          <line x1="167" y1="252" x2="372" y2="286" stroke="#fbbf24" stroke-width="2" marker-end="url(#m1y)"/>
+          <!-- CCS Finished -->
+          <rect x="390" y="276" width="125" height="38" fill="#fbbf24"/>
+          <text x="452" y="292" text-anchor="middle" class="tdk">ChangeCipherSpec</text>
+          <text x="452" y="306" text-anchor="middle" class="tdk">Finished</text>
+          <line x1="373" y1="300" x2="168" y2="334" stroke="#fbbf24" stroke-width="2" marker-end="url(#m1y)"/>
+          <!-- brackets -->
+          <path d="M526,62 L532,62 L532,150 L526,150" fill="none" stroke="#60a5fa" stroke-width="2"/>
+          <text x="552" y="106" text-anchor="middle" class="t tb" transform="rotate(90 552 106)" style="fill:#60a5fa">TCP 50ms</text>
+          <path d="M526,154 L532,154 L532,334 L526,334" fill="none" stroke="#fbbf24" stroke-width="2"/>
+          <text x="552" y="244" text-anchor="middle" class="t tb" transform="rotate(90 552 244)" style="fill:#fbbf24">TLS 110ms</text>
+        </svg>
+        <div class="cap">Slide 2 — TCP 연결 후 TLS 핸드셰이크</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>HTTPS의 작동 방식</h3>
+    <ul>
+      <li><span class="kw">핸드셰이크 과정</span>: 사용자의 브라우저가 웹 서버에 접속하면, 서버는 SSL 인증서와 공개 키를 전송하는 핸드셰이크 과정을 거침</li>
+      <li><span class="kw">대칭 키 생성</span>: 브라우저와 서버는 공개 키를 사용하여 안전한 대칭 키를 생성하고, 이 대칭 키를 이용해 앞으로의 통신을 암호화함</li>
+      <li><span class="kw">데이터 암호화</span>: 대칭 키로 암호화된 데이터는 중간에 해독하기 어렵기 때문에 도청이나 정보 탈취를 막을 수 있음</li>
+    </ul>
+    <h4>HTTPS의 주요 기능</h4>
+    <ul>
+      <li><b>통신 암호화</b>: 클라이언트와 웹서버 간의 통신 데이터를 암호화</li>
+      <li><b>웹사이트 인증</b>: SSL 인증서를 통해 웹사이트의 신원 확인 (가짜 사이트 접속 차단)</li>
+    </ul>
+    <div class="tbl-wrap"><table>
+      <tr><th>구분</th><th>HTTP</th><th>HTTPS</th></tr>
+      <tr><td>포트</td><td>80</td><td>443</td></tr>
+      <tr><td>암호화</td><td>없음 (평문)</td><td>TLS/SSL (현재 TLS 1.3)</td></tr>
+      <tr><td>연결 설정</td><td>TCP 연결</td><td>TCP 연결 + TLS/SSL 핸드셰이크</td></tr>
+      <tr><td>신원 확인</td><td>—</td><td>SSL 인증서로 웹사이트 인증</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 02 쿠키 ============ -->
+<section id="s02">
+  <div class="sec-head"><span class="num">02</span><h2>사용자와 서버의 상호작용: 쿠키</h2><span class="slide">Slide 4–5</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>왜 쿠키가 필요한가</h3>
+        <ul>
+          <li>HTTP 서버는 <span class="kw">상태를 유지하지 않음 (stateless)</span>
+            <ul>
+              <li>장점: 수천 개의 연결을 다룰 수 있는 고성능 웹 서버 개발 가능</li>
+              <li>문제점: 사용자 접속 제한, 사용자에 따른 컨텐츠 제공 불가능</li>
+            </ul>
+          </li>
+          <li>상용 웹사이트는 <span class="kw">쿠키</span>를 사용</li>
+        </ul>
+        <h4>Four components</h4>
+        <ol>
+          <li>HTTP <b>응답</b> 메시지의 쿠키 헤더 라인</li>
+          <li>HTTP <b>요청</b> 메시지의 쿠키 헤더 라인</li>
+          <li>사용자의 브라우저에 사용자 종단 시스템과 관리를 지속시키는 <b>쿠키 파일</b></li>
+          <li>웹사이트 <b>백엔드 데이터베이스</b></li>
+        </ol>
+<pre><span class="h-cm"># 서버 → 클라이언트 (응답 헤더)</span>
+<span class="h-key">set-cookie</span>: <span class="h-num">1678</span>
+<span class="h-cm"># 클라이언트 → 서버 (이후 요청 헤더)</span>
+<span class="h-key">cookie</span>: <span class="h-num">1678</span></pre>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 580 440" role="img" aria-label="쿠키 동작 시퀀스">
+          <defs>
+            <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#e5e7eb"/></marker>
+            <marker id="m2p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#a78bfa"/></marker>
+          </defs>
+          <text x="150" y="28" text-anchor="middle" class="t tb" style="fill:#f87171;font-size:13px">client</text>
+          <text x="400" y="28" text-anchor="middle" class="t tb" style="fill:#f87171;font-size:13px">server</text>
+          <line x1="150" y1="38" x2="150" y2="425" stroke="#475569" stroke-width="2"/>
+          <line x1="400" y1="38" x2="400" y2="425" stroke="#475569" stroke-width="2"/>
+          <!-- cookie file 1 -->
+          <rect x="15" y="56" width="100" height="24" rx="6" fill="#1e3a8a" stroke="#60a5fa"/>
+          <text x="65" y="72" text-anchor="middle" class="tc">ebay 8734</text>
+          <text x="65" y="95" text-anchor="middle" class="tm">cookie file</text>
+          <!-- m1 -->
+          <text x="275" y="64" text-anchor="middle" class="tm">usual http request msg</text>
+          <line x1="152" y1="72" x2="397" y2="72" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m2)"/>
+          <text x="408" y="58" class="tm" style="fill:#60a5fa">Amazon server</text>
+          <text x="408" y="72" class="tm" style="fill:#60a5fa">creates ID</text>
+          <text x="408" y="86" class="tm" style="fill:#60a5fa">1678 for user</text>
+          <!-- DB -->
+          <ellipse cx="525" cy="150" rx="30" ry="9" fill="#312e81" stroke="#a78bfa"/>
+          <path d="M495,150 L495,200 A30,9 0 0 0 555,200 L555,150" fill="#312e81" stroke="#a78bfa"/>
+          <ellipse cx="525" cy="150" rx="30" ry="9" fill="#3b3690" stroke="#a78bfa"/>
+          <text x="525" y="224" text-anchor="middle" class="tm" style="fill:#f87171">backend</text>
+          <text x="525" y="237" text-anchor="middle" class="tm" style="fill:#f87171">database</text>
+          <line x1="470" y1="95" x2="505" y2="140" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#m2p)"/>
+          <text x="492" y="108" class="tm">create entry</text>
+          <!-- m2 -->
+          <rect x="15" y="112" width="100" height="38" rx="6" fill="#1e3a8a" stroke="#60a5fa"/>
+          <text x="65" y="127" text-anchor="middle" class="tc">ebay 8734</text>
+          <text x="65" y="142" text-anchor="middle" class="tc">amazon 1678</text>
+          <text x="275" y="110" text-anchor="middle" class="tm">usual http response</text>
+          <text x="275" y="124" text-anchor="middle" class="tc" style="fill:#f472b6">set-cookie: 1678</text>
+          <line x1="398" y1="132" x2="153" y2="132" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m2)"/>
+          <!-- m3 -->
+          <text x="275" y="176" text-anchor="middle" class="tm">usual http request msg</text>
+          <text x="275" y="190" text-anchor="middle" class="tc" style="fill:#f472b6">cookie: 1678</text>
+          <line x1="152" y1="198" x2="397" y2="198" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m2)"/>
+          <text x="408" y="200" class="tm" style="fill:#60a5fa">cookie-</text>
+          <text x="408" y="213" class="tm" style="fill:#60a5fa">specific action</text>
+          <line x1="460" y1="195" x2="492" y2="185" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#m2p)"/>
+          <text x="455" y="182" class="tm">access</text>
+          <!-- m4 -->
+          <text x="275" y="244" text-anchor="middle" class="tm">usual http response msg</text>
+          <line x1="398" y1="252" x2="153" y2="252" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m2)"/>
+          <!-- one week later -->
+          <line x1="10" y1="282" x2="570" y2="282" stroke="#475569" stroke-dasharray="5 4"/>
+          <text x="15" y="302" class="t tb">one week later:</text>
+          <rect x="15" y="312" width="100" height="38" rx="6" fill="#1e3a8a" stroke="#60a5fa"/>
+          <text x="65" y="327" text-anchor="middle" class="tc">ebay 8734</text>
+          <text x="65" y="342" text-anchor="middle" class="tc">amazon 1678</text>
+          <!-- m5 -->
+          <text x="275" y="322" text-anchor="middle" class="tm">usual http request msg</text>
+          <text x="275" y="336" text-anchor="middle" class="tc" style="fill:#f472b6">cookie: 1678</text>
+          <line x1="152" y1="344" x2="397" y2="344" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m2)"/>
+          <text x="408" y="360" class="tm" style="fill:#60a5fa">cookie-</text>
+          <text x="408" y="373" class="tm" style="fill:#60a5fa">specific action</text>
+          <line x1="505" y1="345" x2="562" y2="206" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#m2p)"/>
+          <text x="530" y="300" text-anchor="end" class="tm">access</text>
+          <!-- m6 -->
+          <text x="275" y="394" text-anchor="middle" class="tm">usual http response msg</text>
+          <line x1="398" y1="402" x2="153" y2="402" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m2)"/>
+        </svg>
+        <div class="cap">Slide 5 — 쿠키 생성과 재사용 흐름</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 웹 캐싱 ============ -->
+<section id="s03">
+  <div class="sec-head"><span class="num">03</span><h2>웹 캐싱 · 서버측 캐싱 (Proxy)</h2><span class="slide">Slide 6–7</span></div>
+  <div class="card">
+    <h3>웹 캐싱 개요</h3>
+    <ul>
+      <li>서버와 단말에 모두 존재 — <b>서버측 캐싱</b> / <b>단말측 캐싱</b></li>
+      <li>캐싱은 HTTP header에 <code class="ic">If-modified-since</code>를 사용하여 체크함</li>
+      <li>전형적으로 <span class="kw">ISP</span>에 의해 설치됨 (브라우저를 미리 설정)</li>
+    </ul>
+    <h4>웹 캐싱 사용 이유</h4>
+    <ul>
+      <li>Client 요청에 대한 <b>응답시간</b>을 줄일 수 있음</li>
+      <li>기업체의 <b>외부 액세스 링크</b>에 대한 트래픽을 줄임</li>
+      <li>영세한 컨텐츠 사업자에게도 효과적으로 컨텐츠를 제공하게 함</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>서버측 캐싱 (Proxy server)</h3>
+        <p><b>Goal:</b> 기점(origin) 웹 서버의 관여 없이 client의 요청을 만족시킴</p>
+        <ul>
+          <li>사용자 브라우저 설정: <b>프락시 서버를 통한 액세스</b>로 설정</li>
+          <li>브라우저는 모든 http 요청을 프락시 서버로 요청
+            <ul>
+              <li><span class="kw">캐싱된 객체 있음</span>: 프락시 서버가 캐싱된 객체 리턴</li>
+              <li><span class="kw">캐싱된 객체 없음</span>: 프락시 서버가 기점서버에 요청한 후 결과를 client에 전송</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="note">프락시 서버는 client 입장에서는 <b>서버</b>, origin server 입장에서는 <b>client</b> 역할을 동시에 한다.</div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 520 300" role="img" aria-label="프락시 서버 구조">
+          <defs>
+            <marker id="m3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#60a5fa"/></marker>
+            <marker id="m3g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#34d399"/></marker>
+          </defs>
+          <!-- clients -->
+          <g><rect x="40" y="55" width="56" height="38" rx="4" fill="#1e293b" stroke="#94a3b8"/><rect x="58" y="93" width="20" height="8" fill="#94a3b8"/><text x="68" y="120" text-anchor="middle" class="t">client</text></g>
+          <g><rect x="40" y="195" width="56" height="38" rx="4" fill="#1e293b" stroke="#94a3b8"/><rect x="58" y="233" width="20" height="8" fill="#94a3b8"/><text x="68" y="260" text-anchor="middle" class="t">client</text></g>
+          <!-- proxy -->
+          <rect x="228" y="120" width="64" height="60" rx="6" fill="#312e81" stroke="#a78bfa" stroke-width="2"/>
+          <text x="260" y="147" text-anchor="middle" class="t tb">Proxy</text>
+          <text x="260" y="163" text-anchor="middle" class="t tb">server</text>
+          <!-- origins -->
+          <g><rect x="430" y="45" width="40" height="60" rx="4" fill="#0f3a4a" stroke="#38bdf8"/><text x="450" y="125" text-anchor="middle" class="t">origin server</text></g>
+          <g><rect x="430" y="190" width="40" height="60" rx="4" fill="#0f3a4a" stroke="#38bdf8"/><text x="450" y="270" text-anchor="middle" class="t">origin server</text></g>
+          <!-- client1 <-> proxy -->
+          <line x1="98" y1="68" x2="226" y2="130" stroke="#60a5fa" stroke-width="2" marker-end="url(#m3b)"/>
+          <line x1="226" y1="142" x2="100" y2="82" stroke="#34d399" stroke-width="2" marker-end="url(#m3g)"/>
+          <!-- client2 <-> proxy -->
+          <line x1="98" y1="206" x2="226" y2="162" stroke="#60a5fa" stroke-width="2" marker-end="url(#m3b)"/>
+          <line x1="226" y1="174" x2="100" y2="220" stroke="#34d399" stroke-width="2" marker-end="url(#m3g)"/>
+          <!-- proxy <-> origin1 -->
+          <line x1="294" y1="128" x2="427" y2="70" stroke="#60a5fa" stroke-width="2" marker-end="url(#m3b)"/>
+          <line x1="427" y1="84" x2="296" y2="141" stroke="#34d399" stroke-width="2" marker-end="url(#m3g)"/>
+          <!-- proxy <-> origin2 -->
+          <line x1="294" y1="160" x2="427" y2="208" stroke="#60a5fa" stroke-width="2" marker-end="url(#m3b)"/>
+          <line x1="427" y1="222" x2="296" y2="173" stroke="#34d399" stroke-width="2" marker-end="url(#m3g)"/>
+          <!-- legend -->
+          <line x1="150" y1="285" x2="185" y2="285" stroke="#60a5fa" stroke-width="2" marker-end="url(#m3b)"/><text x="192" y="289" class="t">HTTP request</text>
+          <line x1="300" y1="285" x2="335" y2="285" stroke="#34d399" stroke-width="2" marker-end="url(#m3g)"/><text x="342" y="289" class="t">HTTP response</text>
+        </svg>
+        <div class="cap">Slide 7 — client ↔ Proxy ↔ origin server</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 웹캐싱 예 ============ -->
+<section id="s04">
+  <div class="sec-head"><span class="num">04</span><h2>웹캐싱 예 — 트래픽 강도와 전체 지연</h2><span class="slide">Slide 8–9</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>① 캐시가 없는 경우 (Slide 8)</h3>
+        <h4>가정</h4>
+        <ul>
+          <li>객체 크기: <b>1M 비트</b></li>
+          <li>기관 브라우저(전체)부터 기점서버 평균 요청 비율: <b>15/sec</b></li>
+          <li>인터넷 라우터 요청으로부터 기점서버 응답시간(인터넷 지연): <b>2초</b></li>
+          <li>액세스 링크: <b>15 Mbps</b> (기업체 LAN: 100 Mbps)</li>
+        </ul>
+        <h4>결과</h4>
+        <div class="calc">
+          액세스 링크 트래픽 강도 = (15/sec × 1M비트) / 15Mbps = <b>1</b><br>
+          전체 지연 = 인터넷 지연 + 액세스 지연 + LAN 지연<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 2 sec + <b>minutes</b> + 0.01
+        </div>
+        <div class="note">트래픽 강도가 1에 도달하면 액세스 링크에서의 큐잉 지연이 매우 커져(수 분 단위) 전체 지연을 지배한다.</div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 460 420" role="img" aria-label="기관망과 공용 인터넷 구성도">
+          <!-- origin servers -->
+          <rect x="250" y="22" width="26" height="42" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+          <rect x="290" y="16" width="26" height="42" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+          <rect x="330" y="22" width="26" height="42" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="370" y="40" class="t tb">origin</text><text x="370" y="55" class="t tb">servers</text>
+          <line x1="263" y1="64" x2="245" y2="86" stroke="#94a3b8"/><line x1="303" y1="58" x2="290" y2="88" stroke="#94a3b8"/><line x1="343" y1="64" x2="320" y2="95" stroke="#94a3b8"/>
+          <!-- internet cloud -->
+          <ellipse cx="210" cy="128" rx="150" ry="52" fill="#0e4f5c" stroke="#22d3ee"/>
+          <text x="210" y="123" text-anchor="middle" class="t tb" style="fill:#e0f2fe">public</text>
+          <text x="210" y="139" text-anchor="middle" class="t tb" style="fill:#e0f2fe">Internet</text>
+          <!-- internet router -->
+          <circle cx="210" cy="190" r="13" fill="#1e40af" stroke="#93c5fd"/>
+          <text x="140" y="195" text-anchor="end" class="t" style="fill:#f87171">인터넷 라우터</text>
+          <!-- access link -->
+          <line x1="210" y1="203" x2="210" y2="266" stroke="#fbbf24" stroke-width="4"/>
+          <text x="222" y="232" class="t tb">15 Mbps</text><text x="222" y="247" class="t">access link</text>
+          <!-- institution -->
+          <rect x="30" y="258" width="400" height="148" rx="14" fill="#10243a" stroke="#38bdf8" stroke-dasharray="6 4"/>
+          <text x="44" y="282" class="t tb" style="fill:#f87171">기업체망</text>
+          <circle cx="210" cy="279" r="13" fill="#1e40af" stroke="#93c5fd"/>
+          <text x="232" y="283" class="t" style="fill:#f87171">기업체 라우터</text>
+          <line x1="210" y1="292" x2="210" y2="320" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="60" y1="320" x2="400" y2="320" stroke="#94a3b8" stroke-width="3"/>
+          <text x="60" y="312" class="t tb">100 Mbps LAN</text>
+          <!-- clients -->
+          <g stroke="#94a3b8" fill="#1e293b">
+            <line x1="85" y1="320" x2="85" y2="340"/><rect x="70" y="340" width="30" height="22" rx="3"/>
+            <line x1="145" y1="320" x2="145" y2="340"/><rect x="130" y="340" width="30" height="22" rx="3"/>
+            <line x1="250" y1="320" x2="250" y2="340"/><rect x="235" y="340" width="30" height="22" rx="3"/>
+            <line x1="310" y1="320" x2="310" y2="340"/><rect x="295" y="340" width="30" height="22" rx="3"/>
+          </g>
+          <!-- local web cache (slide 9) -->
+          <line x1="385" y1="320" x2="385" y2="340" stroke="#f87171" stroke-width="2"/>
+          <rect x="360" y="340" width="50" height="34" rx="4" fill="#7f1d1d" stroke="#f87171" stroke-width="2" stroke-dasharray="4 3"/>
+          <text x="385" y="355" text-anchor="middle" class="tm" style="fill:#fecaca">local web</text>
+          <text x="385" y="368" text-anchor="middle" class="tm" style="fill:#fecaca">cache</text>
+          <text x="385" y="396" text-anchor="middle" class="tm" style="fill:#f87171">(②에서 추가)</text>
+        </svg>
+        <div class="cap">Slide 8–9 — 기업체망 · 15Mbps 액세스 링크 · 공용 인터넷</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>② 웹캐싱을 사용할 경우 (Slide 9)</h3>
+        <p>적중률(hit rate)이 <b>0.4</b>인 경우 — 40% requests satisfied at cache, 60% requests satisfied at origin</p>
+        <div class="calc">
+          트래픽 강도 = 15M비트 × 0.6 / 15Mbps = <b>0.6</b><br><br>
+          전체 지연 = 0.6 × (기점서버로부터 지연) + 0.4 × (캐시에 의한 LAN 지연)<br>
+          &nbsp;&nbsp;= 0.6 × (2초 + 0.067 + 0.01) + 0.4 × (0.01)<br>
+          &nbsp;&nbsp;= 0.6 × 2.077 + 0.004<br>
+          &nbsp;&nbsp;= 1.2462 + 0.004 ≈ <b>1.25초</b>
+        </div>
+        <div class="tbl-wrap"><table>
+          <tr><th>항목</th><th>캐시 없음</th><th>캐시 적용 (적중률 0.4)</th></tr>
+          <tr><td>액세스 링크로 나가는 요청</td><td>100%</td><td>60%</td></tr>
+          <tr><td>트래픽 강도</td><td>1</td><td>0.6</td></tr>
+          <tr><td>액세스 지연</td><td>minutes</td><td>0.067초</td></tr>
+          <tr><td>전체 지연</td><td>2 sec + minutes + 0.01</td><td>≈ 1.25초</td></tr>
+        </table></div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 380 300" role="img" aria-label="캐시 유무에 따른 트래픽 강도 비교 막대그래프">
+          <text x="210" y="22" text-anchor="middle" class="t tb">액세스 링크 트래픽 강도 비교</text>
+          <!-- grid & y ticks: y(v)=240-150v -->
+          <g stroke="#26324a">
+            <line x1="70" y1="240" x2="340" y2="240"/><line x1="70" y1="210" x2="340" y2="210"/><line x1="70" y1="180" x2="340" y2="180"/>
+            <line x1="70" y1="150" x2="340" y2="150"/><line x1="70" y1="120" x2="340" y2="120"/><line x1="70" y1="90" x2="340" y2="90"/><line x1="70" y1="60" x2="340" y2="60"/>
+          </g>
+          <line x1="70" y1="50" x2="70" y2="240" stroke="#94a3b8" stroke-width="1.5"/>
+          <line x1="70" y1="240" x2="340" y2="240" stroke="#94a3b8" stroke-width="1.5"/>
+          <g class="tm" text-anchor="end">
+            <text x="62" y="244">0</text><text x="62" y="214">0.2</text><text x="62" y="184">0.4</text><text x="62" y="154">0.6</text>
+            <text x="62" y="124">0.8</text><text x="62" y="94">1.0</text><text x="62" y="64">1.2</text>
+          </g>
+          <text x="20" y="150" text-anchor="middle" class="tm" transform="rotate(-90 20 150)">트래픽 강도 (La/R)</text>
+          <!-- bars -->
+          <rect x="110" y="90" width="70" height="150" fill="#f87171" opacity="0.85"/>
+          <text x="145" y="82" text-anchor="middle" class="t tb">1.0</text>
+          <rect x="230" y="150" width="70" height="90" fill="#34d399" opacity="0.85"/>
+          <text x="265" y="142" text-anchor="middle" class="t tb">0.6</text>
+          <!-- x labels -->
+          <text x="145" y="258" text-anchor="middle" class="t">캐시 없음</text>
+          <text x="145" y="273" text-anchor="middle" class="tm">지연: minutes</text>
+          <text x="265" y="258" text-anchor="middle" class="t">캐시 적용 (h=0.4)</text>
+          <text x="265" y="273" text-anchor="middle" class="tm">지연: ≈1.25초</text>
+          <text x="205" y="292" text-anchor="middle" class="tm">구성</text>
+        </svg>
+        <div class="cap">Slide 8–9 수치 기반 — 트래픽 강도 1 → 0.6</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 조건부 GET ============ -->
+<section id="s05">
+  <div class="sec-head"><span class="num">05</span><h2>조건부 GET : 단말측 캐싱</h2><span class="slide">Slide 10</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>Conditional GET</h3>
+        <ul>
+          <li><b>목적</b>: client가 최근 버전의 객체를 캐싱하고 있는 경우 객체를 보내지 않음</li>
+          <li><b>client</b>: HTTP request에 캐싱된 복사본의 날짜 명시</li>
+        </ul>
+<pre><span class="h-key">If-modified-since</span>: <span class="h-str">&lt;date&gt;</span></pre>
+        <ul>
+          <li><b>server</b>: client측 캐싱된 객체가 최근이면 응답에 객체를 포함하지 않음</li>
+        </ul>
+<pre><span class="h-cm"># object not modified</span>
+<span class="h-cmd">HTTP/1.1</span> <span class="h-num">304</span> <span class="h-val">Not Modified</span>
+
+<span class="h-cm"># object modified</span>
+<span class="h-cmd">HTTP/1.1</span> <span class="h-num">200</span> <span class="h-val">OK</span>
+<span class="h-str">&lt;data&gt;</span></pre>
+        <div class="tbl-wrap"><table>
+          <tr><th>구분</th><th>서버측 캐싱</th><th>단말측 캐싱</th></tr>
+          <tr><td>위치</td><td>프락시 서버 (주로 ISP 설치)</td><td>client(브라우저)</td></tr>
+          <tr><td>핵심 동작</td><td>캐시 적중 시 origin 관여 없이 응답</td><td>If-modified-since로 최신 여부 확인</td></tr>
+          <tr><td>효과</td><td>응답시간·액세스 링크 트래픽 감소</td><td>변경 없으면 객체 전송 생략(304)</td></tr>
+        </table></div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 520 360" role="img" aria-label="조건부 GET 시퀀스">
+          <defs><marker id="m5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#e5e7eb"/></marker></defs>
+          <text x="120" y="28" text-anchor="middle" class="t tb" style="font-size:14px">client</text>
+          <text x="380" y="28" text-anchor="middle" class="t tb" style="font-size:14px">server</text>
+          <line x1="120" y1="38" x2="120" y2="345" stroke="#475569" stroke-width="2"/>
+          <line x1="380" y1="38" x2="380" y2="345" stroke="#475569" stroke-width="2"/>
+          <!-- exchange 1 -->
+          <text x="250" y="62" text-anchor="middle" class="t">HTTP request msg</text>
+          <text x="250" y="77" text-anchor="middle" class="tc" style="fill:#a78bfa">If-modified-since: &lt;date&gt;</text>
+          <line x1="122" y1="86" x2="377" y2="86" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m5)"/>
+          <text x="392" y="100" class="t" style="fill:#60a5fa">object</text>
+          <text x="392" y="115" class="t" style="fill:#60a5fa">not</text>
+          <text x="392" y="130" class="t" style="fill:#60a5fa">modified</text>
+          <text x="250" y="122" text-anchor="middle" class="t">HTTP response</text>
+          <text x="250" y="137" text-anchor="middle" class="tc" style="fill:#34d399">HTTP/1.1 304 Not Modified</text>
+          <line x1="378" y1="146" x2="123" y2="146" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m5)"/>
+          <line x1="20" y1="185" x2="500" y2="185" stroke="#475569" stroke-dasharray="6 4"/>
+          <!-- exchange 2 -->
+          <text x="250" y="212" text-anchor="middle" class="t">HTTP request msg</text>
+          <text x="250" y="227" text-anchor="middle" class="tc" style="fill:#a78bfa">If-modified-since: &lt;date&gt;</text>
+          <line x1="122" y1="236" x2="377" y2="236" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m5)"/>
+          <text x="392" y="258" class="t" style="fill:#60a5fa">object</text>
+          <text x="392" y="273" class="t" style="fill:#60a5fa">modified</text>
+          <text x="250" y="272" text-anchor="middle" class="t">HTTP response</text>
+          <text x="250" y="287" text-anchor="middle" class="tc" style="fill:#fbbf24">HTTP/1.1 200 OK</text>
+          <text x="250" y="302" text-anchor="middle" class="tc" style="fill:#fca5a5">&lt;data&gt;</text>
+          <line x1="378" y1="312" x2="123" y2="312" stroke="#e5e7eb" stroke-width="1.6" marker-end="url(#m5)"/>
+        </svg>
+        <div class="cap">Slide 10 — 304 Not Modified vs 200 OK</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 전자메일 ============ -->
+<section id="s06">
+  <div class="sec-head"><span class="num">06</span><h2>2.3 인터넷 전자메일</h2><span class="slide">Slide 11</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>3가지 구성요소</h3>
+        <ol>
+          <li><b>user agents</b></li>
+          <li><b>mail servers</b></li>
+          <li><b>simple mail transfer protocol: SMTP</b></li>
+        </ol>
+        <h4>User Agent</h4>
+        <ul>
+          <li>메일 리더기</li>
+          <li>composing, editing, reading mail messages</li>
+          <li>e.g., Eudora, Outlook, elm, Netscape Messenger</li>
+          <li>outgoing, incoming messages stored on server</li>
+        </ul>
+        <div class="note">mail server는 사용자별 <b>user mailbox</b>(수신 메일)와 <b>outgoing message queue</b>(송신 대기 메일)를 가진다.</div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 520 400" role="img" aria-label="전자메일 시스템 구성도">
+          <!-- legend -->
+          <rect x="330" y="10" width="26" height="10" fill="#34d399"/><text x="362" y="20" class="tm">outgoing message queue</text>
+          <rect x="330" y="28" width="26" height="10" fill="#fbbf24"/><text x="362" y="38" class="tm">user mailbox</text>
+          <!-- links -->
+          <line x1="130" y1="92" x2="380" y2="188" stroke="#f87171" stroke-width="2"/>
+          <line x1="130" y1="300" x2="380" y2="208" stroke="#f87171" stroke-width="2"/>
+          <line x1="85" y1="112" x2="85" y2="268" stroke="#f87171" stroke-width="2"/>
+          <text x="250" y="128" class="t tb" style="fill:#f87171">SMTP</text>
+          <text x="250" y="276" class="t tb" style="fill:#f87171">SMTP</text>
+          <text x="95" y="194" class="t tb" style="fill:#f87171">SMTP</text>
+          <!-- UA links -->
+          <g stroke="#94a3b8" stroke-width="1.5">
+            <line x1="130" y1="62" x2="170" y2="36"/>
+            <line x1="130" y1="318" x2="170" y2="350"/>
+            <line x1="430" y1="165" x2="430" y2="118"/>
+            <line x1="430" y1="225" x2="430" y2="292"/>
+          </g>
+          <!-- server A -->
+          <rect x="40" y="52" width="90" height="60" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="85" y="72" text-anchor="middle" class="t tb">mail server</text>
+          <g fill="#34d399"><rect x="48" y="88" width="10" height="14"/><rect x="61" y="88" width="10" height="14"/><rect x="74" y="88" width="10" height="14"/></g>
+          <rect x="100" y="86" width="22" height="18" fill="#fbbf24"/>
+          <!-- server B -->
+          <rect x="380" y="165" width="90" height="60" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="425" y="185" text-anchor="middle" class="t tb">mail server</text>
+          <g fill="#34d399"><rect x="388" y="201" width="10" height="14"/><rect x="401" y="201" width="10" height="14"/><rect x="414" y="201" width="10" height="14"/></g>
+          <rect x="440" y="199" width="22" height="18" fill="#fbbf24"/>
+          <!-- server C -->
+          <rect x="40" y="270" width="90" height="60" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="85" y="290" text-anchor="middle" class="t tb">mail server</text>
+          <g fill="#34d399"><rect x="48" y="306" width="10" height="14"/><rect x="61" y="306" width="10" height="14"/><rect x="74" y="306" width="10" height="14"/></g>
+          <rect x="100" y="304" width="22" height="18" fill="#fbbf24"/>
+          <!-- UAs -->
+          <g fill="#0f3a4a" stroke="#38bdf8">
+            <rect x="170" y="14" width="66" height="36" rx="5"/>
+            <rect x="170" y="336" width="66" height="36" rx="5"/>
+            <rect x="397" y="80" width="66" height="36" rx="5"/>
+            <rect x="397" y="292" width="66" height="36" rx="5"/>
+          </g>
+          <g class="tm" text-anchor="middle" style="fill:#e0f2fe">
+            <text x="203" y="29">user</text><text x="203" y="43">agent</text>
+            <text x="203" y="351">user</text><text x="203" y="365">agent</text>
+            <text x="430" y="95">user</text><text x="430" y="109">agent</text>
+            <text x="430" y="307">user</text><text x="430" y="321">agent</text>
+          </g>
+        </svg>
+        <div class="cap">Slide 11 — user agent · mail server · SMTP</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 SMTP ============ -->
+<section id="s07">
+  <div class="sec-head"><span class="num">07</span><h2>전자메일: SMTP [RFC 2821]</h2><span class="slide">Slide 12–15</span></div>
+  <div class="card">
+    <h3>SMTP 개요</h3>
+    <ul>
+      <li>Client에서 server로 <span class="kw">신뢰성 있는</span> 이메일 전송을 위해 <span class="kw">TCP 포트 25</span> 사용</li>
+      <li><b>직접 전송</b>: 송신서버에서 수신서버로 전송</li>
+      <li>전송 3단계: <span class="tag">handshaking (greeting)</span><span class="tag">transfer of messages</span><span class="tag">closure</span></li>
+      <li>command/response interaction — commands: ASCII text / response: status code and phrase</li>
+      <li>메시지는 <span class="kw">7-bit ASCII</span> 코드만 지원</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>Scenario: Alice sends message to Bob</h3>
+        <ol>
+          <li>Alice는 UA를 통해 <code class="ic">bob@someschool.edu</code>를 수신자로 하는 메일을 작성함</li>
+          <li>Alice의 UA는 그녀의 메일서버에 메일을 보내고 그 메일은 송신서버에 보관됨 (message queue)</li>
+          <li>송신서버 측 SMTP는 밥의 메일서버 SMTP에 연결</li>
+          <li>송신 SMTP는 TCP 연결을 통해 수신메일서버에 메시지 전달</li>
+          <li>수신메일서버는 밥의 메일함에 메일을 보관함</li>
+          <li>밥은 자신의 UA를 통해 메시지를 읽는다</li>
+        </ol>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 640 200" role="img" aria-label="Alice가 Bob에게 메일을 보내는 과정">
+          <defs><marker id="m7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#94a3b8"/></marker></defs>
+          <!-- Alice -->
+          <circle cx="28" cy="98" r="11" fill="#fbbf24"/><path d="M12,130 Q28,108 44,130 Z" fill="#fbbf24"/>
+          <text x="28" y="150" text-anchor="middle" class="tm">Alice</text>
+          <!-- UA A -->
+          <rect x="62" y="92" width="72" height="40" rx="5" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="98" y="108" text-anchor="middle" class="tm" style="fill:#e0f2fe">user</text><text x="98" y="122" text-anchor="middle" class="tm" style="fill:#e0f2fe">agent</text>
+          <!-- S1 -->
+          <rect x="195" y="80" width="95" height="64" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="242" y="100" text-anchor="middle" class="t tb">mail server</text>
+          <g fill="#34d399"><rect x="205" y="118" width="10" height="16"/><rect x="218" y="118" width="10" height="16"/><rect x="231" y="118" width="10" height="16"/></g>
+          <rect x="258" y="116" width="24" height="20" fill="#fbbf24"/>
+          <!-- S2 -->
+          <rect x="370" y="80" width="95" height="64" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="417" y="100" text-anchor="middle" class="t tb">mail server</text>
+          <g fill="#34d399"><rect x="380" y="118" width="10" height="16"/><rect x="393" y="118" width="10" height="16"/></g>
+          <rect x="430" y="116" width="24" height="20" fill="#fbbf24"/>
+          <!-- UA B -->
+          <rect x="520" y="92" width="72" height="40" rx="5" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="556" y="108" text-anchor="middle" class="tm" style="fill:#e0f2fe">user</text><text x="556" y="122" text-anchor="middle" class="tm" style="fill:#e0f2fe">agent</text>
+          <!-- Bob -->
+          <circle cx="615" cy="98" r="11" fill="#f472b6"/><path d="M599,130 Q615,108 631,130 Z" fill="#f472b6"/>
+          <text x="615" y="150" text-anchor="middle" class="tm">Bob</text>
+          <!-- arrows -->
+          <line x1="136" y1="112" x2="192" y2="112" stroke="#94a3b8" stroke-width="2" marker-end="url(#m7)"/>
+          <line x1="292" y1="112" x2="367" y2="112" stroke="#94a3b8" stroke-width="2" marker-end="url(#m7)"/>
+          <line x1="467" y1="112" x2="517" y2="112" stroke="#94a3b8" stroke-width="2" marker-end="url(#m7)"/>
+          <!-- numbers -->
+          <g font-weight="700">
+            <circle cx="98" cy="70" r="11" fill="#111827" stroke="#fbbf24"/><text x="98" y="74" text-anchor="middle" class="t">1</text>
+            <circle cx="164" cy="90" r="11" fill="#111827" stroke="#fbbf24"/><text x="164" y="94" text-anchor="middle" class="t">2</text>
+            <circle cx="223" cy="164" r="11" fill="#111827" stroke="#fbbf24"/><text x="223" y="168" text-anchor="middle" class="t">3</text>
+            <circle cx="330" cy="90" r="11" fill="#111827" stroke="#fbbf24"/><text x="330" y="94" text-anchor="middle" class="t">4</text>
+            <circle cx="442" cy="164" r="11" fill="#111827" stroke="#fbbf24"/><text x="442" y="168" text-anchor="middle" class="t">5</text>
+            <circle cx="492" cy="90" r="11" fill="#111827" stroke="#fbbf24"/><text x="492" y="94" text-anchor="middle" class="t">6</text>
+          </g>
+          <text x="330" y="140" text-anchor="middle" class="tm" style="fill:#f87171">SMTP / TCP</text>
+        </svg>
+        <div class="cap">Slide 13 — 단계 ①~⑥</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Sample SMTP interaction <span class="slide" style="font-size:12px;color:var(--dim)">(Slide 14)</span></h3>
+<pre><span class="h-s">S:</span> <span class="h-num">220</span> hamburger.edu
+<span class="h-c">C:</span> <span class="h-cmd">HELO</span> crepes.fr
+<span class="h-s">S:</span> <span class="h-num">250</span>  Hello crepes.fr, pleased to meet you
+<span class="h-c">C:</span> <span class="h-cmd">MAIL FROM:</span> <span class="h-str">&lt;alice@crepes.fr&gt;</span>
+<span class="h-s">S:</span> <span class="h-num">250</span> alice@crepes.fr... Sender ok
+<span class="h-c">C:</span> <span class="h-cmd">RCPT TO:</span> <span class="h-str">&lt;bob@hamburger.edu&gt;</span>
+<span class="h-s">S:</span> <span class="h-num">250</span> bob@hamburger.edu ... Recipient ok
+<span class="h-c">C:</span> <span class="h-cmd">DATA</span>
+<span class="h-s">S:</span> <span class="h-num">354</span> Enter mail, end with "." on a line by itself
+<span class="h-c">C:</span> Subject: Pizza
+<span class="h-c">C:</span> Do you like ketchup?
+<span class="h-c">C:</span>   How about pickles?
+<span class="h-c">C:</span> <span class="h-cmd">.</span>
+<span class="h-s">S:</span> <span class="h-num">250</span> Message accepted for delivery
+<span class="h-c">C:</span> <span class="h-cmd">QUIT</span>
+<span class="h-s">S:</span> <span class="h-num">221</span> hamburger.edu closing connection</pre>
+    <div class="note"><span class="h-s">S:</span> 서버 응답(status code + phrase) · <span class="h-c">C:</span> 클라이언트 명령(ASCII text). 흐름: <b>HELO</b>(handshaking) → <b>MAIL FROM / RCPT TO / DATA … "."</b>(transfer) → <b>QUIT</b>(closure)</div>
+  </div>
+
+  <div class="card">
+    <h3>SMTP 특징 <span class="slide" style="font-size:12px;color:var(--dim)">(Slide 15)</span></h3>
+    <ul>
+      <li>SMTP는 <span class="kw">지속연결</span>을 사용</li>
+      <li>SMTP는 7비트 ASCII로 된 메시지(헤더와 바디)를 요구함 (인코딩 필요)</li>
+      <li>SMTP는 메시지 종료를 위해 <code class="ic">CRLF.CRLF</code>를 사용</li>
+    </ul>
+    <h4>HTTP와의 차이점</h4>
+    <div class="tbl-wrap"><table>
+      <tr><th>구분</th><th>HTTP</th><th>SMTP</th></tr>
+      <tr><td>1. 전송 방향</td><td><b>pull</b></td><td><b>push</b></td></tr>
+      <tr><td>2. 메시지 포맷</td><td>제한이 없음</td><td>몸체를 포함한 각 메시지가 7비트 ASCII 포맷</td></tr>
+      <tr><td>3. 텍스트+이미지 문서</td><td>응답 메시지에 각 객체를 캡슐화</td><td>모든 메시지의 객체를 한 메시지로 만듦</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 08 메일 포맷 & MIME ============ -->
+<section id="s08">
+  <div class="sec-head"><span class="num">08</span><h2>Mail message format · MIME</h2><span class="slide">Slide 16–18</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>Mail message format</h3>
+        <ul>
+          <li><b>SMTP</b>: 이메일 메시지를 교환하기 위한 프로토콜</li>
+          <li><b>RFC 822</b>: 메일 헤더 라인의 포맷과 의미 해석</li>
+          <li><b>header lines</b>, e.g., <code class="ic">To:</code> <code class="ic">From:</code> <code class="ic">Subject:</code>
+            <ul><li><i>SMTP 명령어와 다름</i></li></ul></li>
+          <li><b>body</b>: "message", ASCII 문자만 사용</li>
+        </ul>
+        <div class="note">header와 body 사이는 <b>blank line</b>(빈 줄)으로 구분된다.</div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 440 270" role="img" aria-label="메일 메시지 포맷">
+          <defs><marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#f87171"/></marker></defs>
+          <rect x="150" y="30" width="240" height="220" fill="none" stroke="#94a3b8"/>
+          <rect x="165" y="42" width="210" height="36" fill="#10b981"/>
+          <text x="270" y="65" text-anchor="middle" class="t tb" style="fill:#fff;font-size:14px">header</text>
+          <rect x="165" y="100" width="210" height="138" fill="#3730a3"/>
+          <text x="270" y="174" text-anchor="middle" class="t tb" style="fill:#fff;font-size:14px">body</text>
+          <line x1="395" y1="89" x2="430" y2="89" stroke="#94a3b8"/>
+          <text x="410" y="112" text-anchor="middle" class="tm">blank</text><text x="410" y="126" text-anchor="middle" class="tm">line</text>
+          <text x="20" y="48" class="t">To:</text><text x="20" y="64" class="t">From:</text><text x="20" y="80" class="t">Subject:</text>
+          <line x1="85" y1="62" x2="162" y2="60" stroke="#f87171" stroke-width="1.5" marker-end="url(#m8)"/>
+          <text x="20" y="160" class="t">"message"</text><text x="20" y="176" class="tm">ASCII 문자만</text>
+          <line x1="95" y1="164" x2="162" y2="168" stroke="#f87171" stroke-width="1.5" marker-end="url(#m8)"/>
+        </svg>
+        <div class="cap">Slide 16 — header / blank line / body</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>비-ASCII 데이터를 위한 MIME 확장 <span class="slide" style="font-size:12px;color:var(--dim)">(Slide 17)</span></h3>
+    <ul>
+      <li><b>MIME</b>: multimedia mail extension, RFC 2045, 2056</li>
+      <li>메시지 헤더에 추가 라인 선언: <b>MIME content type</b></li>
+    </ul>
+<pre><span class="h-key">From</span>: <span class="h-str">alice@crepes.fr</span>
+<span class="h-key">To</span>: <span class="h-str">bob@hamburger.edu</span>
+<span class="h-key">Subject</span>: <span class="h-val">Picture of yummy crepe.</span>
+<span class="h-key">MIME-Version</span>: <span class="h-num">1.0</span>                      <span class="h-cm">← MIME version</span>
+<span class="h-key">Content-Transfer-Encoding</span>: <span class="h-cmd">base64</span>     <span class="h-cm">← method used to encode data</span>
+<span class="h-key">Content-Type</span>: <span class="h-cmd">image/jpeg</span>               <span class="h-cm">← multimedia data type, subtype, parameter declaration</span>
+
+base64 encoded data .....                   <span class="h-cm">← encoded data</span>
+.........................
+......base64 encoded data</pre>
+  </div>
+
+  <div class="card">
+    <h3>MIME 타입 <span class="slide" style="font-size:12px;color:var(--dim)">(Slide 18)</span></h3>
+<pre><span class="h-key">Content-Type</span>: <span class="h-cmd">type</span>/<span class="h-num">subtype</span>; <span class="h-str">parameters</span></pre>
+    <div class="tbl-wrap"><table>
+      <tr><th>type</th><th>example subtypes</th><th>비고</th></tr>
+      <tr><td>Text</td><td><code class="ic">plain</code>, <code class="ic">html</code></td><td></td></tr>
+      <tr><td>Image</td><td><code class="ic">jpeg</code>, <code class="ic">gif</code></td><td></td></tr>
+      <tr><td>Audio</td><td><code class="ic">basic</code> (8-bit mu-law encoded), <code class="ic">32kadpcm</code> (32 kbps coding)</td><td></td></tr>
+      <tr><td>Video</td><td><code class="ic">mpeg</code>, <code class="ic">quicktime</code></td><td></td></tr>
+      <tr><td>Application</td><td><code class="ic">msword</code>, <code class="ic">octet-stream</code></td><td>보기 전에 리더에 의한 처리가 필요한 데이터</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 09 메일 액세스 ============ -->
+<section id="s09">
+  <div class="sec-head"><span class="num">09</span><h2>메일 액세스 프로토콜</h2><span class="slide">Slide 19</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>SMTP vs Mail access protocol</h3>
+        <ul>
+          <li><b>SMTP</b>: 수신 서버에 전달/저장 (push)</li>
+          <li><b>Mail access protocol</b>: 서버로부터 메일 수신
+            <ul>
+              <li><b>POP</b>: Post Office Protocol [RFC 1939] → <span class="kw">포트 110</span><br>authorization (agent ↔ server) and download</li>
+              <li><b>IMAP</b>: Internet Mail Access Protocol [RFC 1730]<br>more features (more complex), manipulation of stored msgs on server</li>
+              <li><b>HTTP</b>: Hotmail, Yahoo! Mail, etc.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 640 190" role="img" aria-label="메일 액세스 프로토콜 흐름">
+          <defs><marker id="m9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#f87171"/></marker></defs>
+          <circle cx="26" cy="72" r="11" fill="#fbbf24"/><path d="M10,104 Q26,82 42,104 Z" fill="#fbbf24"/>
+          <text x="26" y="124" text-anchor="middle" class="tm">Alice</text>
+          <rect x="58" y="62" width="72" height="40" rx="5" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="94" y="78" text-anchor="middle" class="tm" style="fill:#e0f2fe">user</text><text x="94" y="92" text-anchor="middle" class="tm" style="fill:#e0f2fe">agent</text>
+          <rect x="200" y="52" width="90" height="60" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="245" y="87" text-anchor="middle" class="t tb">mail server</text>
+          <text x="245" y="132" text-anchor="middle" class="tm">sender's mail</text><text x="245" y="146" text-anchor="middle" class="tm">server</text>
+          <rect x="360" y="52" width="90" height="60" rx="5" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+          <text x="405" y="87" text-anchor="middle" class="t tb">mail server</text>
+          <text x="405" y="132" text-anchor="middle" class="tm">receiver's mail</text><text x="405" y="146" text-anchor="middle" class="tm">server</text>
+          <rect x="530" y="62" width="72" height="40" rx="5" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="566" y="78" text-anchor="middle" class="tm" style="fill:#e0f2fe">user</text><text x="566" y="92" text-anchor="middle" class="tm" style="fill:#e0f2fe">agent</text>
+          <circle cx="620" cy="140" r="11" fill="#f472b6"/><path d="M604,172 Q620,150 636,172 Z" fill="#f472b6"/>
+          <text x="590" y="170" text-anchor="end" class="tm">Bob</text>
+          <line x1="132" y1="82" x2="197" y2="82" stroke="#f87171" stroke-width="2" marker-end="url(#m9)"/>
+          <text x="165" y="70" text-anchor="middle" class="t tb" style="fill:#f87171">SMTP</text>
+          <line x1="292" y1="82" x2="357" y2="82" stroke="#f87171" stroke-width="2" marker-end="url(#m9)"/>
+          <text x="325" y="70" text-anchor="middle" class="t tb" style="fill:#f87171">SMTP</text>
+          <line x1="452" y1="82" x2="527" y2="82" stroke="#f87171" stroke-width="2" marker-end="url(#m9)"/>
+          <text x="490" y="56" text-anchor="middle" class="t tb" style="fill:#f87171">access</text>
+          <text x="490" y="70" text-anchor="middle" class="t tb" style="fill:#f87171">protocol</text>
+          <text x="490" y="118" text-anchor="middle" class="tm">POP / IMAP / HTTP</text>
+        </svg>
+        <div class="cap">Slide 19 — 송신 구간은 SMTP, 수신(인출) 구간은 access protocol</div>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <tr><th>구분</th><th>POP</th><th>IMAP</th><th>HTTP</th></tr>
+      <tr><td>RFC</td><td>RFC 1939</td><td>RFC 1730</td><td>—</td></tr>
+      <tr><td>포트</td><td>110</td><td>(강의자료 미기재)</td><td>—</td></tr>
+      <tr><td>특징</td><td>authorization(agent ↔ server) and download</td><td>more features (more complex), 서버에 저장된 메시지 조작</td><td>웹메일 (Hotmail, Yahoo! Mail 등)</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ 10 비디오 스트리밍 & CDN ============ -->
+<section id="s10">
+  <div class="sec-head"><span class="num">10</span><h2>2.6 비디오 스트리밍과 CDN</h2><span class="slide">Slide 20–21</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>비디오 스트리밍</h3>
+        <ul>
+          <li>비디오 스트리밍: <b>major consumer of Internet bandwidth</b></li>
+          <li>Netflix, YouTube, Amazon Prime: <span class="kw">80% of residential ISP traffic (2020)</span></li>
+        </ul>
+        <h4>문제점</h4>
+        <ul>
+          <li>클라이언트와 서버 간의 <b>대역폭 변화</b>에 따른 컨텐츠 제공 방법</li>
+          <li><b>패킷 손실 및 지연</b>에 따른 재생 중단 등의 품질 저하 해결</li>
+        </ul>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 460 170" role="img" aria-label="비디오 서버에서 인터넷을 거쳐 클라이언트로">
+          <defs><marker id="m10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#94a3b8"/></marker></defs>
+          <rect x="40" y="55" width="36" height="60" rx="4" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="58" y="138" text-anchor="middle" class="tm">video server</text>
+          <ellipse cx="230" cy="85" rx="95" ry="40" fill="#0e4f5c" stroke="#22d3ee"/>
+          <text x="230" y="90" text-anchor="middle" class="t tb" style="fill:#e0f2fe">Internet</text>
+          <rect x="370" y="60" width="54" height="40" rx="4" fill="#1e293b" stroke="#94a3b8"/>
+          <rect x="387" y="100" width="20" height="8" fill="#94a3b8"/>
+          <text x="397" y="130" text-anchor="middle" class="tm">client</text>
+          <line x1="78" y1="85" x2="133" y2="85" stroke="#94a3b8" stroke-width="2" marker-end="url(#m10)"/>
+          <line x1="327" y1="82" x2="366" y2="82" stroke="#94a3b8" stroke-width="2" marker-end="url(#m10)"/>
+          <text x="230" y="150" text-anchor="middle" class="tm" style="fill:#fbbf24">대역폭 변동 · 패킷 손실 · 지연</text>
+        </svg>
+        <div class="cap">Slide 20 — 서버 → Internet → client</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>Content Distribution Networks (CDNs)</h3>
+        <ul>
+          <li><b>CDN</b>: 각 CDN 노드에 컨텐츠 저장
+            <ul><li>e.g. Netflix stores copies of MadMen</li></ul></li>
+          <li>가입자는 CDN으로부터 컨텐츠 요청
+            <ul>
+              <li><span class="kw">근접 노드</span>로 컨텐츠 재생 요청</li>
+              <li>노드가 <span class="kw">혼잡한 경우</span> 다른 버전(혹은 저속)의 컨텐츠를 선택</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="note">그림 흐름: client가 "where's Madmen?"을 묻고 <b>manifest file</b>을 받은 뒤, 가까운 CDN 노드에서 재생한다. (슬라이드 노트: Akamai — 100,000+ servers, 1000+ clusters, 70+ countries)</div>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 540 340" role="img" aria-label="CDN 노드와 클라이언트 요청 흐름">
+          <defs>
+            <marker id="m10a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#fbbf24"/></marker>
+            <marker id="m10b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#34d399"/></marker>
+          </defs>
+          <!-- network backbone -->
+          <ellipse cx="330" cy="170" rx="175" ry="120" fill="#0d2440" stroke="#1e40af"/>
+          <g stroke="#1e3a8a" stroke-width="1.5">
+            <line x1="230" y1="95" x2="380" y2="80"/><line x1="380" y1="80" x2="450" y2="170"/><line x1="450" y1="170" x2="360" y2="250"/>
+            <line x1="360" y1="250" x2="220" y2="230"/><line x1="220" y1="230" x2="230" y2="95"/><line x1="230" y1="95" x2="360" y2="250"/>
+          </g>
+          <!-- CDN nodes -->
+          <g>
+            <rect x="215" y="78" width="30" height="34" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+            <rect x="365" y="63" width="30" height="34" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+            <rect x="435" y="153" width="30" height="34" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+            <rect x="345" y="233" width="30" height="34" rx="3" fill="#7f1d1d" stroke="#f87171" stroke-width="2"/>
+            <rect x="205" y="213" width="30" height="34" rx="3" fill="#064e3b" stroke="#34d399" stroke-width="2"/>
+          </g>
+          <text x="330" y="176" text-anchor="middle" class="tm">CDN nodes (MadMen 사본 저장)</text>
+          <text x="360" y="288" text-anchor="middle" class="tm" style="fill:#f87171">혼잡 노드 → 다른 버전/저속 선택</text>
+          <text x="220" y="205" text-anchor="middle" class="tm" style="fill:#34d399">근접 노드</text>
+          <!-- manifest -->
+          <rect x="20" y="30" width="110" height="46" rx="6" fill="#312e81" stroke="#a78bfa"/>
+          <text x="75" y="50" text-anchor="middle" class="t tb">manifest</text><text x="75" y="66" text-anchor="middle" class="t tb">file</text>
+          <!-- client -->
+          <rect x="40" y="250" width="54" height="38" rx="4" fill="#1e293b" stroke="#94a3b8"/>
+          <rect x="57" y="288" width="20" height="8" fill="#94a3b8"/>
+          <text x="67" y="316" text-anchor="middle" class="tm">client</text>
+          <line x1="55" y1="248" x2="55" y2="80" stroke="#fbbf24" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#m10a)"/>
+          <line x1="85" y1="80" x2="85" y2="246" stroke="#fbbf24" stroke-width="1.6" marker-end="url(#m10a)"/>
+          <text x="95" y="128" class="tm" style="fill:#fbbf24">① where's Madmen?</text>
+          <text x="95" y="158" class="tm" style="fill:#fbbf24">② manifest file</text>
+          <line x1="96" y1="262" x2="202" y2="236" stroke="#34d399" stroke-width="2.4" marker-end="url(#m10b)"/>
+          <text x="118" y="268" class="tm" style="fill:#34d399">③ 재생 요청</text>
+        </svg>
+        <div class="cap">Slide 21 — manifest file → 근접 CDN 노드 선택</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 Netflix ============ -->
+<section id="s11">
+  <div class="sec-head"><span class="num">11</span><h2>Case study: Netflix</h2><span class="slide">Slide 22</span></div>
+  <div class="card">
+    <div class="split">
+      <div>
+        <h3>동작 순서</h3>
+        <div class="note">사전 준비: Amazon cloud가 <b>upload copies of multiple versions of video to CDN servers</b> (여러 버전의 영상 사본을 CDN 서버에 업로드)</div>
+        <ol>
+          <li><b>Bob manages Netflix account</b> — Netflix registration, accounting servers</li>
+          <li><b>Bob browses Netflix video</b> — Amazon cloud</li>
+          <li><b>Manifest file, requested, returned for specific video</b></li>
+          <li><b>DASH server selected, contacted, streaming begins</b> — CDN server</li>
+        </ol>
+      </div>
+      <div class="fig">
+        <svg viewBox="0 0 580 420" role="img" aria-label="Netflix 구조">
+          <defs>
+            <marker id="m11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#e5e7eb"/></marker>
+            <marker id="m11d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#94a3b8"/></marker>
+            <marker id="m11g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#34d399"/></marker>
+          </defs>
+          <!-- amazon cloud -->
+          <ellipse cx="230" cy="80" rx="115" ry="48" fill="#0e4f5c" stroke="#22d3ee"/>
+          <rect x="175" y="62" width="24" height="36" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+          <rect x="205" y="62" width="24" height="36" rx="3" fill="#0f3a4a" stroke="#38bdf8"/>
+          <text x="245" y="72" class="t tb" style="fill:#e0f2fe">Amazon</text><text x="245" y="88" class="t tb" style="fill:#e0f2fe">cloud</text>
+          <!-- CDN servers -->
+          <g>
+            <ellipse cx="490" cy="70" rx="60" ry="32" fill="#0d2440" stroke="#38bdf8"/>
+            <text x="490" y="66" text-anchor="middle" class="t tb">CDN</text><text x="490" y="81" text-anchor="middle" class="t tb">server</text>
+            <ellipse cx="490" cy="190" rx="60" ry="32" fill="#0d2440" stroke="#38bdf8"/>
+            <text x="490" y="186" text-anchor="middle" class="t tb">CDN</text><text x="490" y="201" text-anchor="middle" class="t tb">server</text>
+            <ellipse cx="490" cy="310" rx="60" ry="32" fill="#064e3b" stroke="#34d399" stroke-width="2"/>
+            <text x="490" y="306" text-anchor="middle" class="t tb">CDN</text><text x="490" y="321" text-anchor="middle" class="t tb">server</text>
+          </g>
+          <line x1="345" y1="78" x2="427" y2="72" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#m11d)"/>
+          <line x1="335" y1="100" x2="432" y2="178" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#m11d)"/>
+          <line x1="320" y1="112" x2="440" y2="290" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#m11d)"/>
+          <text x="330" y="22" class="tm">upload copies of multiple versions</text>
+          <text x="330" y="36" class="tm">of video to CDN servers</text>
+          <!-- registration -->
+          <rect x="30" y="150" width="26" height="44" rx="3" fill="#312e81" stroke="#a78bfa"/>
+          <rect x="62" y="150" width="26" height="44" rx="3" fill="#312e81" stroke="#a78bfa"/>
+          <text x="20" y="128" class="tm">Netflix registration,</text><text x="20" y="142" class="tm">accounting servers</text>
+          <!-- Bob -->
+          <rect x="200" y="320" width="60" height="40" rx="4" fill="#1e293b" stroke="#94a3b8"/>
+          <rect x="220" y="360" width="20" height="8" fill="#94a3b8"/>
+          <circle cx="175" cy="336" r="10" fill="#f472b6"/><path d="M161,366 Q175,346 189,366 Z" fill="#f472b6"/>
+          <text x="230" y="392" text-anchor="middle" class="tm">Bob</text>
+          <!-- arrows -->
+          <line x1="205" y1="320" x2="85" y2="200" stroke="#e5e7eb" stroke-width="1.8" marker-end="url(#m11)"/>
+          <circle cx="140" cy="258" r="11" fill="#111827" stroke="#fbbf24"/><text x="140" y="262" text-anchor="middle" class="t tb">1</text>
+          <text x="40" y="290" class="tm">Bob manages</text><text x="40" y="304" class="tm">Netflix account</text>
+          <line x1="222" y1="318" x2="222" y2="132" stroke="#e5e7eb" stroke-width="1.8" marker-end="url(#m11)"/>
+          <circle cx="222" cy="220" r="11" fill="#111827" stroke="#fbbf24"/><text x="222" y="224" text-anchor="middle" class="t tb">2</text>
+          <text x="212" y="160" class="tm" text-anchor="end">Bob browses</text><text x="212" y="174" class="tm" text-anchor="end">Netflix video</text>
+          <line x1="248" y1="130" x2="248" y2="316" stroke="#fbbf24" stroke-width="1.8" marker-end="url(#m11)"/>
+          <circle cx="248" cy="250" r="11" fill="#111827" stroke="#fbbf24"/><text x="248" y="254" text-anchor="middle" class="t tb">3</text>
+          <text x="262" y="175" class="tm" style="fill:#fbbf24">Manifest file,</text><text x="262" y="189" class="tm" style="fill:#fbbf24">requested, returned</text><text x="262" y="203" class="tm" style="fill:#fbbf24">for specific video</text>
+          <line x1="262" y1="336" x2="427" y2="314" stroke="#34d399" stroke-width="2.4" marker-end="url(#m11g)"/>
+          <circle cx="345" cy="325" r="11" fill="#111827" stroke="#34d399"/><text x="345" y="329" text-anchor="middle" class="t tb">4</text>
+          <text x="310" y="362" class="tm" style="fill:#34d399">DASH server selected,</text><text x="310" y="376" class="tm" style="fill:#34d399">contacted, streaming begins</text>
+        </svg>
+        <div class="cap">Slide 22 — Netflix: 계정 → 탐색 → manifest → DASH 스트리밍</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 요약 ============ -->
+<section id="s12">
+  <div class="sec-head"><span class="num">12</span><h2>핵심 요약</h2><span class="slide">Slide 2–22</span></div>
+  <div class="sum-grid">
+    <div class="card"><span class="num">01</span><h3>HTTPS</h3>포트 443, TLS/SSL(현재 TLS 1.3). 핸드셰이크에서 인증서·공개 키 전달 → 공개 키로 대칭 키 생성 → 대칭 키로 데이터 암호화. 기능: 통신 암호화 + 웹사이트 인증.</div>
+    <div class="card"><span class="num">02</span><h3>쿠키</h3>stateless HTTP의 한계 보완. 4요소: 응답 헤더(set-cookie), 요청 헤더(cookie), 브라우저 쿠키 파일, 백엔드 DB.</div>
+    <div class="card"><span class="num">03</span><h3>웹 캐싱</h3>서버측(프락시, ISP 설치)·단말측. 응답시간 단축, 액세스 링크 트래픽 감소, 영세 사업자 컨텐츠 제공.</div>
+    <div class="card"><span class="num">04</span><h3>웹캐싱 계산</h3>캐시 없음: 트래픽 강도 1 → 지연 minutes. 적중률 0.4: 트래픽 강도 0.6, 전체 지연 = 0.6(2+0.067+0.01)+0.4(0.01) ≈ 1.25초.</div>
+    <div class="card"><span class="num">05</span><h3>조건부 GET</h3>요청에 If-modified-since: &lt;date&gt;. 변경 없음 → 304 Not Modified(객체 없음), 변경됨 → 200 OK + data.</div>
+    <div class="card"><span class="num">06–07</span><h3>전자메일 · SMTP</h3>UA · mail server · SMTP. TCP 25, 직접 전송, 3단계(handshaking/transfer/closure), 지속연결, 7-bit ASCII, CRLF.CRLF로 종료. HTTP=pull, SMTP=push.</div>
+    <div class="card"><span class="num">08</span><h3>메일 포맷 · MIME</h3>RFC 822 헤더(To/From/Subject) + blank line + body. MIME(RFC 2045, 2056): MIME-Version, Content-Transfer-Encoding(base64), Content-Type(type/subtype).</div>
+    <div class="card"><span class="num">09</span><h3>메일 액세스</h3>SMTP는 수신 서버까지 전달/저장, 수신은 POP(RFC 1939, 포트 110, download)·IMAP(RFC 1730, 서버 메시지 조작)·HTTP(웹메일).</div>
+    <div class="card"><span class="num">10–11</span><h3>스트리밍 · CDN · Netflix</h3>스트리밍이 주거 ISP 트래픽 80%(2020). CDN 노드에 사본 저장, 근접 노드 요청, 혼잡 시 다른 버전 선택. Netflix: 계정 → 탐색 → manifest → DASH 서버 스트리밍.</div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function update(){
+    var y = window.scrollY + 120, idx = 0;
+    for (var i=0;i<secs.length;i++){ if (secs[i] && secs[i].offsetTop <= y) idx = i; }
+    if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight - 4) idx = secs.length-1;
+    links.forEach(function(a,i){ a.classList.toggle('active', i===idx); });
+  }
+  window.addEventListener('scroll', update, {passive:true});
+  update();
+})();
+</script>
+</body>
+</html>
