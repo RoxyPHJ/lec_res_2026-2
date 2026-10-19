@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chap 2. Application Layer (3) — Socket Programming</title>
+<style>
+:root{
+  --bg:#0a0e1a; --surface:#111827; --surface2:#172033; --surface3:#1e293b;
+  --border:#253149; --border2:#33415c;
+  --text:#e5e7eb; --muted:#94a3b8; --dim:#64748b;
+  --accent:#38bdf8; --accent-soft:rgba(56,189,248,.12);
+  --udp:#f59e0b; --udp-soft:rgba(245,158,11,.12);
+  --tcp:#34d399; --tcp-soft:rgba(52,211,153,.12);
+  --srv:#a78bfa; --srv-soft:rgba(167,139,250,.10);
+  --cli:#60a5fa; --cli-soft:rgba(96,165,250,.10);
+  --msg:#f87171; --err:#fb7185; --err-soft:rgba(251,113,133,.10);
+  --code-bg:#0b1120; --code-red:#fca5a5;
+  --hk:#c792ea; --hs:#c3e88d; --hn:#f78c6c; --hf:#82aaff; --hu:#ffcb6b; --hc:#5f7090;
+  --f-body:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --f-code:'Menlo','Courier New',monospace;
+  --f-head:'Impact','Arial Narrow',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);line-height:1.7;font-size:15.5px;-webkit-text-size-adjust:100%}
+a{color:var(--accent);text-decoration:none}
+code{font-family:var(--f-code);font-size:.88em;background:var(--surface3);border:1px solid var(--border);padding:1px 6px;border-radius:5px;color:#e2e8f0;overflow-wrap:anywhere}
+b,strong{color:#fff}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);max-width:1420px;margin:0 auto}
+aside.toc{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 14px 28px 20px;border-right:1px solid var(--border)}
+.toc h3{font-family:var(--f-head);letter-spacing:.08em;font-weight:400;font-size:15px;color:var(--muted);margin:0 0 14px 8px}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc a{display:flex;gap:10px;align-items:baseline;padding:7px 10px;border-radius:8px;color:var(--muted);font-size:13.5px;line-height:1.35;border-left:3px solid transparent;transition:.15s}
+.toc a:hover{background:var(--surface);color:var(--text)}
+.toc a .tn{font-family:var(--f-head);font-size:14px;color:var(--dim);min-width:20px}
+.toc a.active{background:var(--accent-soft);color:#fff;border-left-color:var(--accent)}
+.toc a.active .tn{color:var(--accent)}
+.toc .prog{height:3px;background:var(--surface3);border-radius:2px;margin:18px 8px 0;overflow:hidden}
+.toc .prog i{display:block;height:100%;width:0;background:var(--accent)}
+main{padding:28px 40px 80px;min-width:0}
+
+/* ---------- hero ---------- */
+.hero{border:1px solid var(--border);border-radius:18px;padding:34px 36px;background:
+ radial-gradient(800px 260px at 90% -20%,rgba(56,189,248,.16),transparent 60%),
+ radial-gradient(600px 240px at 0% 120%,rgba(167,139,250,.14),transparent 60%),var(--surface);margin-bottom:34px}
+.hero .kicker{font-family:var(--f-code);font-size:12.5px;color:var(--accent);letter-spacing:.12em}
+.hero h1{font-family:var(--f-head);font-weight:400;font-size:44px;line-height:1.1;margin:10px 0 8px;letter-spacing:.01em}
+.hero h1 span{color:var(--accent)}
+.hero p{margin:0;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font-size:12.5px;padding:4px 11px;border-radius:999px;border:1px solid var(--border2);color:var(--muted);background:var(--surface2)}
+.chip.udp{color:var(--udp);border-color:rgba(245,158,11,.4)}
+.chip.tcp{color:var(--tcp);border-color:rgba(52,211,153,.4)}
+
+/* ---------- section ---------- */
+section.sec{margin:0 0 44px}
+.sec-head{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.sec-head .num{font-family:var(--f-head);font-size:34px;line-height:1;color:var(--accent);min-width:46px}
+.sec-head h2{font-size:22px;margin:0;font-weight:700;letter-spacing:-.01em}
+.sec-head .slide{margin-left:auto;font-family:var(--f-code);font-size:11.5px;color:var(--muted);border:1px solid var(--border2);padding:3px 9px;border-radius:6px;white-space:nowrap}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 28px}
+.card + .card{margin-top:16px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:28px;align-items:start}
+.split.code-split{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+.split.wide{grid-template-columns:minmax(0,.82fr) minmax(0,1.5fr)}
+.split.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.lead{font-size:16.5px;color:#f1f5f9;margin:0 0 14px}
+.lead b{color:var(--accent)}
+ul.bl{margin:8px 0 0;padding:0;list-style:none}
+ul.bl li{position:relative;padding:5px 0 5px 22px}
+ul.bl li::before{content:"";position:absolute;left:4px;top:15px;width:7px;height:7px;border-radius:2px;background:var(--accent)}
+ul.bl ul{list-style:none;padding:2px 0 0 4px;margin:0}
+ul.bl ul li::before{background:transparent;border:1.5px solid var(--muted);border-radius:50%;width:8px;height:8px;top:14px}
+.label{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;margin:16px 0 4px}
+.label:first-child{margin-top:0}
+.label code{text-transform:none}
+.callout{margin-top:16px;padding:12px 16px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);font-size:14.5px}
+.callout.warn{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.07)}
+.callout.warn b{color:var(--msg)}
+.callout.tcp{border-color:rgba(52,211,153,.4);background:var(--tcp-soft)}
+.callout.tcp b{color:var(--tcp)}
+.callout.udp{border-color:rgba(245,158,11,.4);background:var(--udp-soft)}
+.callout.udp b{color:var(--udp)}
+.fig{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px}
+.fig .cap{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
+.steps{counter-reset:st;list-style:none;padding:0;margin:6px 0 0}
+.steps li{counter-increment:st;position:relative;padding:8px 0 8px 38px;border-bottom:1px dashed var(--border)}
+.steps li:last-child{border-bottom:0}
+.steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);font-family:var(--f-head);font-size:13px;text-align:center;line-height:23px;color:var(--accent)}
+.steps .who{font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;margin-right:6px}
+.who.ws{background:var(--srv-soft);color:var(--srv);border:1px solid rgba(167,139,250,.35)}
+.who.wc{background:var(--cli-soft);color:var(--cli);border:1px solid rgba(96,165,250,.35)}
+
+/* ---------- code ---------- */
+.code{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.code-title{display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-family:var(--f-code);font-size:12px;color:var(--muted)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#334155;display:block}
+.dots i:nth-child(1){background:#f87171}.dots i:nth-child(2){background:#fbbf24}.dots i:nth-child(3){background:#34d399}
+.code pre{margin:0;padding:12px 0;overflow-x:auto;font-family:var(--f-code);font-size:13px;line-height:1.62;color:#d6deeb;tab-size:4}
+.cl{display:block;padding:0 14px 0 0;white-space:pre;min-height:1.62em}
+.cl.on{background:rgba(56,189,248,.07);box-shadow:inset 3px 0 0 var(--accent)}
+.lno{display:inline-block;width:3em;padding-right:1em;text-align:right;color:#3b4a66;user-select:none;-webkit-user-select:none}
+.cl.div{margin:8px 0;border-top:1px dashed var(--border2);min-height:0;height:0;position:relative}
+.divtag{position:absolute;right:14px;top:-10px;font-size:10.5px;background:var(--code-bg);color:var(--dim);padding:0 6px;border:1px solid var(--border2);border-radius:4px;line-height:18px}
+.mk{display:inline-block;margin-left:12px;color:var(--accent);font-family:var(--f-body);font-weight:700}
+.code .hk{color:var(--hk)}.code .hs{color:var(--hs)}.code .hn{color:var(--hn)}.code .hf{color:var(--hf)}.code .hu{color:var(--hu)}.code .hc{color:var(--hc);font-style:italic}
+ol.notes{list-style:none;margin:0;padding:0}
+ol.notes li{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+ol.notes li:last-child{border-bottom:0}
+ol.notes .mk.big{margin:0;font-size:18px;line-height:1.3}
+ol.notes .en{display:block;font-family:var(--f-code);font-size:11.5px;color:var(--dim);margin-bottom:2px}
+ol.notes .ko{font-size:14.5px}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}
+th,td{padding:11px 14px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--surface2);font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.03em}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--muted);font-weight:700;white-space:nowrap}
+th.udp{color:var(--udp)}th.tcp{color:var(--tcp)}
+td.ck{text-align:center;font-family:var(--f-code)}
+.y{color:var(--tcp);font-weight:700}.y2{color:var(--udp);font-weight:700}.no{color:#334155}
+
+/* ---------- token chips ---------- */
+.tok{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--f-code);font-size:12.5px;margin:6px 0}
+.tok span{padding:3px 9px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2)}
+.tok span.hit{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.tok em{font-style:normal;color:var(--dim);font-size:12px}
+
+/* ---------- summary ---------- */
+.sum-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.sum{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.sum h4{margin:0 0 6px;font-size:15px}
+.sum h4 i{font-style:normal;font-family:var(--f-head);color:var(--accent);margin-right:8px;font-weight:400}
+.sum p{margin:0;font-size:14.2px;color:#cbd5e1}
+
+/* ---------- svg ---------- */
+svg.dg{width:100%;height:auto;display:block}
+.dg text{font-family:var(--f-body)}
+.dg .tt{fill:var(--text);font-size:13.5px}
+.dg .tc{fill:var(--code-red);font-family:var(--f-code);font-size:12.5px}
+.dg .sm2{font-size:11.5px}
+.dg .lt{fill:var(--text);font-size:13.5px}
+.dg .c{text-anchor:middle}
+.dg .b{font-weight:700}
+.dg .sm{font-size:12px}
+.dg .dim{fill:var(--muted)}
+.dg .hd{fill:var(--text);font-size:19px;font-weight:700}
+.dg .srvc{fill:var(--srv)}.dg .clic{fill:var(--cli)}
+.dg .msg{fill:var(--msg)}.dg .conc{fill:var(--tcp)}.dg .loopt{fill:var(--udp)}
+.dg .bx{stroke-width:1.3}
+.dg .bx.srv{fill:var(--srv-soft);stroke:rgba(167,139,250,.55)}
+.dg .bx.cli{fill:var(--cli-soft);stroke:rgba(96,165,250,.55)}
+.dg .bx.ok{fill:var(--tcp-soft);stroke:rgba(52,211,153,.55)}
+.dg .bx.err{fill:var(--err-soft);stroke:rgba(251,113,133,.55)}
+.dg .bx.dec{fill:var(--surface3);stroke:var(--accent)}
+.dg .lb{stroke:#7c93c9;stroke-width:1.8;fill:none}
+.dg .lr{stroke:var(--msg);stroke-width:1.8;fill:none}
+.dg .lg{stroke:var(--tcp);stroke-width:1.8;fill:none}
+.dg .ld{stroke:var(--udp);stroke-width:2.2;fill:none}
+.dg .la{stroke:var(--muted);stroke-width:1.6;fill:none}
+.dg .dash{stroke-dasharray:7 5}.dg .dash2{stroke-dasharray:4 4}.dg .faint{opacity:.45}
+.dg .loop{stroke:var(--udp);stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+.dg .mb{fill:#7c93c9}.dg .mr{fill:var(--msg)}.dg .mg{fill:var(--tcp)}.dg .my{fill:var(--udp)}
+.dg .ly{stroke:var(--border2);stroke-width:1.2}
+.dg .ly.app{fill:rgba(96,165,250,.13)}
+.dg .ly.os{fill:var(--surface3)}
+.dg .proc{fill:rgba(96,165,250,.22);stroke:var(--cli);stroke-width:1.2}
+.dg .door{fill:var(--udp);stroke:#fde68a;stroke-width:1.2}
+.dg .doorline{stroke:#78350f;stroke-width:1.4}
+.dg .cloud{fill:rgba(45,212,191,.18);stroke:#2dd4bf;stroke-width:1.4}
+.dg .sock{fill:var(--udp);font-size:17px;font-weight:700;font-style:italic}
+.dg .brace{fill:none;stroke-width:1.6}
+.dg .brace.dev,.dg text.dev{stroke:var(--cli)}.dg text.dev{fill:var(--cli);stroke:none}
+.dg .brace.osb{stroke:var(--msg)}.dg text.osb{fill:var(--msg)}
+.dg .sep{stroke:var(--udp);stroke-width:1;stroke-dasharray:3 4;opacity:.6}
+.dg .host{stroke-width:1.3}
+.dg .host.srv{fill:var(--srv-soft);stroke:rgba(167,139,250,.5)}
+.dg .host.cli{fill:var(--cli-soft);stroke:rgba(96,165,250,.5)}
+.dg .sk{stroke-width:1.4}
+.dg .sk.wel{fill:rgba(245,158,11,.18);stroke:var(--udp)}
+.dg .sk.con{fill:rgba(52,211,153,.16);stroke:var(--tcp)}
+.dg .sk.cl{fill:rgba(96,165,250,.2);stroke:var(--cli)}
+.dg .pk{stroke:var(--border2);stroke-width:1.2}
+
+footer{color:var(--dim);font-size:12.5px;text-align:center;margin-top:50px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .layout{grid-template-columns:1fr}
+  aside.toc{position:sticky;top:0;z-index:20;height:auto;border-right:0;border-bottom:1px solid var(--border);background:rgba(10,14,26,.94);padding:10px 12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .toc h3,.toc .prog{display:none}
+  .toc ol{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+  .toc ol::-webkit-scrollbar{display:none}
+  .toc a{white-space:nowrap;border-left:0;border:1px solid var(--border);padding:5px 11px}
+  .toc a.active{border-color:var(--accent)}
+  html{scroll-padding-top:70px}
+  main{padding:22px 18px 60px}
+}
+@media (max-width:860px){
+  .split,.split.code-split,.split.wide,.split.even{grid-template-columns:1fr}
+  .sum-grid{grid-template-columns:1fr}
+  .hero{padding:26px 22px}.hero h1{font-size:34px}
+  .card{padding:20px 18px}
+  .sec-head h2{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="toc">
+  <h3>CONTENTS</h3>
+  <ol><li><a href="#s01" data-id="s01"><span class="tn">01</span><span class="tt2">Socket Programming 개요</span></a></li><li><a href="#s02" data-id="s02"><span class="tn">02</span><span class="tt2">소켓 = 프로세스의 문(door)</span></a></li><li><a href="#s03" data-id="s03"><span class="tn">03</span><span class="tt2">UDP 소켓 프로그래밍</span></a></li><li><a href="#s04" data-id="s04"><span class="tn">04</span><span class="tt2">UDP 상호작용 흐름</span></a></li><li><a href="#s05" data-id="s05"><span class="tn">05</span><span class="tt2">UDP Client 코드</span></a></li><li><a href="#s06" data-id="s06"><span class="tn">06</span><span class="tt2">UDP Server 코드</span></a></li><li><a href="#s07" data-id="s07"><span class="tn">07</span><span class="tt2">TCP 소켓 프로그래밍</span></a></li><li><a href="#s08" data-id="s08"><span class="tn">08</span><span class="tt2">TCP 상호작용 흐름</span></a></li><li><a href="#s09" data-id="s09"><span class="tn">09</span><span class="tt2">TCP Client 코드</span></a></li><li><a href="#s10" data-id="s10"><span class="tn">10</span><span class="tt2">TCP Server 코드</span></a></li><li><a href="#s11" data-id="s11"><span class="tn">11</span><span class="tt2">Webserver 예제</span></a></li><li><a href="#s12" data-id="s12"><span class="tn">12</span><span class="tt2">UDP vs TCP 비교</span></a></li><li><a href="#s13" data-id="s13"><span class="tn">13</span><span class="tt2">핵심 요약</span></a></li></ol>
+  <div class="prog"><i id="prog"></i></div>
+</aside>
+
+<main>
+<header class="hero">
+  <div class="kicker">COMPUTER NETWORKS · CHAPTER 2</div>
+  <h1>Application Layer (3)<br><span>Socket Programming</span></h1>
+  <p>최승식 · 인천대학교 — 소켓을 이용한 클라이언트/서버 응용 프로그램 작성</p>
+  <div class="chips">
+    <span class="chip udp">UDP · SOCK_DGRAM</span>
+    <span class="chip tcp">TCP · SOCK_STREAM</span>
+    <span class="chip">Python socket</span>
+    <span class="chip">Webserver 예제</span>
+  </div>
+</header>
+
+<!-- 01 -->
+<section class="sec" id="s01">
+<div class="sec-head"><span class="num">01</span><h2>Socket Programming 개요</h2><span class="slide">Slide 2</span></div>
+<div class="card split">
+  <div>
+    <p class="lead"><b>Goal</b> — 소켓을 이용하여 <b>클라이언트/서버 응용 프로그램</b>을 작성한다.</p>
+    <span class="label">Socket API</span>
+    <ul class="bl">
+      <li>1981년 <b>BSD 4.1 UNIX</b>에서 소개</li>
+      <li>응용에 의해 <b>생성</b>되고 사용 후 <b>해지</b></li>
+      <li>클라이언트/서버 패러다임</li>
+      <li>소켓 API를 이용하여 <b>2종류의 트랜스포트 서비스</b> 이용
+        <ul>
+          <li><span style="color:var(--udp)">unreliable datagram</span> (UDP)</li>
+          <li><span style="color:var(--tcp)">reliable, byte stream-oriented</span> (TCP)</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+  <div class="fig">
+    <svg viewBox="0 0 520 300" class="dg" role="img" aria-label="Socket API로 사용하는 두 가지 트랜스포트 서비스">
+      <defs><marker id="o1-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker></defs>
+      <rect x="150" y="24" width="220" height="56" rx="10" class="bx dec"/>
+      <text x="260" y="48" class="lt c b">Application</text>
+      <text x="260" y="67" class="lt c sm dim">클라이언트 / 서버 프로세스</text>
+      <rect x="110" y="104" width="300" height="34" rx="8" style="fill:rgba(245,158,11,.14);stroke:var(--udp);stroke-width:1.3"/>
+      <text x="260" y="126" class="lt c b" style="fill:var(--udp)">Socket API</text>
+      <line x1="200" y1="138" x2="130" y2="176" class="lb" marker-end="url(#o1-b)"/>
+      <line x1="320" y1="138" x2="390" y2="176" class="lb" marker-end="url(#o1-b)"/>
+      <rect x="30" y="180" width="210" height="96" rx="10" class="bx" style="fill:var(--udp-soft);stroke:rgba(245,158,11,.55)"/>
+      <text x="135" y="206" class="lt c b" style="fill:var(--udp)">UDP</text>
+      <text x="135" y="228" class="tc c">SOCK_DGRAM</text>
+      <text x="135" y="250" class="lt c sm">unreliable datagram</text>
+      <text x="135" y="266" class="lt c sm dim">비연결형 · 손실 가능</text>
+      <rect x="280" y="180" width="210" height="96" rx="10" class="bx" style="fill:var(--tcp-soft);stroke:rgba(52,211,153,.55)"/>
+      <text x="385" y="206" class="lt c b" style="fill:var(--tcp)">TCP</text>
+      <text x="385" y="228" class="tc c">SOCK_STREAM</text>
+      <text x="385" y="250" class="lt c sm">reliable byte stream</text>
+      <text x="385" y="266" class="lt c sm dim">연결형 · 신뢰성</text>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- 02 -->
+<section class="sec" id="s02">
+<div class="sec-head"><span class="num">02</span><h2>소켓 = 프로세스의 문(door)</h2><span class="slide">Slide 3</span></div>
+<div class="card split wide">
+  <div>
+    <p class="lead"><b>Socket</b>: 응용 프로세스와 종단간 트랜스포트 프로토콜 사이의 <b>도어(door)</b> 역할과 유사.</p>
+    <p class="lead"><b>TCP service</b>: 프로세스 간 <b>신뢰성 있는 데이터 스트림</b> 전달.</p>
+    <ul class="bl">
+      <li><b>application / process</b> 영역 — <span style="color:var(--cli)">controlled by app developer</span> (개발자가 작성)</li>
+      <li><b>transport · network · link · physical</b> — <span style="color:var(--msg)">controlled by OS</span></li>
+      <li>프로세스는 소켓이라는 문을 통해서만 데이터를 내보내고 받는다. 문 너머의 전달은 트랜스포트 계층 이하가 담당.</li>
+    </ul>
+  </div>
+  <div class="fig"><svg viewBox="0 0 700 300" class="dg" role="img" aria-label="소켓은 응용 프로세스와 트랜스포트 계층 사이의 문">
+<defs>
+<marker id="d1-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker>
+<marker id="d1-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mr"/></marker>
+<marker id="d1-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mg"/></marker>
+<marker id="d1-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="my"/></marker>
+</defs>
+<rect x="40" y="50" width="150" height="64" rx="6" class="ly app"/>
+<text x="115.0" y="69" class="lt c b">application</text>
+<ellipse cx="115.0" cy="93" rx="38" ry="12" class="proc"/>
+<text x="115.0" y="97" class="lt c">process</text>
+<rect x="40" y="114" width="150" height="30" class="ly os"/>
+<text x="115.0" y="134" class="lt c dim">transport</text>
+<rect x="40" y="144" width="150" height="30" class="ly os"/>
+<text x="115.0" y="164" class="lt c dim">network</text>
+<rect x="40" y="174" width="150" height="30" class="ly os"/>
+<text x="115.0" y="194" class="lt c dim">link</text>
+<rect x="40" y="204" width="150" height="30" class="ly os"/>
+<text x="115.0" y="224" class="lt c dim">physical</text>
+<rect x="95.0" y="106" width="40" height="16" rx="3" class="door"/>
+<line x1="115.0" y1="108" x2="115.0" y2="120" class="doorline"/>
+<text x="115.0" y="258" class="lt c dim">end host</text>
+<rect x="380" y="50" width="150" height="64" rx="6" class="ly app"/>
+<text x="455.0" y="69" class="lt c b">application</text>
+<ellipse cx="455.0" cy="93" rx="38" ry="12" class="proc"/>
+<text x="455.0" y="97" class="lt c">process</text>
+<rect x="380" y="114" width="150" height="30" class="ly os"/>
+<text x="455.0" y="134" class="lt c dim">transport</text>
+<rect x="380" y="144" width="150" height="30" class="ly os"/>
+<text x="455.0" y="164" class="lt c dim">network</text>
+<rect x="380" y="174" width="150" height="30" class="ly os"/>
+<text x="455.0" y="194" class="lt c dim">link</text>
+<rect x="380" y="204" width="150" height="30" class="ly os"/>
+<text x="455.0" y="224" class="lt c dim">physical</text>
+<rect x="435.0" y="106" width="40" height="16" rx="3" class="door"/>
+<line x1="455.0" y1="108" x2="455.0" y2="120" class="doorline"/>
+<text x="455.0" y="258" class="lt c dim">end host</text>
+<ellipse cx="285" cy="178" rx="62" ry="28" class="cloud"/>
+<text x="285" y="183" class="lt c b">Internet</text>
+<line x1="196" y1="229" x2="374" y2="229" class="la" marker-start="url(#d1-b)" marker-end="url(#d1-b)"/>
+<text x="285" y="74" class="lt c sock">socket</text>
+<line x1="250" y1="80" x2="138" y2="110" class="lr"/>
+<line x1="320" y1="80" x2="432" y2="110" class="lr"/>
+<path d="M538,52 h8 v60 h-8" class="brace dev"/>
+<text x="555" y="78" class="lt dev">controlled by</text><text x="555" y="95" class="lt dev">app developer</text>
+<path d="M538,118 h8 v116 h-8" class="brace osb"/>
+<text x="555" y="172" class="lt osb">controlled</text><text x="555" y="189" class="lt osb">by OS</text>
+<line x1="30" y1="114" x2="536" y2="114" class="sep"/>
+<text x="20" y="290" class="lt sm dim">점선 위 = 개발자가 작성하는 영역 · 점선 아래 = 운영체제(커널)가 제공하는 영역 · 노란 문 = socket</text>
+</svg></div>
+</div>
+</section>
+
+<!-- 03 -->
+<section class="sec" id="s03">
+<div class="sec-head"><span class="num">03</span><h2>UDP 소켓 프로그래밍</h2><span class="slide">Slide 4</span></div>
+<div class="card split">
+  <div>
+    <p class="lead"><b>UDP</b>: 클라이언트와 서버 사이에 <b>연결 없음</b> (비연결형)</p>
+    <ul class="bl">
+      <li><b>핸드세이크 과정이 없음</b></li>
+      <li>송신 호스트는 송신하는 각 바이트 묶음에 <b>IP 주소와 포트번호</b>를 붙여서 패킷 생성</li>
+      <li>서버 호스트는 수신된 패킷으로부터 <b>IP 주소와 포트</b> 추출</li>
+    </ul>
+    <div class="callout warn"><b>UDP</b>: 전송된 데이터가 <b>손실될 수 있음</b></div>
+  </div>
+  <div class="fig">
+    <svg viewBox="0 0 520 290" class="dg" role="img" aria-label="UDP 패킷에 목적지 IP와 포트를 붙여 송신">
+      <defs><marker id="o3-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mr"/></marker>
+      <marker id="o3-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker></defs>
+      <text x="40" y="36" class="lt b clic">송신 호스트 (client)</text>
+      <rect x="40" y="50" width="150" height="40" class="pk" style="fill:rgba(96,165,250,.15)"/>
+      <text x="115" y="75" class="lt c">bytes (message)</text>
+      <text x="200" y="76" class="lt b" style="fill:var(--udp)">+</text>
+      <rect x="216" y="50" width="120" height="40" class="pk" style="fill:rgba(245,158,11,.18)"/>
+      <text x="276" y="75" class="tc c">dest IP</text>
+      <rect x="336" y="50" width="110" height="40" class="pk" style="fill:rgba(245,158,11,.18)"/>
+      <text x="391" y="75" class="tc c">dest port</text>
+      <text x="40" y="112" class="lt sm dim">→ 보낼 때마다 주소를 붙인다 : sendto(data, (IP, port))</text>
+      <line x1="240" y1="126" x2="240" y2="174" class="lr dash" marker-end="url(#o3-r)"/>
+      <text x="252" y="156" class="lt sm msg">연결·핸드세이크 없이 바로 전송 (손실 가능)</text>
+      <text x="40" y="200" class="lt b srvc">수신 호스트 (server)</text>
+      <rect x="40" y="214" width="150" height="40" class="pk" style="fill:rgba(167,139,250,.14)"/>
+      <text x="115" y="239" class="lt c">data</text>
+      <rect x="216" y="214" width="230" height="40" class="pk" style="fill:rgba(167,139,250,.14)"/>
+      <text x="331" y="239" class="tc c">src IP, src port 추출</text>
+      <text x="40" y="276" class="lt sm dim">→ recvfrom() 이 (data, clientAddress) 를 함께 돌려줌</text>
+    </svg>
+  </div>
+</div>
+</section>
+
+<!-- 04 -->
+<section class="sec" id="s04">
+<div class="sec-head"><span class="num">04</span><h2>UDP 상호작용 흐름</h2><span class="slide">Slide 5</span></div>
+<div class="card split wide">
+  <div>
+    <p class="lead">서버와 클라이언트 모두 <code>socket(AF_INET, SOCK_DGRAM)</code>으로 UDP 소켓을 만든다. 연결 설정 단계가 없다.</p>
+    <ol class="steps">
+      <li><span class="who ws">server</span>소켓 생성, <b>port = x</b></li>
+      <li><span class="who wc">client</span>소켓 생성</li>
+      <li><span class="who wc">client</span><b>서버 IP와 port = x</b>를 지정한 datagram 생성 → <code>clientSocket</code>으로 송신</li>
+      <li><span class="who ws">server</span><code>serverSocket</code>에서 datagram 읽기</li>
+      <li><span class="who ws">server</span><code>serverSocket</code>으로 응답 쓰기 — <b>클라이언트 주소, 포트번호를 명시</b></li>
+      <li><span class="who wc">client</span><code>clientSocket</code>에서 datagram 읽기</li>
+      <li><span class="who wc">client</span><code>clientSocket</code> close</li>
+    </ol>
+    <div class="callout udp">서버는 <b>소켓 1개</b>(serverSocket)로 모든 클라이언트와 통신하므로, 응답할 때마다 상대 주소를 지정해야 한다.</div>
+  </div>
+  <div class="fig"><svg viewBox="0 0 680 500" class="dg" role="img" aria-label="UDP 클라이언트/서버 소켓 상호작용">
+<defs>
+<marker id="u-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker>
+<marker id="u-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mr"/></marker>
+<marker id="u-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mg"/></marker>
+<marker id="u-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="my"/></marker>
+</defs>
+<text x="170" y="34" class="hd c srvc">server <tspan class="sm">(running on serverIP)</tspan></text>
+<text x="510" y="34" class="hd c clic">client</text>
+<rect x="20" y="60" width="300" height="65" rx="7" class="bx srv"/>
+<text x="30" y="81" class="tt">create socket, port= x:</text>
+<text x="30" y="98" class="tc">serverSocket =</text>
+<text x="30" y="115" class="tc">socket(AF_INET,SOCK_DGRAM)</text>
+<rect x="360" y="60" width="300" height="65" rx="7" class="bx cli"/>
+<text x="370" y="81" class="tt">create socket:</text>
+<text x="370" y="98" class="tc">clientSocket =</text>
+<text x="370" y="115" class="tc">socket(AF_INET,SOCK_DGRAM)</text>
+<rect x="360" y="160" width="300" height="65" rx="7" class="bx cli"/>
+<text x="370" y="181" class="tt">Create datagram with server IP and</text>
+<text x="370" y="198" class="tt">port=x; send datagram via</text>
+<text x="370" y="215" class="tc">clientSocket</text>
+<rect x="20" y="205" width="300" height="48" rx="7" class="bx srv"/>
+<text x="30" y="226" class="tt">read datagram from</text>
+<text x="30" y="243" class="tc">serverSocket</text>
+<rect x="20" y="300" width="300" height="82" rx="7" class="bx srv"/>
+<text x="30" y="321" class="tt">write reply to</text>
+<text x="30" y="338" class="tc">serverSocket</text>
+<text x="30" y="355" class="tt">specifying client address,</text>
+<text x="30" y="372" class="tt">port number</text>
+<rect x="360" y="345" width="300" height="48" rx="7" class="bx cli"/>
+<text x="370" y="366" class="tt">read datagram from</text>
+<text x="370" y="383" class="tc">clientSocket</text>
+<rect x="360" y="430" width="300" height="48" rx="7" class="bx cli"/>
+<text x="370" y="451" class="tt">close</text>
+<text x="370" y="468" class="tc">clientSocket</text>
+<line x1="170" y1="125" x2="170" y2="203" class="lb" marker-end="url(#u-b)"/>
+<line x1="170" y1="253" x2="170" y2="298" class="lb" marker-end="url(#u-b)"/>
+<line x1="510" y1="125" x2="510" y2="158" class="lb" marker-end="url(#u-b)"/>
+<line x1="510" y1="225" x2="510" y2="343" class="lb" marker-end="url(#u-b)"/>
+<line x1="510" y1="393" x2="510" y2="428" class="lb" marker-end="url(#u-b)"/>
+<line x1="360" y1="188" x2="322" y2="226" class="lr" marker-end="url(#u-r)"/>
+<text x="341" y="168" class="lt c sm msg">request</text>
+<line x1="320" y1="322" x2="358" y2="365" class="lr" marker-end="url(#u-r)"/>
+<text x="341" y="306" class="lt c sm msg">reply</text>
+</svg><div class="cap">Slide 5 재구성 — 빨간 화살표: datagram 전송</div></div>
+</div>
+</section>
+
+<!-- 05 -->
+<section class="sec" id="s05">
+<div class="sec-head"><span class="num">05</span><h2>UDP Client 코드</h2><span class="slide">Slide 6</span></div>
+<div class="card split code-split">
+  <div class="code"><div class="code-title"><span class="dots"><i></i><i></i><i></i></span>UDPClient.py</div><pre><span class="cl on"><span class="lno">1</span><span class="cc"><span class="hk">from</span> socket <span class="hk">import</span> *</span><span class="mk">①</span></span><span class="cl"><span class="lno">2</span><span class="cc">serverName = <span class="hs">&#x27;hostname&#x27;</span></span></span><span class="cl"><span class="lno">3</span><span class="cc">serverPort = <span class="hn">12000</span></span></span><span class="cl on"><span class="lno">4</span><span class="cc">clientSocket = <span class="hf">socket</span>(<span class="hu">AF_INET</span>,  <span class="hu">SOCK_DGRAM</span>)</span><span class="mk">②</span></span><span class="cl on"><span class="lno">5</span><span class="cc">message = <span class="hf">raw_input</span>(<span class="hs">&#x27;Input lowercase sentence:&#x27;</span>)</span><span class="mk">③</span></span><span class="cl on"><span class="lno">6</span><span class="cc">clientSocket.<span class="hf">sendto</span>(message.<span class="hf">encode</span>(),</span><span class="mk">④</span></span><span class="cl"><span class="lno">7</span><span class="cc">                    (serverName, serverPort))</span></span><span class="cl"><span class="lno">8</span><span class="cc">modifiedMessage, serverAddress =</span></span><span class="cl on"><span class="lno">9</span><span class="cc">                    clientSocket.<span class="hf">recvfrom</span>(<span class="hn">2048</span>)</span><span class="mk">⑤</span></span><span class="cl on"><span class="lno">10</span><span class="cc"><span class="hk">print</span> modifiedMessage.<span class="hf">decode</span>()</span><span class="mk">⑥</span></span><span class="cl"><span class="lno">11</span><span class="cc">clientSocket.<span class="hf">close</span>()</span></span></pre></div>
+  <div><ol class="notes"><li><span class="mk big">①</span><div><span class="en">include Python&#x27;s socket library</span><span class="ko"><code>socket</code> 라이브러리를 불러온다. 이후 <code>socket()</code>, <code>AF_INET</code>, <code>SOCK_DGRAM</code>을 바로 사용.</span></div></li><li><span class="mk big">②</span><div><span class="en">create UDP socket for server</span><span class="ko"><code>AF_INET</code> = IPv4 주소 체계, <code>SOCK_DGRAM</code> = <b>UDP</b> 소켓.</span></div></li><li><span class="mk big">③</span><div><span class="en">get user keyboard input</span><span class="ko">키보드로 소문자 문장을 입력받는다.</span></div></li><li><span class="mk big">④</span><div><span class="en">Attach server name, port to message; send into socket</span><span class="ko"><code>sendto()</code> — 비연결형이므로 <b>보낼 때마다</b> 목적지 (serverName, serverPort)를 붙인다. 문자열은 <code>encode()</code>로 바이트 변환.</span></div></li><li><span class="mk big">⑤</span><div><span class="en">read reply characters from socket into string</span><span class="ko"><code>recvfrom(2048)</code> — 버퍼 크기 2048. 데이터와 함께 <b>송신자 주소</b>(serverAddress)를 반환.</span></div></li><li><span class="mk big">⑥</span><div><span class="en">print out received string and close socket</span><span class="ko"><code>decode()</code>로 문자열 변환 후 출력하고 소켓을 닫는다.</span></div></li></ol></div>
+</div>
+</section>
+
+<!-- 06 -->
+<section class="sec" id="s06">
+<div class="sec-head"><span class="num">06</span><h2>UDP Server 코드</h2><span class="slide">Slide 7</span></div>
+<div class="card split code-split">
+  <div class="code"><div class="code-title"><span class="dots"><i></i><i></i><i></i></span>UDPServer.py</div><pre><span class="cl"><span class="lno">1</span><span class="cc"><span class="hk">from</span> socket <span class="hk">import</span> *</span></span><span class="cl"><span class="lno">2</span><span class="cc">serverPort = <span class="hn">12000</span></span></span><span class="cl on"><span class="lno">3</span><span class="cc">serverSocket = <span class="hf">socket</span>(<span class="hu">AF_INET</span>, <span class="hu">SOCK_DGRAM</span>)</span><span class="mk">①</span></span><span class="cl on"><span class="lno">4</span><span class="cc">serverSocket.<span class="hf">bind</span>((<span class="hs">&#x27;&#x27;</span>, serverPort))</span><span class="mk">②</span></span><span class="cl"><span class="lno">5</span><span class="cc"><span class="hk">print</span> (<span class="hs">&quot;The server is ready to receive&quot;</span>)</span></span><span class="cl on"><span class="lno">6</span><span class="cc"><span class="hk">while</span> <span class="hk">True</span>:</span><span class="mk">③</span></span><span class="cl on"><span class="lno">7</span><span class="cc">    message, clientAddress = serverSocket.<span class="hf">recvfrom</span>(<span class="hn">2048</span>)</span><span class="mk">④</span></span><span class="cl"><span class="lno">8</span><span class="cc">    modifiedMessage = message.<span class="hf">decode</span>().<span class="hf">upper</span>()</span></span><span class="cl on"><span class="lno">9</span><span class="cc">    serverSocket.<span class="hf">sendto</span>(modifiedMessage.<span class="hf">encode</span>(),</span><span class="mk">⑤</span></span><span class="cl"><span class="lno">10</span><span class="cc">                        clientAddress)</span></span></pre></div>
+  <div><ol class="notes"><li><span class="mk big">①</span><div><span class="en">create UDP socket</span><span class="ko">클라이언트와 동일하게 <code>SOCK_DGRAM</code>(UDP) 소켓 생성.</span></div></li><li><span class="mk big">②</span><div><span class="en">bind socket to local port number 12000</span><span class="ko"><code>bind(('', 12000))</code> — 포트 12000을 소켓에 명시적으로 할당. 이 포트로 오는 패킷이 이 소켓으로 전달된다.</span></div></li><li><span class="mk big">③</span><div><span class="en">loop forever</span><span class="ko">서버는 계속 요청을 기다리며 무한 반복.</span></div></li><li><span class="mk big">④</span><div><span class="en">Read from UDP socket into message, getting client&#x27;s address (client IP and port)</span><span class="ko"><code>recvfrom()</code>이 반환한 <b>clientAddress</b>(클라이언트 IP, 포트)를 저장 → 응답 목적지로 사용.</span></div></li><li><span class="mk big">⑤</span><div><span class="en">send upper case string back to this client</span><span class="ko">대문자로 변환한 문자열을 <code>sendto(…, clientAddress)</code>로 해당 클라이언트에게 돌려보낸다.</span></div></li></ol></div>
+</div>
+</section>
+
+<!-- 07 -->
+<section class="sec" id="s07">
+<div class="sec-head"><span class="num">07</span><h2>TCP 소켓 프로그래밍</h2><span class="slide">Slide 8</span></div>
+<div class="card split wide">
+  <div>
+    <span class="label">서버 준비</span>
+    <ul class="bl">
+      <li>서버 프로세스가 <b>먼저 실행</b></li>
+      <li>서버는 클라이언트로부터 초기 접속을 처리하는 소켓을 가져야 함 — <b style="color:var(--udp)">서버소켓</b></li>
+    </ul>
+    <span class="label">클라이언트 프로세스는 서버에게 TCP 연결 시작</span>
+    <ul class="bl">
+      <li>클라이언트는 소켓 객체를 생성</li>
+      <li>소켓 객체 생성 시 <b>서버의 IP 주소와 프로세스의 포트번호</b>를 명시</li>
+      <li>클라이언트가 소켓을 생성 시 클라이언트 TCP는 서버 TCP와 <b>3방향 핸드세이크</b>로 연결을 설정</li>
+      <li>클라이언트가 연결을 요청하면 서버는 클라이언트와의 통신을 위한 <b>새로운 소켓</b>을 생성 — <b style="color:var(--tcp)">연결소켓</b></li>
+    </ul>
+  </div>
+  <div class="fig"><svg viewBox="0 0 680 350" class="dg" role="img" aria-label="서버소켓(welcoming)과 연결소켓">
+<defs>
+<marker id="w-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker>
+<marker id="w-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mr"/></marker>
+<marker id="w-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mg"/></marker>
+<marker id="w-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="my"/></marker>
+</defs>
+<rect x="20" y="30" width="330" height="296" rx="10" class="host srv"/>
+<text x="36" y="56" class="lt b srvc">server process</text>
+<text x="36" y="78" class="tc sm2">serverSocket.bind(('',12000))</text>
+<text x="36" y="96" class="tc sm2">serverSocket.listen(1)</text>
+<rect x="186" y="114" width="164" height="40" rx="6" class="sk wel"/>
+<text x="268.0" y="131" class="lt c sm b">serverSocket</text><text x="268.0" y="147" class="lt c sm">(서버소켓 · welcoming)</text>
+<rect x="186" y="200" width="164" height="40" rx="6" class="sk con"/>
+<text x="268.0" y="217" class="lt c sm b">connectionSocket</text><text x="268.0" y="233" class="lt c sm">(연결소켓 · client A)</text>
+<rect x="186" y="270" width="164" height="40" rx="6" class="sk con"/>
+<text x="268.0" y="287" class="lt c sm b">connectionSocket</text><text x="268.0" y="303" class="lt c sm">(연결소켓 · client B)</text>
+<line x1="268.0" y1="155" x2="268.0" y2="198" class="lg" marker-end="url(#w-g)"/>
+<path d="M186,134 H170 V290 H184" class="lg dash2" marker-end="url(#w-g)"/>
+<text x="34" y="200" class="lt sm conc">② accept() 반환 시</text><text x="34" y="217" class="lt sm conc">새 소켓 생성</text>
+<rect x="500" y="150" width="160" height="72" rx="10" class="host cli"/>
+<text x="580" y="172" class="lt c b clic">client A</text>
+<rect x="470" y="184" width="120" height="28" rx="6" class="sk cl"/>
+<text x="530" y="203" class="lt c sm b">clientSocket</text>
+<rect x="500" y="250" width="160" height="72" rx="10" class="host cli"/>
+<text x="580" y="272" class="lt c b clic">client B</text>
+<rect x="470" y="284" width="120" height="28" rx="6" class="sk cl"/>
+<text x="530" y="303" class="lt c sm b">clientSocket</text>
+<path d="M470,192 C430,160 400,134 354,132" class="lr dash" marker-end="url(#w-r)"/>
+<text x="430" y="104" class="lt c sm msg">① connect()</text><text x="430" y="120" class="lt c sm msg">3-way handshake</text>
+<path d="M470,292 C440,240 410,160 354,146" class="lr dash faint" marker-end="url(#w-r)"/>
+<line x1="352" y1="222" x2="468" y2="198" class="ld" marker-start="url(#w-y)" marker-end="url(#w-y)"/>
+<line x1="352" y1="290" x2="468" y2="298" class="ld" marker-start="url(#w-y)" marker-end="url(#w-y)"/>
+<text x="410" y="258" class="lt c sm loopt">③ send / recv</text>
+</svg><div class="cap">서버소켓(welcoming)은 1개 · 연결소켓은 클라이언트마다 1개</div></div>
+</div>
+</section>
+
+<!-- 08 -->
+<section class="sec" id="s08">
+<div class="sec-head"><span class="num">08</span><h2>TCP 상호작용 흐름</h2><span class="slide">Slide 9</span></div>
+<div class="card split wide">
+  <div>
+    <p class="lead">TCP는 데이터를 보내기 전에 <b>연결 설정(connection setup)</b>이 먼저 일어난다.</p>
+    <ol class="steps">
+      <li><span class="who ws">server</span>들어올 요청을 위한 소켓 생성, <b>port = x</b> : <code>serverSocket = socket()</code></li>
+      <li><span class="who ws">server</span>연결 요청 대기 : <code>connectionSocket = serverSocket.accept()</code></li>
+      <li><span class="who wc">client</span>소켓 생성 후 <b>hostid, port = x</b>로 connect → <b>TCP connection setup</b></li>
+      <li><span class="who wc">client</span><code>clientSocket</code>으로 요청 전송</li>
+      <li><span class="who ws">server</span><code>connectionSocket</code>에서 요청 읽기 → 응답 쓰기</li>
+      <li><span class="who wc">client</span><code>clientSocket</code>에서 응답 읽기 → close</li>
+      <li><span class="who ws">server</span><code>connectionSocket</code> close</li>
+    </ol>
+    <div class="callout tcp">서버의 읽기/쓰기는 <b>serverSocket이 아니라 connectionSocket</b>으로 이루어진다.</div>
+  </div>
+  <div class="fig"><svg viewBox="0 0 680 580" class="dg" role="img" aria-label="TCP 클라이언트/서버 소켓 상호작용">
+<defs>
+<marker id="t-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker>
+<marker id="t-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mr"/></marker>
+<marker id="t-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mg"/></marker>
+<marker id="t-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="my"/></marker>
+</defs>
+<text x="167.0" y="34" class="hd c srvc">server <tspan class="sm">(running on hostid)</tspan></text>
+<text x="537.0" y="34" class="hd c clic">client</text>
+<rect x="44" y="55" width="246" height="65" rx="7" class="bx srv"/>
+<text x="54" y="76" class="tt">create socket,</text>
+<text x="54" y="93" class="tt">port=x, for incoming request:</text>
+<text x="54" y="110" class="tc">serverSocket = socket()</text>
+<rect x="44" y="160" width="246" height="82" rx="7" class="bx srv"/>
+<text x="54" y="181" class="tt">wait for incoming</text>
+<text x="54" y="198" class="tt">connection request</text>
+<text x="54" y="215" class="tc">connectionSocket =</text>
+<text x="54" y="232" class="tc">serverSocket.accept()</text>
+<rect x="414" y="168" width="246" height="65" rx="7" class="bx cli"/>
+<text x="424" y="189" class="tt">create socket,</text>
+<text x="424" y="206" class="tt">connect to hostid, port=x</text>
+<text x="424" y="223" class="tc">clientSocket = socket()</text>
+<rect x="414" y="280" width="246" height="48" rx="7" class="bx cli"/>
+<text x="424" y="301" class="tt">send request using</text>
+<text x="424" y="318" class="tc">clientSocket</text>
+<rect x="44" y="295" width="246" height="48" rx="7" class="bx srv"/>
+<text x="54" y="316" class="tt">read request from</text>
+<text x="54" y="333" class="tc">connectionSocket</text>
+<rect x="44" y="380" width="246" height="48" rx="7" class="bx srv"/>
+<text x="54" y="401" class="tt">write reply to</text>
+<text x="54" y="418" class="tc">connectionSocket</text>
+<rect x="414" y="415" width="246" height="48" rx="7" class="bx cli"/>
+<text x="424" y="436" class="tt">read reply from</text>
+<text x="424" y="453" class="tc">clientSocket</text>
+<rect x="44" y="470" width="246" height="48" rx="7" class="bx srv"/>
+<text x="54" y="491" class="tt">close</text>
+<text x="54" y="508" class="tc">connectionSocket</text>
+<rect x="414" y="500" width="246" height="48" rx="7" class="bx cli"/>
+<text x="424" y="521" class="tt">close</text>
+<text x="424" y="538" class="tc">clientSocket</text>
+<line x1="167.0" y1="120" x2="167.0" y2="158" class="lb" marker-end="url(#t-b)"/>
+<line x1="167.0" y1="242" x2="167.0" y2="293" class="lb" marker-end="url(#t-b)"/>
+<line x1="167.0" y1="343" x2="167.0" y2="378" class="lb" marker-end="url(#t-b)"/>
+<line x1="167.0" y1="428" x2="167.0" y2="468" class="lb" marker-end="url(#t-b)"/>
+<line x1="537.0" y1="233" x2="537.0" y2="278" class="lb" marker-end="url(#t-b)"/>
+<line x1="537.0" y1="328" x2="537.0" y2="413" class="lb" marker-end="url(#t-b)"/>
+<line x1="537.0" y1="463" x2="537.0" y2="498" class="lb" marker-end="url(#t-b)"/>
+<line x1="292" y1="205" x2="412" y2="205" class="lr dash" marker-start="url(#t-r)" marker-end="url(#t-r)"/>
+<text x="352" y="180" class="lt c b msg">TCP</text>
+<text x="352" y="196" class="lt c msg">connection setup</text>
+<text x="352" y="224" class="lt c sm dim">3-way handshake</text>
+<line x1="414" y1="304" x2="292" y2="324" class="lr" marker-end="url(#t-r)"/>
+<line x1="290" y1="404" x2="412" y2="440" class="lr" marker-end="url(#t-r)"/>
+<text x="352" y="296" class="lt c sm msg">request</text>
+<text x="352" y="402" class="lt c sm msg">reply</text>
+<path d="M44,494 H24 V201 H42" class="loop" marker-end="url(#t-y)"/>
+<text x="16" y="350" class="lt sm loopt" transform="rotate(-90 16 350)" text-anchor="middle">while True: 다음 클라이언트</text>
+</svg><div class="cap">Slide 9 재구성 — 점선: TCP 연결 설정, 노란 점선: 서버 루프</div></div>
+</div>
+</section>
+
+<!-- 09 -->
+<section class="sec" id="s09">
+<div class="sec-head"><span class="num">09</span><h2>TCP Client 코드</h2><span class="slide">Slide 10</span></div>
+<div class="card split code-split">
+  <div class="code"><div class="code-title"><span class="dots"><i></i><i></i><i></i></span>TCPClient.py</div><pre><span class="cl"><span class="lno">1</span><span class="cc"><span class="hk">from</span> socket <span class="hk">import</span> *</span></span><span class="cl"><span class="lno">2</span><span class="cc"> </span></span><span class="cl"><span class="lno">3</span><span class="cc">serverName = <span class="hs">&#x27;servername&#x27;</span></span></span><span class="cl"><span class="lno">4</span><span class="cc">serverPort = <span class="hn">12000</span></span></span><span class="cl"><span class="lno">5</span><span class="cc"> </span></span><span class="cl on"><span class="lno">6</span><span class="cc">clientSocket = <span class="hf">socket</span>(<span class="hu">AF_INET</span>, <span class="hu">SOCK_STREAM</span>)</span><span class="mk">①</span></span><span class="cl on"><span class="lno">7</span><span class="cc">clientSocket.<span class="hf">connect</span>((serverName,serverPort))</span><span class="mk">②</span></span><span class="cl"><span class="lno">8</span><span class="cc"> </span></span><span class="cl"><span class="lno">9</span><span class="cc">sentence = <span class="hf">raw_input</span>(<span class="hs">&#x27;Input lowercase sentence:&#x27;</span>)</span></span><span class="cl on"><span class="lno">10</span><span class="cc">clientSocket.<span class="hf">send</span>(sentence.<span class="hf">encode</span>())</span><span class="mk">③</span></span><span class="cl on"><span class="lno">11</span><span class="cc">modifiedSentence = clientSocket.<span class="hf">recv</span>(<span class="hn">1024</span>)</span><span class="mk">④</span></span><span class="cl"><span class="lno">12</span><span class="cc"> </span></span><span class="cl"><span class="lno">13</span><span class="cc"><span class="hk">print</span> (<span class="hs">&#x27;From Server:&#x27;</span>, modifiedSentence.<span class="hf">decode</span>())</span></span><span class="cl"><span class="lno">14</span><span class="cc">clientSocket.<span class="hf">close</span>()</span></span></pre></div>
+  <div><ol class="notes"><li><span class="mk big">①</span><div><span class="en">create TCP socket for server, remote port 12000</span><span class="ko"><code>SOCK_STREAM</code> = <b>TCP</b> 소켓.</span></div></li><li><span class="mk big">②</span><div><span class="ko"><code>connect()</code> — 이 시점에 클라이언트 TCP가 서버 TCP와 <b>3방향 핸드세이크</b>로 연결을 설정한다.</span></div></li><li><span class="mk big">③</span><div><span class="en">No need to attach server name, port</span><span class="ko">이미 연결이 설정되었으므로 <code>send()</code>에는 목적지 주소가 필요 없다 (UDP의 <code>sendto()</code>와 대비).</span></div></li><li><span class="mk big">④</span><div><span class="ko"><code>recv(1024)</code> — 데이터만 반환 (주소 없음).</span></div></li></ol></div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="sec" id="s10">
+<div class="sec-head"><span class="num">10</span><h2>TCP Server 코드</h2><span class="slide">Slide 11</span></div>
+<div class="card split code-split">
+  <div class="code"><div class="code-title"><span class="dots"><i></i><i></i><i></i></span>TCPServer.py</div><pre><span class="cl"><span class="lno">1</span><span class="cc"><span class="hk">from</span> socket <span class="hk">import</span> *</span></span><span class="cl"><span class="lno">2</span><span class="cc">serverPort = <span class="hn">12000</span></span></span><span class="cl on"><span class="lno">3</span><span class="cc">serverSocket = <span class="hf">socket</span>(<span class="hu">AF_INET</span>,<span class="hu">SOCK_STREAM</span>)</span><span class="mk">①</span></span><span class="cl"><span class="lno">4</span><span class="cc">serverSocket.<span class="hf">bind</span>((<span class="hs">&#x27;&#x27;</span>,serverPort))</span></span><span class="cl"><span class="lno">5</span><span class="cc"> </span></span><span class="cl on"><span class="lno">6</span><span class="cc">serverSocket.<span class="hf">listen</span>(<span class="hn">1</span>)</span><span class="mk">②</span></span><span class="cl"><span class="lno">7</span><span class="cc"><span class="hk">print</span> (<span class="hs">&#x27;The server is ready to receive&#x27;</span>)</span></span><span class="cl"><span class="lno">8</span><span class="cc"> </span></span><span class="cl on"><span class="lno">9</span><span class="cc"><span class="hk">while</span> <span class="hk">True</span>:</span><span class="mk">③</span></span><span class="cl on"><span class="lno">10</span><span class="cc">    connectionSocket, addr = serverSocket.<span class="hf">accept</span>()</span><span class="mk">④</span></span><span class="cl"><span class="lno">11</span><span class="cc"> </span></span><span class="cl on"><span class="lno">12</span><span class="cc">    sentence = connectionSocket.<span class="hf">recv</span>(<span class="hn">1024</span>).<span class="hf">decode</span>()</span><span class="mk">⑤</span></span><span class="cl"><span class="lno">13</span><span class="cc">    capitalizedSentence = sentence.<span class="hf">upper</span>()</span></span><span class="cl"><span class="lno">14</span><span class="cc">    connectionSocket.<span class="hf">send</span>(capitalizedSentence.</span></span><span class="cl"><span class="lno">15</span><span class="cc">                                            <span class="hf">encode</span>())</span></span><span class="cl on"><span class="lno">16</span><span class="cc">    connectionSocket.<span class="hf">close</span>()</span><span class="mk">⑥</span></span></pre></div>
+  <div><ol class="notes"><li><span class="mk big">①</span><div><span class="en">create TCP welcoming socket</span><span class="ko">초기 접속을 받는 <b>서버소켓(welcoming socket)</b> 생성 후 포트 12000에 bind.</span></div></li><li><span class="mk big">②</span><div><span class="en">server begins listening for incoming TCP requests</span><span class="ko"><code>listen(1)</code> — 연결 요청 대기 시작 (대기 큐 최대 1).</span></div></li><li><span class="mk big">③</span><div><span class="en">loop forever</span><span class="ko">무한 반복.</span></div></li><li><span class="mk big">④</span><div><span class="en">server waits on accept() for incoming requests, new socket created on return</span><span class="ko"><code>accept()</code>는 요청이 올 때까지 대기하고, 반환 시 해당 클라이언트 전용 <b>connectionSocket(연결소켓)</b>을 새로 만든다.</span></div></li><li><span class="mk big">⑤</span><div><span class="en">read bytes from socket (but not address as in UDP)</span><span class="ko"><code>recv()</code>는 바이트만 읽는다 — UDP의 <code>recvfrom()</code>처럼 주소를 받지 않는다.</span></div></li><li><span class="mk big">⑥</span><div><span class="en">close connection to this client (but not welcoming socket)</span><span class="ko">닫는 것은 <b>connectionSocket</b>뿐. serverSocket(welcoming)은 열린 채로 다음 클라이언트를 받는다.</span></div></li></ol></div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="sec" id="s11">
+<div class="sec-head"><span class="num">11</span><h2>Webserver 예제</h2><span class="slide">Slide 12–14</span></div>
+<div class="card split wide">
+  <div>
+    <p class="lead">TCP 소켓으로 만든 간단한 <b>HTTP 웹서버</b>. 포트 <b>6789</b>에서 요청을 받아, 요청한 파일을 <b>200 OK</b>로 보내거나 없으면 <b>404 Not Found</b>를 보낸다.</p>
+    <span class="label">요청 파일명 추출 — <code>message.split()[1]</code></span>
+    <div class="tok"><span>GET</span><span class="hit">/index.html</span><span>HTTP/1.1</span><em>… ← split() 결과 [0] [1] [2]</em></div>
+    <div class="tok"><em>filename[1:] →</em><span class="hit">index.html</span><em>( 맨 앞 '/' 제거 후 open )</em></div>
+    <span class="label">Content-Type 결정</span>
+    <div class="tbl-wrap" style="margin-top:4px">
+      <table style="min-width:0">
+        <tr><th>확장자</th><th>filetype</th></tr>
+        <tr><td><code>.jpg</code></td><td><code>image/jpg</code></td></tr>
+        <tr><td><code>.mp4</code></td><td><code>video/mp4</code></td></tr>
+        <tr><td>그 외</td><td><code>text/html</code></td></tr>
+      </table>
+    </div>
+    <span class="label">응답 형식</span>
+    <div class="code"><pre><span class="cl"><span class="lno"></span><span class="hs">HTTP/1.1 200 OK</span></span><span class="cl"><span class="lno"></span><span class="hs">Content-Type: text/html</span></span><span class="cl"><span class="lno"></span><span class="hc">(빈 줄 — '\n\n')</span></span><span class="cl"><span class="lno"></span>&lt;파일 내용 = response&gt;</span></pre></div>
+  </div>
+  <div class="fig"><svg viewBox="0 0 640 610" class="dg" role="img" aria-label="웹서버 예제 처리 흐름">
+<defs>
+<marker id="h-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mb"/></marker>
+<marker id="h-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mr"/></marker>
+<marker id="h-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mg"/></marker>
+<marker id="h-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="my"/></marker>
+</defs>
+<rect x="46" y="20" width="340" height="48" rx="7" class="bx srv"/>
+<text x="56" y="41" class="tc">serverSocket = socket(AF_INET, SOCK_STREAM)</text>
+<text x="56" y="58" class="tc">bind((&#x27;&#x27;, 6789))  ·  listen(1)</text>
+<rect x="46" y="95" width="340" height="48" rx="7" class="bx srv"/>
+<text x="56" y="116" class="tc">connectionSocket, addr =</text>
+<text x="56" y="133" class="tc">              serverSocket.accept()</text>
+<rect x="46" y="170" width="340" height="48" rx="7" class="bx srv"/>
+<text x="56" y="191" class="tc">message = connectionSocket.recv(2048)</text>
+<text x="56" y="208" class="tc">                  .decode()</text>
+<rect x="46" y="245" width="340" height="31" rx="7" class="bx srv"/>
+<text x="56" y="266" class="tc">filename = message.split()[1]</text>
+<polygon points="66,340 216.0,304 366,340 216.0,376" class="bx dec"/>
+<text x="216.0" y="336" class="tc c">open(filename[1:],'rb')</text>
+<text x="216.0" y="354" class="lt c sm">파일 열기 성공?</text>
+<rect x="46" y="405" width="340" height="65" rx="7" class="bx ok"/>
+<text x="56" y="426" class="tc">header = &#x27;HTTP/1.1 200 OK\n&#x27;</text>
+<text x="56" y="443" class="tt">+ Content-Type:</text>
+<text x="56" y="460" class="tt">image/jpg · video/mp4 · text/html</text>
+<rect x="46" y="495" width="340" height="48" rx="7" class="bx ok"/>
+<text x="56" y="516" class="tc">send(header.encode())</text>
+<text x="56" y="533" class="tc">send(response)  →  close()</text>
+<rect x="410" y="405" width="214" height="65" rx="7" class="bx err"/>
+<text x="420" y="426" class="tc">except IOError:</text>
+<text x="420" y="443" class="tc">&#x27;HTTP/1.1 404 Not Found&#x27;</text>
+<text x="420" y="460" class="tt">+ Error 404 HTML 본문</text>
+<rect x="410" y="495" width="214" height="65" rx="7" class="bx err"/>
+<text x="420" y="516" class="tc">send(header.encode())</text>
+<text x="420" y="533" class="tc">send(response)</text>
+<text x="420" y="550" class="tc">close()</text>
+<line x1="216.0" y1="68" x2="216.0" y2="93" class="lb" marker-end="url(#h-b)"/>
+<line x1="216.0" y1="143" x2="216.0" y2="168" class="lb" marker-end="url(#h-b)"/>
+<line x1="216.0" y1="218" x2="216.0" y2="243" class="lb" marker-end="url(#h-b)"/>
+<line x1="216.0" y1="276" x2="216.0" y2="302" class="lb" marker-end="url(#h-b)"/>
+<line x1="216.0" y1="376" x2="216.0" y2="403" class="lb" marker-end="url(#h-b)"/>
+<line x1="216.0" y1="470" x2="216.0" y2="493" class="lb" marker-end="url(#h-b)"/>
+<text x="224.0" y="394" class="lt sm conc">성공</text>
+<path d="M366,340 H517.0 V403" class="lr" marker-end="url(#h-r)"/>
+<text x="511.0" y="332" class="lt sm msg" text-anchor="end">실패 (IOError)</text>
+<line x1="517.0" y1="470" x2="517.0" y2="493" class="lb" marker-end="url(#h-b)"/>
+<path d="M216.0,543 V585 H24 V119 H44" class="loop" marker-end="url(#h-y)"/>
+<path d="M517.0,560 V585 H216.0" class="loop"/>
+<text x="16" y="360" class="lt sm loopt" transform="rotate(-90 16 360)" text-anchor="middle">while True: 다음 요청 대기</text>
+</svg><div class="cap">Slide 12–14 코드의 처리 흐름</div></div>
+</div>
+<div class="card split code-split">
+  <div class="code"><div class="code-title"><span class="dots"><i></i><i></i><i></i></span>WebServer.py  ·  Slide 12</div><pre><span class="cl"><span class="lno">1</span><span class="cc"><span class="hc"># Import socket module</span></span></span><span class="cl"><span class="lno">2</span><span class="cc"><span class="hk">from</span> socket <span class="hk">import</span> *</span></span><span class="cl"><span class="lno">3</span><span class="cc"><span class="hk">import</span> sys <span class="hc"># In order to terminate the program</span></span></span><span class="cl"><span class="lno">4</span><span class="cc"> </span></span><span class="cl on"><span class="lno">5</span><span class="cc">serverSocket = <span class="hf">socket</span>(<span class="hu">AF_INET</span>, <span class="hu">SOCK_STREAM</span>)</span><span class="mk">①</span></span><span class="cl"><span class="lno">6</span><span class="cc"> </span></span><span class="cl"><span class="lno">7</span><span class="cc"><span class="hc"># Assign a port number</span></span></span><span class="cl on"><span class="lno">8</span><span class="cc">serverPort = <span class="hn">6789</span></span><span class="mk">②</span></span><span class="cl"><span class="lno">9</span><span class="cc"> </span></span><span class="cl"><span class="lno">10</span><span class="cc"><span class="hc"># Bind the socket to server address and server port</span></span></span><span class="cl"><span class="lno">11</span><span class="cc">serverSocket.<span class="hf">bind</span>((<span class="hs">&#x27;&#x27;</span>, serverPort))</span></span><span class="cl"><span class="lno">12</span><span class="cc"> </span></span><span class="cl"><span class="lno">13</span><span class="cc"><span class="hc"># Listen to at most 1 connection at a time</span></span></span><span class="cl on"><span class="lno">14</span><span class="cc">serverSocket.<span class="hf">listen</span>(<span class="hn">1</span>)</span><span class="mk">③</span></span><span class="cl"><span class="lno">15</span><span class="cc"> </span></span><span class="cl"><span class="lno">16</span><span class="cc"><span class="hc"># Server should be up and running and listening to the incoming connections</span></span></span><span class="cl"><span class="lno">17</span><span class="cc"> </span></span><span class="cl"><span class="lno">18</span><span class="cc"><span class="hk">while</span> <span class="hk">True</span>:</span></span><span class="cl"><span class="lno">19</span><span class="cc">    <span class="hk">print</span>(<span class="hs">&#x27;The server is ready to receive&#x27;</span>)</span></span><span class="cl"><span class="lno">20</span><span class="cc"> </span></span><span class="cl"><span class="lno">21</span><span class="cc">    <span class="hc"># Set up a new connection from the client</span></span></span><span class="cl on"><span class="lno">22</span><span class="cc">    connectionSocket, addr = serverSocket.<span class="hf">accept</span>()</span><span class="mk">④</span></span><span class="cl"><span class="lno">23</span><span class="cc"> </span></span><span class="cl"><span class="lno">24</span><span class="cc">    <span class="hk">try</span>:</span></span><span class="cl"><span class="lno">25</span><span class="cc">        <span class="hc"># Receives the request message from the client</span></span></span><span class="cl on"><span class="lno">26</span><span class="cc">        message = connectionSocket.<span class="hf">recv</span>(<span class="hn">2048</span>).<span class="hf">decode</span>()</span><span class="mk">⑤</span></span><span class="cl"><span class="lno">27</span><span class="cc">        <span class="hk">print</span>(message)</span></span><span class="cl div"><span class="divtag">Slide 13 ↓</span></span><span class="cl on"><span class="lno">28</span><span class="cc">        filename = message.<span class="hf">split</span>()[<span class="hn">1</span>]</span><span class="mk">⑥</span></span><span class="cl"><span class="lno">29</span><span class="cc">        <span class="hk">print</span>(filename)</span></span><span class="cl"><span class="lno">30</span><span class="cc"> </span></span><span class="cl on"><span class="lno">31</span><span class="cc">        myfile = <span class="hf">open</span>(filename[<span class="hn">1</span>:],<span class="hs">&#x27;rb&#x27;</span>)</span><span class="mk">⑦</span></span><span class="cl"><span class="lno">32</span><span class="cc">        response = myfile.<span class="hf">read</span>()</span></span><span class="cl"><span class="lno">33</span><span class="cc">        myfile.<span class="hf">close</span>()</span></span><span class="cl"><span class="lno">34</span><span class="cc"> </span></span><span class="cl"><span class="lno">35</span><span class="cc">        <span class="hc"># Send the HTTP response header line to the connection socket</span></span></span><span class="cl on"><span class="lno">36</span><span class="cc">        header = <span class="hs">&#x27;HTTP/1.1 200 OK\n&#x27;</span></span><span class="mk">⑧</span></span><span class="cl"><span class="lno">37</span><span class="cc"> </span></span><span class="cl on"><span class="lno">38</span><span class="cc">        <span class="hk">if</span>(filename.<span class="hf">endswith</span>(<span class="hs">&quot;.jpg&quot;</span>)):</span><span class="mk">⑨</span></span><span class="cl"><span class="lno">39</span><span class="cc">            filetype = <span class="hs">&#x27;image/jpg&#x27;</span></span></span><span class="cl"><span class="lno">40</span><span class="cc">        <span class="hk">elif</span>(filename.<span class="hf">endswith</span>(<span class="hs">&quot;.mp4&quot;</span>)):</span></span><span class="cl"><span class="lno">41</span><span class="cc">            filetype = <span class="hs">&#x27;video/mp4&#x27;</span></span></span><span class="cl"><span class="lno">42</span><span class="cc">        <span class="hk">else</span>:</span></span><span class="cl"><span class="lno">43</span><span class="cc">            filetype = <span class="hs">&#x27;text/html&#x27;</span></span></span><span class="cl"><span class="lno">44</span><span class="cc"> </span></span><span class="cl on"><span class="lno">45</span><span class="cc">        header += <span class="hs">&#x27;Content-Type: &#x27;</span>+<span class="hf">str</span>(filetype)+<span class="hs">&#x27;\n\n&#x27;</span></span><span class="mk">⑩</span></span><span class="cl"><span class="lno">46</span><span class="cc">        <span class="hk">print</span>(header)</span></span><span class="cl"><span class="lno">47</span><span class="cc"> </span></span><span class="cl on"><span class="lno">48</span><span class="cc">        connectionSocket.<span class="hf">send</span>(header.<span class="hf">encode</span>())</span><span class="mk">⑪</span></span><span class="cl"><span class="lno">49</span><span class="cc">        connectionSocket.<span class="hf">send</span>(response)</span></span><span class="cl"><span class="lno">50</span><span class="cc">        connectionSocket.<span class="hf">close</span>()</span></span><span class="cl div"><span class="divtag">Slide 14 ↓</span></span><span class="cl"><span class="lno">51</span><span class="cc">    <span class="hk">except</span> IOError:</span></span><span class="cl on"><span class="lno">52</span><span class="cc">        header = <span class="hs">&#x27;HTTP/1.1 404 Not Found\n\n&#x27;</span></span><span class="mk">⑫</span></span><span class="cl"><span class="lno">53</span><span class="cc">        response = <span class="hs">&#x27;&lt;html&gt;&lt;body&gt;&lt;center&gt;&lt;h3&gt;Error 404: File not found&lt;/h3&gt;</span></span></span><span class="cl"><span class="lno">54</span><span class="cc"><span class="hs">            &lt;p&gt;Python HTTP Server&lt;/p&gt;&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&#x27;</span>.<span class="hf">encode</span>()</span></span><span class="cl"><span class="lno">55</span><span class="cc"> </span></span><span class="cl"><span class="lno">56</span><span class="cc">        <span class="hk">print</span>(header)</span></span><span class="cl"><span class="lno">57</span><span class="cc">        connectionSocket.<span class="hf">send</span>(header.<span class="hf">encode</span>())</span></span><span class="cl"><span class="lno">58</span><span class="cc">        connectionSocket.<span class="hf">send</span>(response)</span></span><span class="cl"><span class="lno">59</span><span class="cc">        connectionSocket.<span class="hf">close</span>()</span></span><span class="cl"><span class="lno">60</span><span class="cc"> </span></span><span class="cl"><span class="lno">61</span><span class="cc">serverSocket.<span class="hf">close</span>()</span></span><span class="cl"><span class="lno">62</span><span class="cc">sys.<span class="hf">exit</span>()</span></span></pre></div>
+  <div><ol class="notes"><li><span class="mk big">①</span><div><span class="ko"><code>SOCK_STREAM</code> — HTTP는 TCP 위에서 동작하므로 TCP 소켓을 만든다.</span></div></li><li><span class="mk big">②</span><div><span class="ko">서버 포트 <b>6789</b>.</span></div></li><li><span class="mk big">③</span><div><span class="ko"><code>listen(1)</code> — 한 번에 최대 1개의 연결 요청을 대기.</span></div></li><li><span class="mk big">④</span><div><span class="ko"><code>accept()</code> — 브라우저(클라이언트)가 접속하면 <b>connectionSocket</b> 생성.</span></div></li><li><span class="mk big">⑤</span><div><span class="ko"><code>recv(2048).decode()</code> — 브라우저가 보낸 <b>HTTP 요청 메시지</b>를 문자열로 받는다.</span></div></li><li><span class="mk big">⑥</span><div><span class="ko">요청 라인을 공백으로 분리 → <code>[1]</code>번째 토큰이 요청한 파일 경로 (예: <code>/index.html</code>).</span></div></li><li><span class="mk big">⑦</span><div><span class="ko"><code>filename[1:]</code>로 앞의 <code>/</code>를 떼고, <code>'rb'</code>(바이너리 읽기)로 연다 → 이미지·영상도 그대로 전송 가능.</span></div></li><li><span class="mk big">⑧</span><div><span class="ko">상태 라인 <code>HTTP/1.1 200 OK</code> 작성.</span></div></li><li><span class="mk big">⑨</span><div><span class="ko">확장자에 따라 <b>Content-Type</b> 결정: <code>.jpg</code>→image/jpg, <code>.mp4</code>→video/mp4, 그 외 text/html.</span></div></li><li><span class="mk big">⑩</span><div><span class="ko">헤더 끝에 <code>\n\n</code>(빈 줄)을 붙여 헤더와 본문을 구분.</span></div></li><li><span class="mk big">⑪</span><div><span class="ko">헤더를 먼저 <code>send</code>하고, 이어서 파일 내용(response)을 보낸 뒤 연결소켓을 닫는다.</span></div></li><li><span class="mk big">⑫</span><div><span class="ko">파일이 없어 <code>open()</code>이 실패하면 <code>IOError</code> → <b>404 Not Found</b> 헤더와 오류 HTML 페이지를 보낸다.</span></div></li></ol></div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="sec" id="s12">
+<div class="sec-head"><span class="num">12</span><h2>UDP vs TCP 비교</h2><span class="slide">종합</span></div>
+<div class="card">
+  <span class="label">UDP vs TCP 소켓 프로그래밍</span>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>구분</th><th class="udp">UDP</th><th class="tcp">TCP</th></tr>
+    <tr><td>소켓 타입</td><td><code>SOCK_DGRAM</code></td><td><code>SOCK_STREAM</code></td></tr>
+    <tr><td>연결</td><td>비연결형 — 핸드세이크 없음</td><td>연결형 — <b>3방향 핸드세이크</b>로 연결 설정</td></tr>
+    <tr><td>서비스</td><td>unreliable datagram — 데이터 <b>손실될 수 있음</b></td><td>reliable, byte stream-oriented</td></tr>
+    <tr><td>목적지 지정</td><td>보낼 때마다 IP·포트를 붙임 : <code>sendto(data, (name, port))</code></td><td><code>connect()</code> 때 한 번 — <code>send(data)</code>에 주소 불필요</td></tr>
+    <tr><td>수신</td><td><code>recvfrom()</code> → (데이터, <b>송신자 주소</b>)</td><td><code>recv()</code> → 데이터만</td></tr>
+    <tr><td>서버 소켓</td><td>serverSocket <b>1개</b>로 모든 클라이언트 처리</td><td>서버소켓(welcoming) 1개 + 클라이언트별 <b>연결소켓</b></td></tr>
+    <tr><td>서버 응답 대상</td><td><code>sendto(…, clientAddress)</code></td><td><code>connectionSocket.send(…)</code></td></tr>
+    <tr><td>서버 종료 처리</td><td>루프 안에서 소켓을 닫지 않음</td><td><code>connectionSocket.close()</code> — welcoming 소켓은 유지</td></tr>
+  </table>
+  </div>
+</div>
+<div class="card">
+  <span class="label">예제 코드별 소켓 함수 사용</span>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>함수</th><th class="udp">UDP Client</th><th class="udp">UDP Server</th><th class="tcp">TCP Client</th><th class="tcp">TCP Server</th><th>역할</th></tr>
+    <tr><td><code>socket()</code></td><td class="ck y2">●</td><td class="ck y2">●</td><td class="ck y">●</td><td class="ck y">●</td><td>소켓 생성</td></tr>
+    <tr><td><code>bind()</code></td><td class="ck no">–</td><td class="ck y2">●</td><td class="ck no">–</td><td class="ck y">●</td><td>로컬 포트(12000) 할당</td></tr>
+    <tr><td><code>listen()</code></td><td class="ck no">–</td><td class="ck no">–</td><td class="ck no">–</td><td class="ck y">●</td><td>연결 요청 대기 시작</td></tr>
+    <tr><td><code>accept()</code></td><td class="ck no">–</td><td class="ck no">–</td><td class="ck no">–</td><td class="ck y">●</td><td>연결 수락 → 연결소켓 생성</td></tr>
+    <tr><td><code>connect()</code></td><td class="ck no">–</td><td class="ck no">–</td><td class="ck y">●</td><td class="ck no">–</td><td>서버와 TCP 연결 설정</td></tr>
+    <tr><td><code>sendto()</code></td><td class="ck y2">●</td><td class="ck y2">●</td><td class="ck no">–</td><td class="ck no">–</td><td>주소 지정 송신</td></tr>
+    <tr><td><code>recvfrom()</code></td><td class="ck y2">●</td><td class="ck y2">●</td><td class="ck no">–</td><td class="ck no">–</td><td>수신 + 송신자 주소</td></tr>
+    <tr><td><code>send()</code></td><td class="ck no">–</td><td class="ck no">–</td><td class="ck y">●</td><td class="ck y">●</td><td>연결된 상대에게 송신</td></tr>
+    <tr><td><code>recv()</code></td><td class="ck no">–</td><td class="ck no">–</td><td class="ck y">●</td><td class="ck y">●</td><td>연결된 상대로부터 수신</td></tr>
+    <tr><td><code>close()</code></td><td class="ck y2">●</td><td class="ck no">–</td><td class="ck y">●</td><td class="ck y">●</td><td>소켓 해지 (TCP 서버는 연결소켓)</td></tr>
+  </table>
+  </div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="sec" id="s13">
+<div class="sec-head"><span class="num">13</span><h2>핵심 요약</h2><span class="slide">종합</span></div>
+<div class="card">
+  <div class="sum-grid">
+    <div class="sum"><h4><i>01</i>소켓 = 문(door)</h4><p>응용 프로세스와 트랜스포트 프로토콜 사이의 인터페이스. 소켓 위는 개발자, 아래는 OS가 제어. Socket API는 1981년 BSD 4.1 UNIX에서 소개.</p></div>
+    <div class="sum"><h4><i>02</i>두 가지 서비스</h4><p>UDP(<code>SOCK_DGRAM</code>) = unreliable datagram, TCP(<code>SOCK_STREAM</code>) = reliable byte stream. <code>AF_INET</code>은 IPv4.</p></div>
+    <div class="sum"><h4><i>03</i>UDP = 비연결형</h4><p>핸드세이크 없음. 송신 측이 매 패킷에 IP·포트를 붙이고(<code>sendto</code>), 수신 측은 패킷에서 주소를 추출(<code>recvfrom</code>). 데이터 손실 가능.</p></div>
+    <div class="sum"><h4><i>04</i>TCP = 연결형</h4><p>서버가 먼저 실행되어 서버소켓으로 대기 → 클라이언트 소켓 생성 시 3방향 핸드세이크 → 서버는 <code>accept()</code>로 연결소켓 생성.</p></div>
+    <div class="sum"><h4><i>05</i>두 종류의 TCP 서버 소켓</h4><p>serverSocket(welcoming)은 초기 접속만 처리하고 계속 유지. 실제 데이터 송수신과 close는 클라이언트별 connectionSocket.</p></div>
+    <div class="sum"><h4><i>06</i>Webserver 예제</h4><p>TCP 6789 포트 → 요청 메시지 <code>split()[1]</code>로 파일명 추출 → 있으면 <b>200 OK</b> + Content-Type + 파일, 없으면(<code>IOError</code>) <b>404 Not Found</b>.</p></div>
+  </div>
+</div>
+</section>
+
+<footer>Chap 2. Application Layer (3) · 최승식 · 인천대학교 — 학습 정리</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var map={};links.forEach(function(a){map[a.getAttribute('data-id')]=a;});
+  var secs=[].slice.call(document.querySelectorAll('section.sec'));
+  var prog=document.getElementById('prog');
+  function setActive(id){
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('data-id')===id);});
+    var a=map[id];
+    if(a){var ol=a.closest('ol');
+      if(ol && ol.scrollWidth>ol.clientWidth){ol.scrollTo({left:a.offsetLeft-ol.clientWidth/2+a.offsetWidth/2,behavior:'smooth'});}
+    }
+  }
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.3, cur=secs[0].id;
+    for(var i=0;i<secs.length;i++){ if(secs[i].offsetTop<=y) cur=secs[i].id; }
+    if(window.innerHeight+window.scrollY>=document.body.scrollHeight-4) cur=secs[secs.length-1].id;
+    setActive(cur);
+    var h=document.body.scrollHeight-window.innerHeight;
+    if(prog) prog.style.width=(h>0?Math.min(100,window.scrollY/h*100):0)+'%';
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  window.addEventListener('resize',onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
