@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>셸코드와 메모리 구조 · 9주차1</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --page:#f1f5f9;
+    --card:#ffffff;
+    --ink:#1e293b;
+    --ink-soft:#475569;
+    --ink-mute:#64748b;
+    --line:#e2e8f0;
+    --brand:#4f46e5;
+    --brand-soft:#eef2ff;
+    --amber:#f59e0b;
+    --amber-bg:#fffbeb;
+    --amber-line:#fcd34d;
+    --amber-ink:#92400e;
+    --blue:#3b82f6;
+    --blue-bg:#eff6ff;
+    --blue-line:#bfdbfe;
+    --blue-ink:#1e40af;
+    --code-bg:#1e293b;
+    --code-ink:#e2e8f0;
+    --code-key:#c4b5fd;
+    --code-com:#64748b;
+    --code-str:#86efac;
+    --code-num:#fca5a5;
+    --radius:14px;
+    --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:var(--sans);
+    background:var(--page);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 60px;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+  /* Header */
+  header{
+    background:linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#4338ca 100%);
+    color:#fff;padding:34px 0 30px;margin-bottom:6px;
+  }
+  header .wrap{display:flex;flex-direction:column;gap:12px}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{
+    font-size:12px;font-weight:600;letter-spacing:.3px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    padding:4px 11px;border-radius:999px;color:#e0e7ff;
+  }
+  .chip.solid{background:#fbbf24;color:#78350f;border-color:transparent}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.25}
+  header p.sub{color:#c7d2fe;font-size:14.5px;max-width:680px}
+
+  /* Source line above tabs */
+  .srcline{
+    font-size:12.5px;color:var(--ink-mute);
+    display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+    padding:16px 2px 10px;
+  }
+  .srcline b{color:var(--ink-soft);font-weight:700}
+  .srcline .dot{width:4px;height:4px;border-radius:50%;background:var(--ink-mute);display:inline-block}
+
+  /* Tabs */
+  .tabs{
+    display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;
+    border-bottom:2px solid var(--line);scrollbar-width:thin;
+  }
+  .tab{
+    flex:0 0 auto;border:none;background:none;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:600;color:var(--ink-mute);
+    padding:11px 15px;border-radius:10px 10px 0 0;position:relative;white-space:nowrap;
+    transition:.15s;
+  }
+  .tab:hover{color:var(--ink);background:#fff}
+  .tab.active{color:var(--brand)}
+  .tab.active::after{
+    content:"";position:absolute;left:10px;right:10px;bottom:-2px;height:3px;
+    background:var(--brand);border-radius:3px;
+  }
+  .tab .n{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:6px;background:var(--line);
+    font-size:11.5px;margin-right:7px;color:var(--ink-soft);
+  }
+  .tab.active .n{background:var(--brand);color:#fff}
+
+  /* Panels */
+  .panel{display:none;animation:fade .25s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .panel-head{padding:24px 2px 6px}
+  .panel-head h2{font-size:21px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+  .panel-head .pg{font-size:11.5px;font-weight:700;color:var(--brand);background:var(--brand-soft);
+    padding:3px 9px;border-radius:7px;white-space:nowrap}
+  .panel-head p{color:var(--ink-soft);font-size:14px;margin-top:6px}
+
+  /* Cards */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-top:14px;
+  }
+  .card h3{font-size:16px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .card p{font-size:14.5px;color:var(--ink-soft);margin:6px 0}
+  .card ul{margin:8px 0 2px;padding-left:4px;list-style:none}
+  .card li{font-size:14.5px;color:var(--ink-soft);padding:4px 0 4px 22px;position:relative}
+  .card li::before{content:"›";position:absolute;left:6px;top:3px;color:var(--brand);font-weight:800}
+  .card .pgbadge{font-size:11px;font-weight:700;color:var(--ink-mute);background:#f1f5f9;
+    padding:2px 8px;border-radius:6px;margin-left:auto;white-space:nowrap}
+
+  .card.amber{background:var(--amber-bg);border-color:var(--amber-line)}
+  .card.amber h3{color:var(--amber-ink)}
+  .card.amber li::before{color:var(--amber)}
+  .card.amber .star{color:var(--amber)}
+  .card.amber .pgbadge{background:#fde68a;color:#92400e}
+
+  .card.blue{background:var(--blue-bg);border-color:var(--blue-line)}
+  .card.blue h3{color:var(--blue-ink)}
+  .card.blue li::before{color:var(--blue)}
+  .card.blue .pgbadge{background:#dbeafe;color:#1e40af}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+  .tag.imp{background:#fde68a;color:#92400e}
+  .tag.sup{background:#dbeafe;color:#1e40af}
+
+  /* Code */
+  pre{
+    background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:15px 17px;margin:12px 0 4px;overflow-x:auto;
+    font-family:var(--mono);font-size:13px;line-height:1.7;
+  }
+  pre .c{color:var(--code-com)}
+  pre .k{color:var(--code-key)}
+  pre .s{color:var(--code-str)}
+  pre .num{color:var(--code-num)}
+  pre .r{color:#fca5a5;font-weight:700}
+  pre .g{color:#86efac;font-weight:700}
+
+  /* Flow diagram */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0 4px}
+  .flow .step{
+    flex:1;min-width:120px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:12px 13px;text-align:center;
+  }
+  .flow .step .big{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--brand)}
+  .flow .step .lbl{font-size:12px;color:var(--ink-mute);margin-top:4px}
+  .flow .arrow{display:flex;align-items:center;justify-content:center;color:var(--ink-mute);
+    font-size:20px;padding:0 6px;flex:0 0 auto}
+
+  /* Memory diagram */
+  .memseg{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:14px 0 4px}
+  .memseg .row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .memseg .row:last-child{border-bottom:none}
+  .memseg .row .name{font-weight:700;font-size:14.5px;min-width:135px}
+  .memseg .row .desc{font-size:13px;color:var(--ink-mute);flex:1}
+  .memseg .row .addr{font-family:var(--mono);font-size:11.5px;color:var(--ink-mute)}
+  .memseg .s-stack{background:#fef2f2} .memseg .s-stack .name{color:#b91c1c}
+  .memseg .s-heap{background:#fff7ed} .memseg .s-heap .name{color:#c2410c}
+  .memseg .s-bss{background:#fefce8} .memseg .s-bss .name{color:#a16207}
+  .memseg .s-data{background:#f0fdf4} .memseg .s-data .name{color:#15803d}
+  .memseg .s-text{background:#eff6ff} .memseg .s-text .name{color:#1d4ed8}
+  .memseg .growlbl{font-size:11px;color:var(--ink-mute);text-align:center;padding:6px;font-style:italic;background:#f8fafc}
+
+  /* grid map */
+  .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  .vgrid .v{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .vgrid .v code{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink)}
+  .vgrid .v .arr{color:var(--ink-mute);margin:0 6px}
+  .vgrid .v .seg{font-weight:700;font-size:13.5px}
+  .vgrid .v .note{display:block;font-size:12px;color:var(--ink-mute);margin-top:4px}
+  .seg-stack{color:#b91c1c} .seg-heap{color:#c2410c} .seg-bss{color:#a16207} .seg-data{color:#15803d}
+
+  /* stack frame diagram */
+  .frame{border:2px solid var(--brand);border-radius:12px;overflow:hidden;margin:14px 0 4px;max-width:460px}
+  .frame .f{padding:10px 15px;border-bottom:1px dashed var(--line);font-size:13.5px;display:flex;justify-content:space-between;gap:10px}
+  .frame .f:last-child{border-bottom:none}
+  .frame .f .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-mute)}
+  .frame .f.hl{background:var(--brand-soft);font-weight:700}
+  .frame .f.ret{background:#fef2f2;color:#b91c1c;font-weight:600}
+  .frame .f.ebp{background:#eff6ff;color:#1d4ed8;font-weight:600}
+
+  .callout{font-size:13px;color:var(--ink-mute);margin-top:10px;padding-left:14px;border-left:3px solid var(--line)}
+
+  footer{text-align:center;color:var(--ink-mute);font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
+  @media(max-width:620px){
+    h1{font-size:23px}
+    .vgrid{grid-template-columns:1fr}
+    .flow .step{min-width:100%}
+    .flow .arrow{transform:rotate(90deg);padding:4px 0}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="chip-row">
+      <span class="chip solid">9주차1</span>
+      <span class="chip">시스템보안</span>
+      <span class="chip">Ch6 Shellcode · Ch7 Buffer Overflow</span>
+    </div>
+    <h1>셸코드와 메모리 구조</h1>
+    <p class="sub">셸코드에서 널바이트(NULL byte)를 제거하는 기법과, 그 배경이 되는 가상 메모리 구조·변수 저장 위치·함수 호출 스택 프레임을 정리합니다.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="srcline">
+    📄 <b>강의자료 매칭</b>
+    <span class="dot"></span> ch6_shellcode_v1.pdf <b>p.59~65</b>
+    <span class="dot"></span> ch7_bof_v1.pdf <b>p.2~7</b>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-i="0"><span class="n">1</span>개요·널바이트</button>
+    <button class="tab" data-i="1"><span class="n">2</span>XOR &amp; Shift</button>
+    <button class="tab" data-i="2"><span class="n">3</span>문자열 스택</button>
+    <button class="tab" data-i="3"><span class="n">4</span>또 다른 접근법</button>
+    <button class="tab" data-i="4"><span class="n">5</span>가상 메모리</button>
+    <button class="tab" data-i="5"><span class="n">6</span>변수·포인터</button>
+    <button class="tab" data-i="6"><span class="n">7</span>함수 호출 스택</button>
+  </nav>
+
+  <!-- ===== TAB 1 ===== -->
+  <section class="panel active">
+    <div class="panel-head">
+      <h2>셸코드와 널바이트 문제 <span class="pg">ch6 p.59</span></h2>
+      <p>셸코드가 무엇이며, 왜 머신코드 안에 널바이트(0x00)가 있으면 안 되는지</p>
+    </div>
+
+    <div class="card">
+      <h3>🐚 셸코드(Shellcode)란 <span class="pgbadge">ch6 p.46</span></h3>
+      <p>공격자가 원하는 <b>셸(shell)을 띄우는</b> 아주 컴팩트한 머신코드입니다. 셸이 떠서 임의의 명령을 실행하는 것이 목표이며, 어셈블리로 작성합니다. 어셈블리 코드를 머신코드(eb, … 등 바이트 열)로 바꾼 뒤 C 코드 안에 쭉 이어 붙여 사용합니다.</p>
+      <p>공격자는 이 코드를 상대 프로그램의 <b>어느 바이트 영역에 복사(심기)</b>해 두고, 맨 앞에서부터 실행시키는 것이 목적입니다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 핵심: 왜 널바이트를 없애야 하나 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.59</span></h3>
+      <p>코드를 상대 프로그램에 "심는다"는 것은 <b>어느 바이트 영역에 카피시킨다</b>는 뜻입니다. 그런데 카피에 쓸 수 있는 거의 유일한 수단이 <code>strcpy</code> 같은 <b>문자열 복사 함수</b>입니다.</p>
+      <ul>
+        <li><b>문자열 복사 함수는 널바이트(0x00)를 만나면 거기서 복사를 멈춥니다.</b></li>
+        <li>머신코드 중간에 널바이트가 있으면 → 그 지점까지만 복사되고 <b>온전히(full) 복사되지 않음</b></li>
+        <li>따라서 셸코드 머신코드(일렬로 늘어선 바이트 배열)에서 <b>널바이트를 모두 제거</b>해야 한다</li>
+      </ul>
+      <p class="callout">이것이 셸코드 작성의 가장 핵심적인 과제입니다. (ch7 BOF에서도 "주소에 0이 있으면 strcpy가 복사를 끝내버린다"는 동일한 제약이 반복됩니다 — ch7 p.22)</p>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 두 가지 접근법 미리보기 <span class="tag sup">부연설명</span><span class="pgbadge">ch6 p.49~65</span></h3>
+      <p>강의 전체 흐름은 ① 레지스터·문자열을 <b>널바이트 없이</b> 세팅하는 방법(XOR, Shift, 스택 push)과, ② 문자열 주소를 얻는 <b>또 다른 접근법</b>(jmp/call/pop)으로 나뉩니다. execve로 셸을 띄우려면 다음 레지스터를 세팅해야 합니다.</p>
+      <pre><span class="c"># execve("/bin/sh", argv, 0) 호출에 필요한 레지스터</span>
+eax = <span class="num">0x0b</span>    <span class="c"># execve 시스템 콜 번호</span>
+ebx = <span class="c"># "/bin/sh" 문자열의 주소</span>
+ecx = <span class="c"># 인자 배열 argv의 주소</span>
+edx = <span class="num">0</span>       <span class="c"># 환경변수 (0으로 설정)</span>
+<span class="c"># → 이 값들 안에 0x00 이 들어가면 안 된다!</span></pre>
+    </div>
+  </section>
+
+  <!-- ===== TAB 2 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>널바이트 제거 ① XOR &amp; Shift <span class="pg">ch6 p.59~60</span></h2>
+      <p>레지스터를 0으로 만들거나 특정 값을 넣을 때 머신코드에 0x00이 생기지 않게 하는 두 기법</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> XOR 연산 — 0을 널바이트 없이 세팅 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.59</span></h3>
+      <p>특정 레지스터(예: edx)에 <b>0을 세팅</b>하고 싶을 때, 가장 직관적인 <code>mov eax, 0</code>(인텔 문법)을 쓰면 문제가 생깁니다.</p>
+      <ul>
+        <li>eax는 <b>4바이트</b> 레지스터 → <code>mov eax, 0</code>의 상수 0은 실제 머신코드에서 <code>0x00000000</code></li>
+        <li>간단히 "0"이라고 적어도, 머신코드로 바꾸면 <b>널바이트가 잔뜩 들어간다</b></li>
+      </ul>
+      <p>해결책은 <b>XOR 연산</b>입니다. 같은 값끼리 XOR하면 결과가 0이 되며, 그 머신코드에는 널바이트가 없습니다.</p>
+      <pre><span class="c">; ✗ 나쁜 예 — 머신코드에 0x00 포함</span>
+<span class="k">mov</span> eax, <span class="num">0</span>          <span class="r">; → 0x00000000 (null byte!)</span>
+
+<span class="c">; ✓ 좋은 예 — XOR 로 0 세팅 (null byte 없음)</span>
+<span class="k">xor</span> eax, eax       <span class="g">; eax = 0, 머신코드에 0x00 없음</span></pre>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 1바이트만 세팅 — AL 레지스터 활용 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.59</span></h3>
+      <p>예를 들어 <code>0x00000099</code>처럼 <b>실제 의미 있는 값은 1바이트(0x99)</b>인데 나머지가 0인 값을 넣고 싶을 때. <code>mov eax, 0x99</code>라고 써도 머신코드에서는 4바이트 <code>0x00000099</code>가 되어 널바이트가 생깁니다.</p>
+      <ul>
+        <li>EAX는 4바이트 확장(extended) 레지스터</li>
+        <li><b>AL은 EAX의 마지막 1바이트</b>만 가리키는 레지스터</li>
+        <li>먼저 XOR로 전체를 0으로 만든 뒤, <b>AL에만 1바이트</b>를 넣는다</li>
+      </ul>
+      <pre><span class="c">; 0x99 를 eax 에 널바이트 없이 넣기</span>
+<span class="k">xor</span> eax, eax       <span class="c">; eax = 0x00000000 (null byte 없이)</span>
+<span class="k">mov</span> al,  <span class="num">0x99</span>      <span class="g">; al = eax 의 마지막 1바이트 → eax = 0x00000099</span></pre>
+      <p class="callout">핵심: XOR 연산을 통해 <b>널바이트 머신코드 없이</b> 특정 레지스터 값을 0으로 세팅하고, 1바이트 레지스터(AL)로 원하는 값만 채운다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> Shift 연산 — 중간에 0이 든 값 넣기 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.60</span></h3>
+      <p>이번엔 <code>0x00112233</code>처럼 <b>값 안에 0x00이 포함된</b> 상수를 ebx에 넣고 싶습니다. 상수 값은 머신코드로 바꾸면 무조건 4바이트 그대로 표현되므로 널바이트가 포함됩니다.</p>
+      <p>아이디어: <b>0 대신 FF로 채워</b> 일단 널바이트 없는 값을 만든 뒤, <b>시프트로 FF를 밀어내고</b> 앞을 0으로 깨끗하게(clean-up) 만든다.</p>
+      <div class="flow">
+        <div class="step"><div class="big">0xFF112233</div><div class="lbl">① 00 대신 FF<br>(null byte 없음)</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">0x11223300</div><div class="lbl">② shl 8<br>(왼쪽 8비트, FF 탈락)</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">0x00112233</div><div class="lbl">③ shr 8<br>(오른쪽 8비트, 앞=0)</div></div>
+      </div>
+      <pre><span class="c">; 0x00112233 을 ebx 에 넣기 (null byte 회피)</span>
+<span class="k">mov</span> ebx, <span class="num">0xFF112233</span>   <span class="c">; 00 대신 FF 로 채움 → null byte 없음</span>
+<span class="k">shl</span> ebx, <span class="num">8</span>            <span class="c">; 왼쪽 8비트 → 0x11223300 (FF 는 밖으로 밀려남)</span>
+<span class="k">shr</span> ebx, <span class="num">8</span>            <span class="g">; 오른쪽 8비트 → 0x00112233 (앞쪽이 0 으로 clean-up)</span></pre>
+      <p class="callout">널바이트가 있으면 카피가 안 되니, 머리를 굴려 <b>동일한 효과를 내되 널바이트는 없는 머신코드</b>를 만드는 "변칙기" 같은 테크닉입니다.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 3 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>문자열을 스택에 올리기 <span class="pg">ch6 p.61</span></h2>
+      <p>"/bin/sh" 문자열을 널바이트 없이 스택에 쌓고, ebx가 그 시작 주소를 가리키게 하는 방법</p>
+    </div>
+
+    <div class="card">
+      <h3>🔤 문자열은 1바이트 문자들의 모음 <span class="pgbadge">ch6 p.61</span></h3>
+      <p>문자열은 문자로 이루어지고, 문자 한 개(char)는 <b>1바이트</b>입니다. 스택에는 보통 <b>4바이트 단위</b>로 push 하므로 문자열을 4바이트씩 끊어서 올립니다.</p>
+      <ul>
+        <li>문자열의 끝을 알리려면 <b>널문자(null byte)</b>가 필요하다</li>
+        <li>그런데 널바이트가 있으면 카피가 안 된다 → 딜레마</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 끝 표시를 Shift 로 만들기 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.61</span></h3>
+      <p>문자열 끝의 널바이트를 직접 넣는 대신:</p>
+      <ul>
+        <li>남는 자리를 <b>널바이트가 아닌 임의의 문자(예: '*')로 채운다</b> — 꼭 별이 아니어도 아무 3바이트면 됨</li>
+        <li>그 다음 <b>왼쪽으로 shift → 오른쪽으로 shift</b>(여기서는 의미 있는 부분이 1바이트라 24비트씩) 해서 채워 넣은 더미를 밀어내고 끝을 0으로 clean-up</li>
+      </ul>
+      <p>이렇게 만든 값(edx 등)을 <b>문자열의 끝부터 역순으로 push</b> 합니다.</p>
+      <pre><span class="c">; 개념 (리틀엔디안, 4바이트씩 역순 push)</span>
+<span class="k">xor</span> eax, eax         <span class="c">; 0 확보 (shift 로 만든 끝 표시)</span>
+<span class="k">push</span> eax             <span class="c">; 문자열 끝 NULL</span>
+<span class="k">push</span> <span class="num">0x68732f6e</span>      <span class="c">; "n/sh"</span>
+<span class="k">push</span> <span class="num">0x69622f2f</span>      <span class="c">; "//bi"</span>
+<span class="k">mov</span>  ebx, esp        <span class="g">; ebx = 문자열 시작 주소</span></pre>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> ebx = ESP : 문자열 시작 주소 잡기 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.61</span></h3>
+      <p>push 를 할수록 스택은 늘어나고, <b>ESP는 항상 가장 최신 데이터의 시작 주소</b>를 가리킵니다. 문자열을 끝부터 역순으로 push → push → push 하면, <b>마지막에 push 한 것이 문자열의 시작</b>이 됩니다.</p>
+      <ul>
+        <li>스택 포인터(ESP)가 그 시작 주소를 가리키고 있음</li>
+        <li>따라서 <code>mov ebx, esp</code> 로 ESP 값을 ebx 에 복사 → <b>ebx 가 문자열 시작 주소를 가리킴</b></li>
+      </ul>
+      <p class="callout">이것이 "직접 스택에 push 한 뒤 ESP 를 기준으로 ebx 를 세팅하는" 첫 번째 방법입니다. 다음 탭의 jmp/call 방식은 이것의 <b>다른 접근법</b>입니다.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 4 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>또 다른 접근법 &amp; 실행 <span class="pg">ch6 p.62~65</span></h2>
+      <p>jmp / call / pop 로 문자열 주소를 얻는 방법, 그리고 실행 시 세그폴트와 해결 옵션</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> jmp / call / pop 기법 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.62~64</span></h3>
+      <p>어셈블리의 <b>레이블(label)</b>과 <code>call</code>의 특성을 이용해 문자열 시작 주소를 얻습니다.</p>
+      <ul>
+        <li><b>jmp</b>: EIP(현재 실행 위치)를 특정 레이블로 바꾼다</li>
+        <li><b>call</b> = <code>push EIP</code> + <code>jmp</code> — 즉 <b>리턴 주소(다음 명령의 주소)를 스택에 저장</b>하고 점프</li>
+        <li>그런데 call 다음에 오는 것은 명령어가 아니라 <b>문자열 데이터(db)</b> → 그 <b>문자열의 시작 주소가 스택에 push</b>된다</li>
+        <li>점프해 간 곳에서 <code>pop ebx</code> → call 이 저장해 둔 <b>문자열 시작 주소를 ebx 로 꺼냄</b></li>
+      </ul>
+      <pre>    <span class="k">jmp</span> two          <span class="c">; ① two 레이블로 점프</span>
+one:
+    <span class="k">pop</span> ebx          <span class="g">; ④ call 이 스택에 저장한 문자열 시작 주소 → ebx</span>
+    <span class="c">; ... eax, ecx, edx 세팅 후 int 0x80 ...</span>
+two:
+    <span class="k">call</span> one         <span class="c">; ② one 호출 = 다음 주소(문자열)를 push + ③ one 으로 점프</span>
+    <span class="k">db</span> <span class="s">"/bin/sh"</span>    <span class="c">; 문자열 데이터 (명령어가 아니라 데이터!)</span></pre>
+      <div class="flow">
+        <div class="step"><div class="big">jmp two</div><div class="lbl">① 아래 call 로</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">call one</div><div class="lbl">② 문자열 주소 push<br>③ one 으로 점프</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">pop ebx</div><div class="lbl">④ 문자열 주소 꺼내기</div></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 왜 레이블을 "쓰지 말라"고 할까 <span class="tag sup">부연설명</span><span class="pgbadge">ch6 p.62</span></h3>
+      <p>C(시어)에도 레이블 문법(<code>goto</code>)은 존재합니다. 흐름 제어를 짤 때 편하긴 하지만, <b>레이블을 남발하면 코드가 스파게티 코드가 됩니다.</b> 그래서 긴급한 상황이 아니면 웬만하면 쓰지 말라고 권장합니다. 여기서는 셸코드 기법을 보여주기 위해 어셈블리 레이블을 사용한 것입니다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 실행: 세그멘테이션 폴트와 해결 옵션 <span class="tag imp">중요</span><span class="pgbadge">ch6 p.65</span></h3>
+      <p>특별한 옵션 없이 그냥 실행하면 <b>세그멘테이션 폴트(Segmentation Fault)</b>가 발생합니다.</p>
+      <ul>
+        <li>프로세스가 메모리에 올라갈 때 영역(세그먼트)이 나뉘며, <b>텍스트(코드) 세그먼트는 수정되면 안 된다</b> — 기본 방어 메커니즘</li>
+        <li>그런데 셸코드는 코드 영역을 수정하려 한다 → 폴트 발생</li>
+        <li>해결: <b>텍스트(코드) 영역을 수정 가능하게 만드는 옵션</b>을 주고 컴파일/실행 → 셸이 뜬다</li>
+      </ul>
+      <pre><span class="c"># 코드(실행) 영역을 쓰기/실행 가능하게 하는 옵션 예시</span>
+gcc -Wl,-z,execstack -m32 shelltest.c   <span class="c"># ch6 p.57</span></pre>
+      <p class="callout">강사 강조: <b>"반드시 직접 돌려보세요."</b> 셸코드는 결국 다음 챕터의 <b>버퍼 오버플로우(BOF)</b>를 이해하기 위한 "맛보기"였습니다.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 5 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>가상 메모리 &amp; 세그먼트 <span class="pg">ch7 p.2~3</span></h2>
+      <p>프로세스마다 주어지는 4GB 가상 주소 공간과, 그 안의 메모리 세그먼트 구조</p>
+    </div>
+
+    <div class="card">
+      <h3>🗺️ 가상 주소 vs 물리 주소 <span class="pgbadge">ch7 p.2</span></h3>
+      <p>운영체제 시간에 배운 것처럼, <b>프로세스마다 독립적인 가상 주소 공간</b>을 가집니다. 32비트 기준 각 프로세스는 똑같이 <b>4GB</b>의 가상 공간을 받습니다.</p>
+      <ul>
+        <li>노트패드(.exe)도 4GB, 다른 서드파티 앱도 4GB, 새 프로세스를 띄울 때마다 또 4GB</li>
+        <li>실제로 4GB를 꽉 채워 쓰는 게 아니라 <b>널널하게(여유롭게)</b> 가상 공간을 할당받는 것</li>
+        <li>실제 사용하는 부분만 물리 메모리에 매핑</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 메모리 세그먼트 구조 <span class="tag imp">중요</span><span class="pgbadge">ch7 p.3</span></h3>
+      <p>가상 메모리의 일부분을 위에서부터 아래로 나타내면 다음과 같습니다.</p>
+      <div class="memseg">
+        <div class="growlbl">▲ 상위 주소 (0xFFFFFFFF)</div>
+        <div class="row s-stack"><span class="name">Stack</span><span class="desc">지역 변수, 함수 호출 프레임 (아래로 성장 ↓)</span></div>
+        <div class="row s-heap"><span class="name">Heap</span><span class="desc">malloc 등 동적 할당 영역 (위로 성장 ↑)</span></div>
+        <div class="row s-bss"><span class="name">BSS</span><span class="desc">초기화되지 않은(uninitialized) static/전역 변수</span></div>
+        <div class="row s-data"><span class="name">Data</span><span class="desc">초기화된 전역(global) 변수</span></div>
+        <div class="row s-text"><span class="name">Text</span><span class="desc">코드(인스트럭션) — 읽기 전용</span></div>
+        <div class="growlbl">▼ 하위 주소 (0x00000000)</div>
+      </div>
+      <p class="callout">앞 탭에서 세그폴트가 났던 이유가 여기 있습니다: <b>Text(코드) 세그먼트는 기본적으로 수정 불가</b>이기 때문.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 6 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>변수의 저장 위치 &amp; 포인터 <span class="pg">ch7 p.3</span></h2>
+      <p>전역·지역·static·포인터 변수가 각각 어느 세그먼트에 저장되는지, 그리고 포인터의 정체</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 변수별 저장 위치 <span class="tag imp">중요</span><span class="pgbadge">ch7 p.3</span></h3>
+      <p>간단한 C 코드를 컴파일해 실행했을 때, 각 변수가 가상 메모리의 어디에 저장되는지:</p>
+      <div class="vgrid">
+        <div class="v"><code>int x;</code> <span class="arr">→</span><span class="seg seg-data">Data</span><span class="note">전역(global) 변수 → 데이터 세그먼트</span></div>
+        <div class="v"><code>int a, b;</code> <span class="arr">→</span><span class="seg seg-stack">Stack</span><span class="note">지역(local) 변수 → 함수 프레임 안</span></div>
+        <div class="v"><code>static int y;</code> <span class="arr">→</span><span class="seg seg-bss">BSS</span><span class="note">static 변수 → BSS (초기화 안 된 경우)</span></div>
+        <div class="v"><code>int *ptr;</code> <span class="arr">→</span><span class="seg seg-stack">Stack</span><span class="note">포인터 변수 자체 → 스택 (지역일 때)</span></div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> static 변수가 BSS 에 있는 이유 <span class="tag imp">중요</span><span class="pgbadge">ch7 p.3</span></h3>
+      <p>static 변수는 함수가 여러 번 호출돼도 <b>값을 유지(히스토리 보존)</b>하는 변수입니다. 한 번 할당된 뒤 계속 저장·업데이트됩니다.</p>
+      <ul>
+        <li><b>스택</b>은 함수가 호출될 때 생겼다가 리턴하면 사라지는 공간</li>
+        <li>static 은 리턴 후에도 값이 남아야 하므로 <b>스택에 두면 안 된다</b></li>
+        <li>그래서 별도로 <b>BSS 세그먼트</b>에 저장한다</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 포인터 변수 = 주소값을 담는 변수 <span class="tag imp">중요</span><span class="pgbadge">ch7 p.3</span></h3>
+      <p>포인터 변수는 <b>메인 메모리의 실제 주소값</b>을 저장하는 변수입니다.</p>
+      <ul>
+        <li>이 시스템(32비트)에서 포인터 크기는 <b>타입과 무관하게 항상 4바이트</b></li>
+        <li>주소값이 4바이트로 이루어져 있으니, 주소를 담으려면 4바이트가 필요하기 때문</li>
+        <li><code>char*</code>, <code>int*</code>, <code>float*</code> 모두 변수 자체 크기는 4바이트</li>
+      </ul>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 그럼 왜 타입(char*/int*/...)을 나눌까 <span class="tag sup">부연설명</span><span class="pgbadge">ch7 p.3</span></h3>
+      <p>포인터가 가리키는 것은 공간의 <b>시작 주소</b>로 모두 같습니다. 차이는 <b>"몇 바이트씩 끊어서 읽느냐(stride)"</b>에 있습니다.</p>
+      <ul>
+        <li><code>char*</code> → <b>1바이트씩</b> 끊어서 읽음</li>
+        <li><code>int*</code> → <b>4바이트씩</b> 끊어서 읽음</li>
+      </ul>
+      <p>즉 타입은 역참조·증감 시 읽는 단위를 결정합니다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> malloc — 힙(Heap) 동적 할당 <span class="tag imp">중요</span><span class="pgbadge">ch7 p.3</span></h3>
+      <p><code>malloc</code>은 <b>힙 영역에 공간을 할당</b>해 주는 동적 메모리 할당 함수입니다. 할당할 바이트 수를 인자로 받고, <b>할당된 영역의 시작 주소</b>를 리턴합니다.</p>
+      <pre><span class="k">int</span> *ptr;
+ptr = (<span class="k">int</span>*) <span class="k">malloc</span>( <span class="k">sizeof</span>(<span class="k">int</span>) * <span class="num">2</span> );
+<span class="c">// sizeof(int)=4, × 2 = 8바이트(8칸)를 힙에 할당</span>
+<span class="c">// malloc 리턴값(시작 주소)을 (int*)로 타입캐스팅 → ptr 에 저장</span></pre>
+      <ul>
+        <li>포인터 변수 <code>ptr</code> 자체(4바이트)는 <b>스택</b>에 있다</li>
+        <li>그 안에 담긴 값은 <b>힙 영역의 시작점</b>을 가리킨다(pointing)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== TAB 7 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>함수 호출 규약 &amp; 스택 프레임 <span class="pg">ch7 p.4~7</span></h2>
+      <p>인자 전달 순서, EBP 기준 접근, 프롤로그, 그리고 호출 체인에서의 스택 프레임</p>
+    </div>
+
+    <div class="card">
+      <h3>🛠️ 어셈블리 얻기 &amp; 문법 <span class="pgbadge">ch7 p.5</span></h3>
+      <p><code>gcc -S</code> 옵션을 주면 바이너리까지 가지 않고 <b>중간 단계인 어셈블리 코드만</b> 뱉어줍니다. 아래 예시는 인텔이 아니라 <b>AT&amp;T 문법</b>입니다(<code>%</code> 접두사, <code>movl</code> 등).</p>
+      <pre>$ gcc -m32 -fno-stack-protector -S prog.c
+$ more prog.s   <span class="c"># 또는 gdb 사용</span></pre>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 인자는 EBP 기준으로 접근 <span class="tag imp">중요</span><span class="pgbadge">ch7 p.4~6</span></h3>
+      <p><b>EBP = Base Pointer(기준점)</b>. 파라미터들은 이 EBP 를 기준점 삼아 오프셋으로 접근합니다.</p>
+      <pre><span class="c"># 파라미터·결과를 EBP 기준 오프셋으로 접근 (AT&T)</span>
+<span class="k">movl</span>  <span class="num">12</span>(%ebp), %eax   <span class="c"># 두 번째 인자</span>
+<span class="k">movl</span>  <span class="num">8</span>(%ebp),  %edx   <span class="c"># 첫 번째 인자</span>
+<span class="k">addl</span>  %edx, %eax
+<span class="k">movl</span>  %eax, -<span class="num">8</span>(%ebp)    <span class="c"># 결과를 EBP 기준 위치에 저장</span></pre>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 인자 전달 순서 &amp; call <span class="tag imp">중요</span><span class="pgbadge">ch7 p.4</span></h3>
+      <ul>
+        <li>스택에 인자를 push 할 때 <b>오른쪽에서 왼쪽으로(right → left)</b> 순서로 넣는다 → 마지막 인자를 먼저 push</li>
+        <li>인자를 다 넘긴 뒤 <code>call func</code> 수행</li>
+        <li><b>call = <code>push EIP</code> + <code>jmp</code></b> → 리턴 주소(Return Address)가 스택에 들어가고 함수 시작점으로 점프</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 함수 프롤로그(Prologue) <span class="tag imp">중요</span><span class="pgbadge">ch7 p.6</span></h3>
+      <p>함수가 호출될 때마다 항상 수행하는 도입부입니다.</p>
+      <pre><span class="k">push</span> %ebp          <span class="c"># 나를 호출한 함수(전임자)의 EBP 저장 = previous frame pointer</span>
+<span class="k">mov</span>  %esp, %ebp    <span class="c"># 새 프레임의 기준점(EBP) 설정</span></pre>
+      <p class="callout">최종적으로 스택에는 <b>리턴 주소(RA)</b>와 <b>이전 프레임 포인터(old EBP)</b>가 쌓인 뒤, 새 함수의 프레임이 시작됩니다.</p>
+    </div>
+
+    <div class="card">
+      <h3>📐 스택 프레임 구조 (호출 시) <span class="pgbadge">ch7 p.6~7</span></h3>
+      <p>함수 F 가 호출됐을 때 프레임 영역의 모습 (위가 상위, 아래가 하위 주소):</p>
+      <div class="frame">
+        <div class="f">인자 (Arguments)<span class="meta">오른쪽→왼쪽 push</span></div>
+        <div class="f ret">Return Address (RA)<span class="meta">= call 이 push 한 EIP</span></div>
+        <div class="f ebp">Previous Frame Pointer<span class="meta">= old EBP</span></div>
+        <div class="f hl">현재 함수 F 의 지역변수<span class="meta">← EBP 기준 접근</span></div>
+      </div>
+      <ul>
+        <li><b>프레임 포인터 = EBP</b>, <b>리턴 주소 = RA</b>(EIP 가 가리키던 그 값)</li>
+        <li>호출될 때마다 스택 프레임이 <b>늘어나고</b>, 리턴하면 <b>해제(파괴)</b>된다</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 함수 호출 체인 (main → foo → bar) <span class="tag imp">중요</span><span class="pgbadge">ch7 p.7</span></h3>
+      <p>함수가 연쇄적으로 호출되면 프레임이 계속 쌓입니다. 각 프레임 사이에는 항상 <b>"나를 호출한 전임자"의 프레임 포인터와 리턴 주소</b>가 저장됩니다.</p>
+      <ul>
+        <li>foo 의 전임자 = main, bar 의 전임자 = foo</li>
+        <li>그래서 함수가 깊어질수록(호출이 많을수록) push 할 것이 많아지고 스택이 더 깊어진다</li>
+      </ul>
+      <p class="callout">이 구조가 바로 다음 주제인 <b>버퍼 오버플로우</b>에서 리턴 주소를 덮어쓰는 공격의 토대가 됩니다.</p>
+    </div>
+  </section>
+
+  <footer>
+    시스템보안 · 9주차1 「셸코드와 메모리 구조」 · 강의자료: ch6_shellcode p.59~65, ch7_bof p.2~7<br>
+    MacWhisper 스크립트 기반 재구성 · ★ amber = 중요/강조, 💡 blue = 부연설명
+  </footer>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    const i = +t.dataset.i;
+    tabs.forEach(x=>x.classList.remove('active'));
+    panels.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    panels[i].classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+</script>
+</body>
+</html>
