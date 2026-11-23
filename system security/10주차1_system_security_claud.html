@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Buffer Overflow Attacks — 10주차1</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel-2:#1e222d; --border:#2a2f3c;
+    --text:#e8eaf0; --muted:#9aa3b2; --faint:#6b7280;
+    --accent:#6ea8fe; --accent-2:#3b82f6;
+    --amber:#f59e0b; --amber-bg:#2a2112; --amber-border:#5a4213;
+    --blue:#38bdf8; --blue-bg:#0e2230; --blue-border:#164a63;
+    --green:#34d399; --red:#f87171; --purple:#a78bfa;
+    --code-bg:#0b0d13; --code-border:#242a36;
+    --radius:14px; --radius-sm:9px;
+    --mono:"SF Mono",SFMono-Regular,ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;
+    -webkit-font-smoothing:antialiased;padding:24px 16px 80px}
+  .wrap{max-width:960px;margin:0 auto}
+
+  /* Header */
+  .hero{background:linear-gradient(145deg,#1a1f2e,#141824);border:1px solid var(--border);
+    border-radius:var(--radius);padding:26px 26px 22px;margin-bottom:18px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-40%;right:-10%;width:320px;height:320px;
+    background:radial-gradient(circle,rgba(110,168,254,.14),transparent 70%);pointer-events:none}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--muted)}
+  .chip.week{background:rgba(110,168,254,.12);border-color:rgba(110,168,254,.35);color:var(--accent)}
+  .chip.ch{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.35);color:var(--purple)}
+  h1.title{font-size:27px;font-weight:800;letter-spacing:-.4px;line-height:1.2}
+  .subtitle{color:var(--muted);font-size:14px;margin-top:6px}
+  .src-note{font-size:12px;color:var(--faint);margin:16px 2px 8px;letter-spacing:.1px}
+  .src-note b{color:var(--muted);font-weight:600}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius);padding:7px;margin-bottom:20px;position:sticky;top:10px;z-index:20;
+    backdrop-filter:blur(8px)}
+  .tab{flex:1 1 auto;min-width:92px;font-family:var(--sans);font-size:13px;font-weight:600;
+    color:var(--muted);background:transparent;border:none;border-radius:var(--radius-sm);
+    padding:9px 10px;cursor:pointer;transition:.18s;white-space:nowrap;text-align:center}
+  .tab:hover{color:var(--text);background:var(--panel-2)}
+  .tab.active{color:#fff;background:linear-gradient(135deg,var(--accent-2),#2563eb);
+    box-shadow:0 2px 10px rgba(59,130,246,.35)}
+  .tab .tn{display:inline-block;opacity:.7;font-variant-numeric:tabular-nums;margin-right:3px}
+
+  /* Panel */
+  .panel{display:none;animation:fade .3s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+  .sec-head h2{font-size:20px;font-weight:800;letter-spacing:-.3px}
+  .pg{font-size:11.5px;color:var(--faint);font-weight:600;background:var(--panel);
+    border:1px solid var(--border);padding:2px 8px;border-radius:6px}
+  .sec-lead{color:var(--muted);font-size:14px;margin:8px 0 18px}
+
+  /* Cards */
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:13px}
+  .card h3{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .card p{font-size:14px;color:#d4d8e2;margin-bottom:8px}
+  .card p:last-child{margin-bottom:0}
+  .card ul{margin:6px 0 4px;padding-left:4px;list-style:none}
+  .card li{font-size:14px;color:#d4d8e2;padding-left:20px;position:relative;margin-bottom:6px}
+  .card li::before{content:"";position:absolute;left:4px;top:9px;width:6px;height:6px;
+    border-radius:2px;background:var(--accent);opacity:.8}
+  .card li:last-child{margin-bottom:0}
+  b.hl{color:#fff;font-weight:700}
+  code.ic{font-family:var(--mono);font-size:12.5px;background:var(--code-bg);
+    border:1px solid var(--code-border);padding:1px 6px;border-radius:5px;color:#8fd0ff}
+
+  /* amber / blue cards */
+  .amber{background:var(--amber-bg);border-color:var(--amber-border)}
+  .amber h3{color:#fcd34d}
+  .amber .tag{color:#fbbf24}
+  .blue{background:var(--blue-bg);border-color:var(--blue-border)}
+  .blue h3{color:#7dd3fc}
+  .blue .tag{color:#38bdf8}
+  .tag{font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:5px;margin-bottom:7px}
+  .star{color:var(--amber)}
+  .exam{display:inline-block;font-size:10.5px;font-weight:800;color:#1a1205;background:var(--amber);
+    padding:1px 7px;border-radius:5px;margin-left:6px;vertical-align:middle;letter-spacing:.2px}
+
+  /* code block */
+  pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:var(--radius-sm);
+    padding:14px 16px;overflow-x:auto;margin:10px 0}
+  pre code{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:#d6deec;white-space:pre}
+  .cmt{color:#5f6b7e}.kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}
+  .num{color:#f78c6c}.reg{color:#ffcb6b}.op{color:#89ddff}
+
+  /* flow / grid visuals */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0}
+  .flow .node{flex:1 1 0;min-width:120px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:12px 10px;text-align:center}
+  .flow .node .t{font-size:13px;font-weight:700;color:#fff}
+  .flow .node .d{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .flow .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);
+    font-size:20px;padding:0 6px;flex:0 0 auto}
+  @media(max-width:640px){.flow{flex-direction:column}.flow .arr{transform:rotate(90deg);padding:4px 0}}
+
+  /* memory stack diagram */
+  .memfig{margin:16px 0}
+  .memfig .cap{font-size:12px;color:var(--faint);text-align:center;margin-bottom:8px}
+  .stack{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;
+    max-width:460px;margin:0 auto;background:var(--panel-2)}
+  .row{display:flex;align-items:center;border-bottom:1px dashed var(--border);font-size:13px}
+  .row:last-child{border-bottom:none}
+  .row .lbl{flex:1;padding:11px 14px;font-weight:600}
+  .row .meta{flex:0 0 auto;padding:11px 14px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .row.buf{background:rgba(52,211,153,.08)}.row.buf .lbl{color:var(--green)}
+  .row.ebp{background:rgba(167,139,250,.10)}.row.ebp .lbl{color:var(--purple)}
+  .row.ret{background:rgba(248,113,113,.11)}.row.ret .lbl{color:var(--red)}
+  .row.arg .lbl{color:var(--muted)}
+  .addr-side{display:flex;justify-content:space-between;max-width:460px;margin:6px auto 0;
+    font-size:11px;color:var(--faint);font-family:var(--mono)}
+  .ovf-arrow{text-align:center;color:var(--red);font-size:12px;font-weight:700;margin:8px 0}
+
+  /* 2-col grid */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .mini{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px}
+  .mini h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .mini p,.mini li{font-size:13px;color:#cdd3de}
+  .mini ul{list-style:none;padding:0}
+  .mini li{padding-left:16px;position:relative;margin-bottom:5px}
+  .mini li::before{content:"›";position:absolute;left:2px;color:var(--accent);font-weight:700}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--muted);margin:2px 3px 2px 0}
+  .num-badge{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--accent-2);
+    color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+  .footer{text-align:center;color:var(--faint);font-size:12px;margin-top:30px}
+  .divider{height:1px;background:var(--border);margin:22px 0 18px;border:none}
+  .keyrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px}
+  .keyrow .badge.on{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.4);color:var(--green)}
+  .keyrow .badge.off{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.4);color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="chip-row">
+      <span class="chip week">10주차 1차시</span>
+      <span class="chip ch">Ch 7</span>
+      <span class="chip">시스템보안</span>
+    </div>
+    <h1 class="title">Buffer Overflow Attacks</h1>
+    <div class="subtitle">버퍼 오버플로우 공격 — strcpy의 원리부터 셸코드 주입·방어기법 비활성화까지</div>
+  </div>
+
+  <div class="src-note">
+    📄 강의자료: <b>ch7_bof_v1.pdf</b> · 스크립트 범위 <b>p.6 ~ p.16</b>
+    (공격 준비를 위한 방어기법은 <b>p.31 ~ p.46</b> 미리보기) · 각 카드에 세부 페이지 표기
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-p="s1"><span class="tn">1</span>strcpy·널바이트</button>
+    <button class="tab" data-p="s2"><span class="tn">2</span>BOF 메커니즘</button>
+    <button class="tab" data-p="s3"><span class="tn">3</span>메모리·스택</button>
+    <button class="tab" data-p="s4"><span class="tn">4</span>공격 원리</button>
+    <button class="tab" data-p="s5"><span class="tn">5</span>셸코드</button>
+    <button class="tab" data-p="s6"><span class="tn">6</span>방어 비활성화</button>
+    <button class="tab" data-p="s7"><span class="tn">7</span>취약 프로그램</button>
+  </div>
+
+  <!-- ============ S1 ============ -->
+  <section class="panel active" id="s1">
+    <div class="sec-head"><h2>1. strcpy와 널바이트</h2><span class="pg">p.8</span></div>
+    <p class="sec-lead">강의 도입부 핵심 질문: "문자열은 <b>어디까지</b> 카피될까?" → 답은 <b>널바이트 직전까지</b>.</p>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 반복 강조 <span class="exam">시험 포인트</span></span>
+      <h3>strcpy( )는 널바이트 직전까지 복사한다</h3>
+      <p><code class="ic">strcpy</code>는 소스(source)의 시작 주소부터 <b class="hl">널바이트(<code class="ic">\0</code>)를 만나기 직전까지</b>의 문자열을 데스티네이션(destination)으로 복사하는 API 함수다.</p>
+      <ul>
+        <li>복사의 끝을 알려주는 기준점이 바로 <b class="hl">널바이트</b>다.</li>
+        <li>널바이트를 지우면? → 그 다음 문자열까지 쭉 이어서 복사된다 (예: <code class="ic">"Hello World\0Extra"</code> 에서 <code class="ic">\0</code> 제거 시 Extra까지 복사).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🔢 널바이트는 "눈에는 2칸, 실제로는 1바이트"</h3>
+      <p><code class="ic">\0</code> 는 역슬래시 <code class="ic">\</code> 와 숫자 <code class="ic">0</code> 두 글자처럼 보이지만, 이것은 <b class="hl">하나의 문자(1바이트)</b>다.</p>
+      <div class="flow">
+        <div class="node"><div class="t">\0 (화면 표기)</div><div class="d">2칸처럼 보임</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">널 캐릭터 1개</div><div class="d">ASCII 코드 0x00</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">실제 크기</div><div class="d"><b>1 byte</b></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🛠 컴파일러가 널바이트를 자동으로 붙인다</h3>
+      <p>소스에 널바이트가 눈에 보이지 않아도 (예: <code class="ic">"string G"</code> 로 끝남) 정확히 거기까지 복사되는 이유 →</p>
+      <p>컴파일러가 컴파일 시점에 문자열의 끝을 인식하고 <b class="hl">마지막에 널바이트를 자동으로 삽입</b>해 주기 때문이다. 그래서 깔끔하게 문자열 끝까지만 복사된다.</p>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>이스케이프 시퀀스와 역슬래시 표기</h3>
+      <p>실제 문자로서 역슬래시 자체를 문자열에 쓰고 싶다면 보통 <code class="ic">\\</code> (역슬래시 두 번)으로 써야 눈에는 <code class="ic">\</code> 한 개로 보인다. <code class="ic">\0</code> 역시 <b>이스케이프 시퀀스</b>로, 문자열의 종료를 표현하는 널 문자다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S2 ============ -->
+  <section class="panel" id="s2">
+    <div class="sec-head"><h2>2. 버퍼 오버플로우 기본 메커니즘</h2><span class="pg">p.9</span></div>
+    <p class="sec-lead">할당된 버퍼 크기를 "넘치게" 사용하는 것이 버퍼 오버플로우, 그것으로 공격까지 이어지면 버퍼 오버플로우 공격.</p>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 정의 <span class="exam">시험 포인트</span></span>
+      <h3>버퍼 오버플로우(Buffer Overflow)란?</h3>
+      <ul>
+        <li><b class="hl">기본 메커니즘</b>: 할당된 버퍼의 크기만큼만 쓰지 않고, 그 크기를 <b class="hl">넘치게(초과) 사용</b>하는 것.</li>
+        <li><b class="hl">버퍼 오버플로우 공격</b>: 넘치게 사용함으로써 <b class="hl">공격까지 이어지는 것</b>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>⚖️ 1차원 배열 vs 포인터 — 같은 문자열, 다른 메모리 위치</h3>
+      <p>둘 다 main 함수 안에서 로컬 변수로 문자열을 담지만 <b class="hl">근본적으로 메모리 위치가 다르다.</b></p>
+      <div class="grid2">
+        <div class="mini">
+          <h4>① 1차원 배열 <span class="badge">char str[40]</span></h4>
+          <ul>
+            <li>main의 <b>스택 프레임</b>에 40바이트 공간을 할당</li>
+            <li>문자열 데이터가 <b>스택</b>에 직접 저장됨</li>
+            <li>앞에서부터 한 칸씩 채워 넣음</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h4>② 포인터 <span class="badge">char *str</span></h4>
+          <ul>
+            <li>문자열은 <b>텍스트(코드) 영역</b>에 저장</li>
+            <li>스택에는 <b>4바이트 포인터 변수</b>만 존재</li>
+            <li>그 4바이트가 문자열의 <b>시작 주소</b>를 가리킴</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>문자열은 코드에서 특별하게 다뤄진다</h3>
+      <p>프로그램의 짠 코드는 머신코드로 변환되어 텍스트 영역에 들어가지만, <b class="hl">문자열 리터럴 데이터도 텍스트 영역에 함께 저장</b>되는 경우가 많다. 포인터(예: 주소값 <code class="ic">0x125FF</code>)는 바로 이 영역의 문자열 시작 주소를 가리킨다.</p>
+    </div>
+
+    <div class="card">
+      <h3>💥 오버플로우가 발생하는 순간</h3>
+      <div class="flow">
+        <div class="node"><div class="t">dest 버퍼</div><div class="d">12바이트 할당</div></div>
+        <div class="arr">←</div>
+        <div class="node"><div class="t">strcpy 복사</div><div class="d">src → dest</div></div>
+        <div class="arr">←</div>
+        <div class="node"><div class="t">src 문자열</div><div class="d">20~30바이트</div></div>
+      </div>
+      <p>목적지 공간은 12바이트뿐인데 20~30바이트를 복사 → <b class="hl">12바이트를 초과</b>해서 뒤쪽 메모리 공간(다른 데이터)을 침범(오버라이트)하게 된다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 결과</span>
+      <h3>Segmentation Fault = 메모리 접근 오류</h3>
+      <p>허용된 공간(12바이트) 이상으로 카피를 이어가 뒤의 메모리를 넘어서 침범하면 → <b class="hl">세그멘테이션 폴트(Segmentation Fault)</b>가 발생한다. 포인터를 잘못 다뤘을 때 가장 흔히 나타나는 <b>메모리 접근 위반</b> 오류다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S3 ============ -->
+  <section class="panel" id="s3">
+    <div class="sec-head"><h2>3. 메모리 구조와 스택 프레임</h2><span class="pg">p.6 ~ 7</span></div>
+    <p class="sec-lead">"머릿속에 메모리를 그릴 수 있어야 한다" — 함수 호출 시 스택이 어떻게 쌓이는지 이해하기.</p>
+
+    <div class="card">
+      <h3>🧱 함수 호출 시 스택 쌓임 순서</h3>
+      <div class="flow">
+        <div class="node"><div class="t">main 프레임</div><div class="d">최상단에서 시작</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">foo 호출</div><div class="d">프레임 생성</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">buffer 할당</div><div class="d">ESP 감소(↓)</div></div>
+      </div>
+      <p>main이 foo 함수를 호출하면 foo를 위한 <b class="hl">새 스택 프레임</b>이 생성된다. foo 안에서 로컬 변수 buffer(예: 12바이트)를 할당하면 인덱스 0~11만큼 <code class="ic">ESP</code>를 빼주어 스택이 아래로 내려간다.</p>
+    </div>
+
+    <div class="card">
+      <h3>📐 foo 스택 프레임 레이아웃</h3>
+      <div class="memfig">
+        <div class="cap">높은 주소 (0xffff…) ↑ · 아래로 갈수록 낮은 주소</div>
+        <div class="stack">
+          <div class="row arg"><span class="lbl">main( ) 프레임</span><span class="meta">상위</span></div>
+          <div class="row ret"><span class="lbl">Return Address (돌아갈 주소)</span><span class="meta">4 byte</span></div>
+          <div class="row ebp"><span class="lbl">Previous EBP (이전 프레임 포인터)</span><span class="meta">4 byte</span></div>
+          <div class="row buf"><span class="lbl">buffer [0 ~ 11]</span><span class="meta">12 byte</span></div>
+        </div>
+        <div class="addr-side"><span>↓ 복사 시작 (낮은 주소)</span><span>복사 진행 방향 ↑</span></div>
+      </div>
+      <ul>
+        <li><b class="hl">Previous EBP</b>: 이전(main)의 프레임 포인터(2BP)가 저장된 곳.</li>
+        <li><b class="hl">Return Address</b>: 이 함수가 끝나면 돌아가야 할 주소.</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 왜 "위쪽"으로 침범하나?</span>
+      <h3>주소 체계와 복사 방향</h3>
+      <p>메모리 주소는 아래가 <code class="ic">0x00000000</code>, 위로 갈수록 <code class="ic">0xffffffff</code>로 <b class="hl">값이 커진다.</b></p>
+      <p>복사는 버퍼의 시작(낮은 주소, 예: 100번지)부터 101, 102… <b class="hl">주소가 커지는 위쪽 방향으로 진행</b>된다. 그래서 버퍼를 넘치면 바로 위의 <b>Previous EBP → Return Address</b> 순서로 침범하게 된다.</p>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>한 줄 = 4바이트 (컨벤션)</h3>
+      <p>일반적으로 메모리의 한 줄(워드)은 <b class="hl">4바이트</b>로 본다. 포인터 변수 값도 4바이트, 저장된 EBP도 4바이트, 리턴 어드레스도 4바이트 — 이 단위로 그림을 그리면 침범 구간을 계산하기 쉽다. (32비트 기준)</p>
+    </div>
+
+    <div class="card">
+      <h3>🔗 함수 호출 시 자동으로 일어나는 일</h3>
+      <div class="flow">
+        <div class="node"><div class="t">Push 인자</div><div class="d">함수 매개변수</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">Push EIP</div><div class="d">리턴 어드레스 저장</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">Push EBP</div><div class="d">이전 프레임 포인터</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">buffer 할당</div><div class="d">ESP 감소</div></div>
+      </div>
+      <p>함수 호출이 일어나면 리턴을 위한 <code class="ic">Push EIP</code>, 이전 프레임을 위한 <code class="ic">Push EBP</code> 명령이 수행되고, 그 아래에 로컬 버퍼가 할당된다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S4 ============ -->
+  <section class="panel" id="s4">
+    <div class="sec-head"><h2>4. 공격 원리 — 리턴 어드레스 덮어쓰기</h2><span class="pg">p.10 ~ 12</span></div>
+    <p class="sec-lead">버퍼를 넘치게 해 리턴 어드레스를 "내가 심은 코드의 주소"로 바꿔치기 → 그곳으로 점프시킨다.</p>
+
+    <div class="card">
+      <h3>🎯 공격 흐름 한눈에 보기</h3>
+      <div class="flow">
+        <div class="node"><div class="t">① 폭탄 제조</div><div class="d">셸코드+새 주소</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">② 오버플로우</div><div class="d">strcpy로 오버라이트</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">③ RA 변조</div><div class="d">리턴 주소 교체</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">④ 점프</div><div class="d">셸코드 실행</div></div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 컨셉 <span class="exam">시험 포인트</span></span>
+      <h3>"폭탄(badbyte)"의 구성</h3>
+      <p>공격자가 오버플로우를 일으키려고 만드는 입력 = <b class="hl">폭탄</b>. 다른 건 다 필요 없고 두 가지가 중요하다:</p>
+      <ul>
+        <li><b class="hl">실행시킬 머신코드 (셸코드)</b> — 공격자가 실제로 돌리고 싶은 코드.</li>
+        <li><b class="hl">New Address (뉴 어드레스)</b> — 리턴 어드레스를 오버라이트할 주소값. 이 값을 셸코드의 시작 주소로 바꿔줘야 그곳으로 실행이 점프한다.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🧨 폭탄이 스택에 올라가는 모습</h3>
+      <div class="memfig">
+        <div class="cap">buffer 11(≈12)바이트 기준 · 100바이트 오버라이트 예시</div>
+        <div class="stack">
+          <div class="row buf"><span class="lbl">🐚 셸코드 (예: index 75~100, ≈25byte)</span><span class="meta">상단</span></div>
+          <div class="row arg"><span class="lbl">NOP / 쓰레기 값 (상관없음)</span><span class="meta">…</span></div>
+          <div class="row ret"><span class="lbl">Return Address → 셸코드 시작 주소로 변조</span><span class="meta">핵심!</span></div>
+          <div class="row ebp"><span class="lbl">Previous EBP (침범됨)</span><span class="meta">4 byte</span></div>
+          <div class="row buf"><span class="lbl">buffer [0~11] (정상 범위)</span><span class="meta">12 byte</span></div>
+        </div>
+      </div>
+      <p>버퍼~12바이트까지는 정상, 13바이트째부터 EBP·리턴 어드레스를 침범한다. 리턴 어드레스 자리에 <b class="hl">셸코드의 시작 주소</b>를 넣어 두면, 함수가 끝날 때 원래 위치가 아니라 <b class="hl">셸코드로 점프</b>한다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 일반 오버플로우 결과 4가지 <span class="exam">시험 포인트</span></span>
+      <h3>리턴 어드레스가 쓸데없는 값일 때 vs 공격 성공</h3>
+      <div class="grid2">
+        <div class="mini">
+          <h4>⚠️ 세그폴트가 나는 경우</h4>
+          <ul>
+            <li>유효하지 않은 <b>인스트럭션</b>인 경우</li>
+            <li>존재하지 않는 <b>주소값</b>인 경우</li>
+            <li>갑자기 <b>커널 영역</b>을 접근하려는 경우</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h4>🔥 공격 성공인 경우</h4>
+          <ul>
+            <li>리턴 주소가 <b style="color:var(--red)">공격자의 코드</b>로 점프</li>
+            <li>내가 만든 코드의 시작 주소로 점핑</li>
+            <li>→ 공격자가 <b>셸 권한 획득</b></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>왜 "주소값을 알아야" 하나</h3>
+      <p>셸코드의 시작 주소값을 미리 알고 계산할 수 있다면, 최초 strcpy 복사(단 한 번) 시점에 리턴 어드레스 자리에 그 값을 채워 넣어 "폭탄"을 제조할 수 있다. 그래서 공격의 사전 조건은 <b class="hl">주소 예측 가능성</b>이며, 이 때문에 다음 섹션의 방어기법(ASLR)이 중요해진다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S5 ============ -->
+  <section class="panel" id="s5">
+    <div class="sec-head"><h2>5. 셸코드와 널바이트 제거</h2><span class="pg">p.25 ~ 29 (Ch6 복습)</span></div>
+    <p class="sec-lead">공격자가 제일 원하는 것 = 셸을 띄우는 것. 그래야 모든 걸 할 수 있다.</p>
+
+    <div class="card">
+      <h3>🐚 셸코드(Shellcode)란?</h3>
+      <p>셸을 띄우는 시스템 콜(<code class="ic">execve("/bin/sh", …)</code>)의 머신코드. 공격자의 최종 목적은 이 셸코드를 <b class="hl">실행</b>시켜 시스템 접근 권한을 얻는 것이다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 반복 강조 <span class="exam">시험 포인트</span></span>
+      <h3>셸코드 안에 널바이트(\0)가 있으면 안 된다</h3>
+      <p>제조할 폭탄(셸코드) 중간에 <b class="hl">널바이트가 끼어 있으면</b>, strcpy로 버퍼에 복사할 때 → <b class="hl">그 널바이트 앞까지만 복사되고 끊긴다.</b></p>
+      <ul>
+        <li>우리 목적은 셸코드의 <b>완벽한 끝까지</b> 전부 오버라이트하는 것.</li>
+        <li>중간에 널바이트 때문에 끊기면 → <b style="color:var(--red)">공격 실패</b>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🔧 널바이트를 없애는 방법</h3>
+      <p>값을 0으로 만드는 명령(<code class="ic">mov eax, 0</code> 등)은 코드에 <code class="ic">0x00</code>을 발생시킨다. 따라서 오퍼레이터를 바꿔서 결과적으로 0을 만들되 코드에는 0이 없도록 한다.</p>
+      <pre><code><span class="cmt">; ❌ 널바이트(0x00)가 생기는 방식</span>
+<span class="kw">mov</span> <span class="reg">eax</span>, <span class="num">0</span>          <span class="cmt">; 코드에 0x00 포함 → 복사 끊김</span>
+
+<span class="cmt">; ✅ XOR로 대체 — 결과는 0, 코드엔 0 없음</span>
+<span class="kw">xor</span> <span class="reg">eax</span>, <span class="reg">eax</span>        <span class="cmt">; eax = 0 (avoid 0 in code)</span></code></pre>
+      <p>이렇게 어떻게든 카피할 폭탄 안에 <b class="hl">널바이트가 없게</b> 만든다.</p>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>셸을 띄우는 것이 "첫 번째 목적"인 이유</h3>
+      <p>권한을 루트로 올리거나 추가 명령을 실행하는 것은 그 다음 단계다. 일단 셸(shell)을 획득하면 그 위에서 거의 모든 후속 작업이 가능하기 때문에, 공격의 1차 목표는 <b class="hl">셸을 따는 것</b>이다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S6 ============ -->
+  <section class="panel" id="s6">
+    <div class="sec-head"><h2>6. 공격 준비 — 방어 메커니즘 비활성화</h2><span class="pg">p.31 ~ 46</span></div>
+    <p class="sec-lead">버퍼 오버플로우는 오래된 기법이라 리눅스에 여러 방어기법(디펜스 메커니즘)이 기본 탑재돼 있다. 실습(공격 성공)을 위해 이들을 꺼야 한다.</p>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 3대 준비사항 <span class="exam">시험 포인트</span></span>
+      <h3>실습을 위해 꺼야 할 3가지 방어</h3>
+      <div class="keyrow">
+        <span class="badge off">① ASLR 끄기</span>
+        <span class="badge off">② Stack Protector 끄기</span>
+        <span class="badge off">③ bash/dash 방어 우회</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>① ASLR (Address Space Layout Randomization) <span class="badge">주소 랜덤화</span></h3>
+      <p><b class="hl">무엇?</b> 프로그램을 메모리에 로딩할 때 스택·힙·텍스트 등 세그먼트의 위치를 특정 범위 내에서 <b class="hl">랜덤하게 배치</b>하는 기법.</p>
+      <p><b class="hl">왜 디펜스가 되나?</b> 매번 똑같이 로딩되면 리턴 어드레스 예측이 쉽다. 위치를 조금씩 랜덤화하면 공격자가 <b class="hl">셸코드 주소를 예측하기 어려워진다.</b></p>
+      <p><b class="hl">리눅스에선 기본으로 켜져 있음</b> → 실습 시 꺼야 한다.</p>
+      <pre><code><span class="cmt"># ASLR 끄기 (0 = 비활성화)</span>
+<span class="fn">sudo</span> sysctl -w kernel.randomize_va_space=<span class="num">0</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>② Stack Protector (StackGuard / Canary)</h3>
+      <p>컴파일 시 리턴 어드레스 아래에 <b class="hl">랜덤 값(canary, 캐너리)</b>을 심고, 그 복사본을 스택 밖 안전한 곳에 저장해 둔다. 함수 종료 시 두 값을 비교해 변조를 탐지하는 버퍼 오버플로우 방지 메커니즘.</p>
+      <p>기본으로 켜져 있으므로 컴파일할 때 옵션으로 꺼준다.</p>
+      <pre><code><span class="cmt"># 컴파일 시 스택 프로텍터 비활성화 옵션</span>
+<span class="fn">gcc</span> -m32 -z execstack <span class="op">-fno-stack-protector</span> -o stack stack.c</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>③ bash / dash 셸 방어 우회</h3>
+      <p>셸코드로 띄우려는 기본 셸(dash/bash) 자체에도 디펜스 메커니즘이 장착돼 있다. <b class="hl">setuid 프로세스 안에서 실행되면 권한을 떨어뜨린다</b> (EUID ≠ RUID일 때 권한 강등).</p>
+      <div class="grid2">
+        <div class="mini">
+          <h4>우회법 A</h4>
+          <p><code class="ic">/bin/sh</code>를 방어기능 없는 셸(zsh)로 링크 변경</p>
+          <pre style="margin-top:6px"><code><span class="fn">sudo</span> ln -sf /bin/zsh /bin/sh</code></pre>
+        </div>
+        <div class="mini">
+          <h4>우회법 B</h4>
+          <p>셸코드 시작에 <code class="ic">setuid(0)</code>를 넣어 Real UID를 0으로 설정 → 권한 강등 무력화</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>NX bit (Non-executable Stack)도 방어기법의 하나</h3>
+      <p>강의자료 p.43 — CPU의 <b class="hl">NX(No-eXecute) 비트</b>로 스택 영역을 실행 불가로 표시해 셸코드 실행을 막는다. 실습에서 <code class="ic">-z execstack</code> 옵션으로 스택 실행을 허용(비활성화)한다. (이 방어는 Return-to-libc 공격으로 우회 가능 — 별도 챕터.)</p>
+    </div>
+  </section>
+
+  <!-- ============ S7 ============ -->
+  <section class="panel" id="s7">
+    <div class="sec-head"><h2>7. 취약한 프로그램 실습 (stack.c)</h2><span class="pg">p.13 ~ 16</span></div>
+    <p class="sec-lead">취약한 프로그램 <code class="ic">stack.c</code>가 공격자가 만든 파일(badfile)을 읽고 오버플로우를 일으키는 구조.</p>
+
+    <div class="card">
+      <h3>📋 stack.c 동작 구조</h3>
+      <div class="flow">
+        <div class="node"><div class="t">badfile 읽기</div><div class="d">300바이트</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">str 배열 저장</div><div class="d">400바이트</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">foo( ) 호출</div><div class="d">시작 주소 전달</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">buffer 복사</div><div class="d">100바이트 → 오버!</div></div>
+      </div>
+      <pre><code><span class="cmt">// stack.c (취약한 프로그램) — 개념 요약</span>
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="kw">char</span> str[<span class="num">400</span>];                 <span class="cmt">// 문자열 배열 400바이트</span>
+    fread(str, <span class="kw">sizeof</span>(<span class="kw">char</span>), <span class="num">300</span>, badfile);  <span class="cmt">// badfile에서 300바이트 읽음</span>
+    <span class="fn">foo</span>(str);                     <span class="cmt">// 배열 이름 = 시작 주소를 인자로 전달</span>
+}
+
+<span class="kw">void</span> <span class="fn">foo</span>(<span class="kw">char</span> *str) {
+    <span class="kw">char</span> buffer[<span class="num">100</span>];            <span class="cmt">// 로컬 버퍼 100바이트</span>
+    strcpy(buffer, str);          <span class="cmt">// 300바이트를 100바이트에 복사 → 200 오버!</span>
+}</code></pre>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 계산 <span class="exam">시험 포인트</span></span>
+      <h3>오버플로우 양 계산</h3>
+      <div class="grid2">
+        <div class="mini">
+          <h4>읽어온 데이터(소스)</h4>
+          <p style="font-size:22px;font-weight:800;color:var(--green)">300 byte</p>
+          <p>badfile에서 읽어 foo로 전달</p>
+        </div>
+        <div class="mini">
+          <h4>목적지 버퍼(dest)</h4>
+          <p style="font-size:22px;font-weight:800;color:var(--red)">100 byte</p>
+          <p>foo의 로컬 1차원 배열</p>
+        </div>
+      </div>
+      <div class="ovf-arrow">↓ 300 − 100 = <b>200 byte 오버플로우</b> → Segmentation Fault ↓</div>
+    </div>
+
+    <div class="card">
+      <h3>🏷 "배열의 이름 = 시작 주소 (상수)"</h3>
+      <p>foo를 호출할 때 넘기는 것은 <b class="hl">배열의 이름</b>, 즉 <b class="hl">배열의 시작 주소값</b>이다. 배열의 이름은 주소값이며 <b class="hl">상수(constant)</b>로 취급된다. strcpy는 이 시작 주소부터 널바이트 직전까지를 buffer로 복사한다.</p>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ 실습 준비 — setuid 루트 프로그램 만들기</h3>
+      <p>취약 프로그램을 컴파일한 뒤 소유자를 root로, 권한을 setuid(4755)로 바꾸면 "빨간색(setuid root)" 프로그램이 된다.</p>
+      <pre><code><span class="cmt"># 컴파일 (방어기법 모두 비활성화)</span>
+<span class="fn">gcc</span> -m32 -z execstack -fno-stack-protector -o stack stack.c
+
+<span class="cmt"># 소유자 root + setuid 비트 설정</span>
+<span class="fn">sudo</span> chown root stack
+<span class="fn">sudo</span> chmod <span class="num">4755</span> stack</code></pre>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>badfile = 공격자가 만드는 "폭탄"</h3>
+      <p>stack 프로그램이 내부에서 <b class="hl">badfile을 열어 읽기</b> 때문에, 공격자는 이 badfile(폭탄)을 잘 만들어 두면 취약 프로그램이 그것을 읽고 오버라이트하게 된다. 그래서 핵심은 "<b class="hl">폭탄(badfile)을 어떻게 구축할 것인가</b>"이다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 다음 차시 예고</span>
+      <h3>이번 강의는 여기까지 (p.16 badfile 구축 직전)</h3>
+      <p>"그 폭탄을 어떻게 만들 것이냐" — <b class="hl">badfile 구축(Badfile Construction)</b>은 강의자료 <b>p.16</b>부터 다음 차시(<b>10주차2</b>)에 이어진다. (버퍼~리턴 어드레스까지의 offset 거리 계산, 셸코드 배치 주소 찾기 등)</p>
+    </div>
+  </section>
+
+  <hr class="divider">
+  <div class="footer">
+    시스템보안 · 10주차1 · Ch 7 Buffer Overflow Attacks<br>
+    강의자료 ch7_bof_v1.pdf 기반 재구성 · 강의 스크립트 내용에 한함
+  </div>
+
+</div>
+
+<script>
+  const tabs=document.querySelectorAll('.tab');
+  const panels=document.querySelectorAll('.panel');
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    panels.forEach(p=>p.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.p).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+</script>
+</body>
+</html>
