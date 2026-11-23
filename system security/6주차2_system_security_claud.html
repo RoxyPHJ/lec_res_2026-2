@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>6주차2 · Ch5–6 어셈블리 명령어와 Shellcode 도입</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-warning:#FAEEDA;--border-warning:#EF9F27;--text-warning:#854F0B;
+  --bg-accent:#E6F1FB;--border-accent:#85B7EB;--text-accent:#185FA5;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono","JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-warning:#412402;--border-warning:#854F0B;--text-warning:#FAC775;
+    --bg-accent:#042C53;--border-accent:#185FA5;--text-accent:#85B7EB;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans)}
+.page{max-width:760px;margin:0 auto;padding:1.5rem 1rem 3rem}
+h1{font-size:22px;font-weight:500;margin:0}
+a.back{font-size:13px;color:var(--text-secondary);text-decoration:none}
+a.back:hover{color:var(--text-primary)}
+button{font:inherit;color:var(--text-primary);background:transparent;border:0.5px solid var(--border-strong);border-radius:var(--radius);cursor:pointer}
+button:hover{background:var(--surface-1)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.wrap{padding:.5rem 0 1rem;font-size:14px;line-height:1.65}
+.src{font-size:12px;color:var(--text-muted);margin:2px 0 8px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tabs button{font-size:13px;padding:5px 11px}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.panel{margin-bottom:1.5rem}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:.85rem 1.1rem;margin-bottom:10px}
+.card.imp{background:var(--bg-warning);border-color:var(--border-warning)}
+.card.imp .ct,.card.imp .ct i{color:var(--text-warning)}
+.card.ext{background:var(--bg-accent);border-color:var(--border-accent)}
+.card.ext .ct{color:var(--text-accent)}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.ct{font-weight:500;font-size:15px}
+.pg{font-size:11px;padding:2px 8px;border-radius:var(--radius);background:var(--surface-1);color:var(--text-secondary);border:0.5px solid var(--border);white-space:nowrap}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:8px 0;overflow-x:auto;line-height:1.55;color:var(--text-primary)}
+code{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);padding:1px 5px;border-radius:4px}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin:8px 0}
+.fb{flex:1;min-width:110px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;text-align:center}
+.fb b{display:block;font-weight:500;font-size:13.5px}
+.ar{align-self:center;color:var(--text-muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.gi{background:var(--surface-1);border-radius:var(--radius);padding:8px 10px;font-size:12.5px}
+.gi b{font-weight:500;display:block;font-size:13.5px}
+.b{display:inline-block;font-size:12px;padding:2px 8px;border-radius:var(--radius);border:0.5px solid var(--border-strong);margin:2px 3px 2px 0;font-family:var(--font-mono)}
+ul{margin:4px 0;padding-left:20px}
+li{margin:2px 0}
+.mut{color:var(--text-secondary);font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+<a class="back" href="../index.html"><i class="ti ti-arrow-left" aria-hidden="true"></i> 목차</a>
+<h2 class="sr-only">시스템보안 Ch5 어셈블리 명령어 후반부와 Ch6 셸코드 도입부 강의를 탭과 카드로 정리한 페이지</h2>
+<div class="wrap">
+<h1>Ch5–6 · 어셈블리 명령어와 Shellcode 도입</h1>
+<div class="mut">시스템보안 6주차 강의 2</div>
+<div class="src">강의자료 범위: ch5_assembly_v1.pdf p.28 ~ p.55 → ch6_shellcode_v1.pdf p.1 ~ p.26 (call 주소값은 ch6 p.31 참조)</div>
+<div class="tabs" id="tabs">
+<button data-t="0" class="on">공지</button>
+<button data-t="1">명령어 형식</button>
+<button data-t="2">산술·전송</button>
+<button data-t="3">논리·스트링</button>
+<button data-t="4">제어 명령</button>
+<button data-t="5">셸코드·실습환경</button>
+<button data-t="6">실행 흐름</button>
+</div>
+
+<div class="panel" data-p="0">
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> 중간고사 일정</span><span class="pg">강의 공지</span></div>
+<ul>
+<li>다음 주 화요일 <b style="font-weight:500">10월 20일</b> 시험 (스크립트상 13시 15분 언급 — 음성 인식이 불분명하니 공지 재확인)</li>
+<li>범위: 19일까지 배운 내용. 시험 전날 수업 내용도 나올 수 있음</li>
+</ul></div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> 실습을 직접 해봐야 풀 수 있다</span><span class="pg">강의 공지</span></div>
+수업에서 한 내용은 반드시 SEED VM을 설치한 뒤 직접 다 해볼 것. 오늘 나온 VS Code 원격 연동 + Disassembly View도 집에서 꼭 해보라고 강조.</div>
+<div class="card"><div class="ch"><span class="ct">이번 강의의 위치</span><span class="pg">ch5 p.28–55 · ch6 p.1–26</span></div>
+<div class="flow">
+<div class="fb"><b>Ch5 어셈블리</b>명령어 형식·문법 마무리</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>Ch6 셸코드</b>실습 환경 구축</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>디스어셈블</b>C → 머신코드 → 어셈블리 실행 흐름</div>
+</div>
+<div class="mut">다음 시간은 ch6 p.27(각 명령어 상세 분석)부터 바로 진행 — "여기서부터 조금 어렵다"고 예고.</div></div>
+</div>
+
+<div class="panel" data-p="1">
+<div class="card"><div class="ch"><span class="ct">명령어 형식: Operator와 Operand</span><span class="pg">ch5 p.28</span></div>
+명령어는 오퍼레이터만 있을 수도, 오퍼레이터 1개 + 오퍼랜드 1개, 오퍼랜드 2개 등 다양한 형태로 존재. Instruction format에는 Prefix가 있을 수도 없을 수도 있고 그 뒤에 Opcode 등이 붙는다.
+<div class="flow">
+<div class="fb"><b>Prefix</b>선택</div><div class="fb"><b>Opcode</b>필수</div><div class="fb"><b>ModR/M</b>/r 부분</div><div class="fb"><b>SIB</b>선택</div><div class="fb"><b>Disp</b>선택</div><div class="fb"><b>Imm</b>선택</div>
+</div></div>
+<div class="card"><div class="ch"><span class="ct">Intel 문법 vs AT&amp;T 문법 구별</span><span class="pg">ch5 p.21 복습</span></div>
+<div class="grid">
+<div class="gi"><b>Intel</b>깔끔함, 보통 대문자, 레지스터에 특수문자 없음<br><code>ADD EAX, EBX</code> → 뒤에서 앞으로</div>
+<div class="gi"><b>AT&amp;T</b>보통 소문자, 레지스터 앞 <code>%</code>, 상수 앞 <code>$</code> 등 특수문자가 덕지덕지<br><code>add %ebx,%eax</code></div>
+</div></div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] 피연산자 방향</span><span class="pg">보충</span></div>
+Intel은 <code>dst, src</code>(결과가 앞), AT&amp;T는 <code>src, dst</code>(결과가 뒤). 리눅스 실습(gdb, VS Code att 설정)은 AT&amp;T로 보므로 방향을 반대로 읽어야 한다.</div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> ADD EAX, EBX → 머신코드 03 C3 변환 과정</span><span class="pg">ch5 p.29–31</span></div>
+사람이 읽는(human readable) 어셈블리를 CPU는 모른다 → CPU 제조사가 제공하는 수백 페이지짜리 Opcode 매핑 표에서 찾아 머신코드로 바꿔야 함.
+<div class="flow">
+<div class="fb"><b>ADD EAX, EBX</b>Intel, 32비트 레지스터 2개</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>Opcode 표 검색</b>ADD r32, r/m32<br>→ <code>03 /r</code></div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>/r 표 검색</b>EAX ↔ EBX 교차<br>→ <code>C3</code></div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>03 C3</b>2바이트 명령어</div>
+</div>
+<pre>04 ib    ADD AL, imm8       ✗ AL(8비트) 아님
+05 id    ADD EAX, imm32     ✗ 두 번째가 상수(imm)가 아님
+01 /r    ADD r/m32, r32     △ 가능하지만 오퍼랜드 앞뒤가 바뀐 형태
+03 /r    ADD r32, r/m32     ✓ 첫째 32비트 레지스터, 둘째 32비트 레지스터/메모리</pre>
+<ul>
+<li>Opcode는 16진수 → <code>03 C3</code>은 한 칸이 1바이트 → 총 <b style="font-weight:500">2바이트</b> (수업 중 질문)</li>
+<li>CPU는 <code>03 C3</code>을 만나면 역으로 "ADD EAX, EBX구나" 해석해 수행</li>
+<li>명령어 길이는 고정이 아님: 1, 2, 4, 6바이트 등 구성에 따라 다름</li>
+</ul></div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] 왜 C3인가 — ModR/M 바이트</span><span class="pg">보충</span></div>
+ModR/M = mod(2비트) | reg(3비트) | r/m(3비트). 레지스터끼리 연산이면 mod=<code>11</code>, reg=EAX=<code>000</code>, r/m=EBX=<code>011</code> → <code>11 000 011</code>₂ = <code>0xC3</code>. 참고로 <code>01 D8</code>로도 같은 연산을 인코딩할 수 있고 어셈블러마다 선택이 다를 수 있으니, 시험에서는 강의자료 기준(<code>03 C3</code>)으로 답할 것.</div>
+</div>
+
+<div class="panel" data-p="2">
+<div class="card"><div class="ch"><span class="ct">ADD / SUB</span><span class="pg">ch5 p.32</span></div>
+<div class="grid">
+<div class="gi"><b>ADD EAX, 4</b>뒤의 값을 앞에 더함<br>EAX 3 → 7</div>
+<div class="gi"><b>SUB EAX, 4</b>앞에서 뒤의 값을 뺌<br>EAX 7 → 3</div>
+</div>
+결과는 항상 제1피연산자에 저장되어 레지스터/메모리 값이 바뀐다.</div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> CMP — 비교만, 값은 안 바꿈</span><span class="pg">ch5 p.33</span></div>
+<div class="flow">
+<div class="fb"><b>CMP op1, op2</b>내부적으로 SUB 연산</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>결과 저장 X</b>ADD/SUB와 차이</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>EFLAGS의 ZR(ZF) 반영</b>같으면 1 / 다르면 0</div>
+</div>
+프로그래밍의 <code>if (a == b)</code>에 해당. 결과(참/거짓)를 32비트 EFLAGS 레지스터의 한 비트인 ZR에 비트 온/오프로 남긴다. 예: 직전에 MOV로 넣은 값과 같은 값을 CMP → ZR = 1.</div>
+<div class="card"><div class="ch"><span class="ct">기타 산술 연산</span><span class="pg">ch5 p.34–35</span></div>
+<span class="b">ADC</span><span class="b">SBB</span><span class="b">INC</span><span class="b">DEC</span><span class="b">NEG</span><span class="b">MUL</span><span class="b">IMUL</span><span class="b">DIV</span><span class="b">IDIV</span><span class="b">CBW</span><span class="b">CWD</span> …
+<div class="mut">강의에서는 "이런 게 있다"고 넘어감 — 표는 자료로 확인.</div></div>
+<div class="card"><div class="ch"><span class="ct">MOV — 데이터 이동 (뒤 → 앞)</span><span class="pg">ch5 p.37</span></div>
+<pre>MOV DWORD PTR [ESP], 0x1234   ; ESP가 가리키는 메모리에 0x1234 저장
+MOV EAX, [ESP]                ; ESP 주소에 있는 데이터를 EAX로 복사</pre>
+대괄호 <code>[ ]</code> = 지난주 배운 메모리 간접 지정 방식.</div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> 조심: MOV EAX, ESP ≠ MOV EAX, [ESP]</span><span class="pg">ch5 p.37, p.40</span></div>
+<div class="grid">
+<div class="gi"><b>MOV EAX, ESP</b>ESP가 가진 값(주소 자체)을 EAX로 복사</div>
+<div class="gi"><b>MOV EAX, [ESP]</b>ESP가 가리키는 곳에 저장된 값을 EAX로 복사</div>
+</div></div>
+<div class="card"><div class="ch"><span class="ct">ESP = 스택 포인터</span><span class="pg">ch5 p.12, p.38–39</span></div>
+자료구조 스택의 <code>top</code> 변수와 같은 역할을 하는 실제 레지스터. 항상 가장 최신(latest) 데이터를 가리킨다.
+<div class="grid">
+<div class="gi"><b>PUSH op</b>오퍼랜드 1개. 스택에 밀어넣고 ESP가 새 데이터로 이동 (데이터 크기만큼 감소)</div>
+<div class="gi"><b>POP op</b>ESP가 가리키는 최신 데이터를 꺼내 op에 저장, ESP 증가</div>
+</div></div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] 왜 PUSH인데 ESP가 감소?</span><span class="pg">보충</span></div>
+스택은 높은 주소 → 낮은 주소 방향으로 자란다(ch5 p.12). 그래서 32비트 기준 PUSH는 ESP −4, POP은 ESP +4.</div>
+<div class="card"><div class="ch"><span class="ct">LEA (Load Effective Address)</span><span class="pg">ch5 p.40</span></div>
+MOV와 비슷하지만 제2피연산자의 주소값 자체를 제1피연산자에 저장.
+<pre>LEA EAX, [ESP]   ; [ESP]의 주소 = ESP 값 → EAX
+MOV EAX, ESP     ; 위와 같은 연산</pre></div>
+<div class="card"><div class="ch"><span class="ct">기타 데이터 전송</span><span class="pg">ch5 p.41</span></div>
+<span class="b">XCHG</span><span class="b">IN</span><span class="b">OUT</span><span class="b">XLAT</span><span class="b">LDS</span><span class="b">LES</span><span class="b">LAHF</span><span class="b">SAHF</span><span class="b">PUSHF</span><span class="b">POPF</span></div>
+</div>
+
+<div class="panel" data-p="3">
+<div class="card"><div class="ch"><span class="ct">논리 연산 (이산수학의 그 논리 연산)</span><span class="pg">ch5 p.42–45</span></div>
+비트 단위로 대응시켜 연산하고 결과는 제1피연산자(EAX 등)에 저장.
+<div class="grid">
+<div class="gi"><b>AND</b>둘 다 1일 때만 1<span class="pg" style="margin-left:4px">p.42</span></div>
+<div class="gi"><b>OR</b>하나라도 1이면 1<span class="pg" style="margin-left:4px">p.43</span></div>
+<div class="gi"><b>XOR</b>둘 중 하나만 1일 때 1<span class="pg" style="margin-left:4px">p.44</span></div>
+<div class="gi"><b>NOT</b>각 비트 반전 (1의 보수)<span class="pg" style="margin-left:4px">p.45</span></div>
+</div>
+<pre>A B | AND OR XOR
+0 0 |  0   0   0
+0 1 |  0   1   1
+1 0 |  0   1   1
+1 1 |  1   1   0
+
+NOT EAX   ; 강의 예: 1001 → 0110</pre></div>
+<div class="card"><div class="ch"><span class="ct">TEST — 비트 위치 확인, 값 변경 X</span><span class="pg">ch5 p.46</span></div>
+내부적으로 AND 연산을 하되 결과는 저장하지 않고 ZR 플래그에만 반영 (CMP가 SUB인 것과 대칭). 강의 예: EAX를 <code>0x0A</code>(1010)과 TEST.</div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] CMP와 TEST 짝으로 외우기</span><span class="pg">보충</span></div>
+<div class="grid">
+<div class="gi"><b>CMP</b>= SUB − 결과 저장</div>
+<div class="gi"><b>TEST</b>= AND − 결과 저장</div>
+</div>
+둘 다 플래그만 바꾸고 바로 뒤의 조건부 점프(JE 등)가 그 플래그를 보고 분기한다. 또 <code>XOR EAX, EAX</code>는 자기 자신과 XOR → 0이 되어, ch6 셸코드에서 0을 만드는 데 쓰인다(ch6 p.59).</div>
+<div class="card"><div class="ch"><span class="ct">스트링 명령</span><span class="pg">ch5 p.48–49</span></div>
+<div class="grid">
+<div class="gi"><b>REP</b>뒤 스트링 명령을 ECX가 0이 될 때까지 반복</div>
+<div class="gi"><b>MOVS</b>ESI가 가리키는 문자열 → EDI로 이동(복사)</div>
+</div>
+<span class="b">MOVSB · Byte 1B</span><span class="b">MOVSW · Word 2B</span><span class="b">MOVSD · Dword 4B</span>
+<div class="mut">강의 중 Word 크기를 "2바이트인가?" 했는데 자료 ch5 p.19 기준 Word = 2바이트 맞음.</div></div>
+</div>
+
+<div class="panel" data-p="4">
+<div class="card"><div class="ch"><span class="ct">JMP — 무조건 점프</span><span class="pg">ch5 p.50</span></div>
+C에서는 코드가 꼬이니 웬만하면 쓰지 말라고 배우지만, 어셈블리에서는 많이 쓰인다. 제1피연산자에 점프할 주소 또는 라벨을 지정.</div>
+<div class="card"><div class="ch"><span class="ct">조건부 점프 형제들</span><span class="pg">ch5 p.51–52</span></div>
+<span class="b">JC · CF=1</span><span class="b">JNC · CF=0</span><span class="b">JE / JZ</span><span class="b">JG · greater</span><span class="b">JNS · not sign</span><span class="b">JO · overflow</span> …
+<div class="mut">CF(캐리 플래그)도 EFLAGS의 한 비트. 실제로는 다 쓰이며, 그중 JE 계열이 가장 많이 나온다.</div></div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> CALL = PUSH EIP + JMP / RET = POP EIP</span><span class="pg">ch5 p.53</span></div>
+<div class="flow">
+<div class="fb"><b>CALL func</b>함수 호출</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>PUSH EIP</b>돌아올 다음 명령 주소를 스택에 저장</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>JMP func</b>함수 시작점으로</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>RET</b>= POP EIP<br>저장해둔 곳으로 복귀</div>
+</div>
+JMP는 뒤도 안 돌아보고 이동하지만, CALL은 함수가 끝난 뒤 이어서 실행할 위치를 스택에 남겨두고 간다. RET은 오퍼랜드가 필요 없음. ch6 실행 흐름 분석에서 그대로 다시 등장.</div>
+<div class="card"><div class="ch"><span class="ct">INT 0x80 — 시스템 콜</span><span class="pg">ch5 p.54 · ch6 p.43</span></div>
+인터럽트가 걸리면 하던 일을 중단하고 그것부터 처리. <code>INT 0x80</code>은 시스템 콜을 호출하는 인터럽트. (자료: 인터럽트 시 EIP와 플래그를 스택에 저장, LOOP는 ECX를 카운터로 반복)</div>
+<div class="card"><div class="ch"><span class="ct">STC · NOP</span><span class="pg">ch5 p.55</span></div>
+<div class="grid">
+<div class="gi"><b>STC</b>EFLAGS의 CF를 세팅</div>
+<div class="gi"><b>NOP (0x90)</b>No operation. 아무 일도 안 하고 빈칸을 채움</div>
+</div>
+NOP이 필요한 이유: 명령어 길이가 제각각(1, 2바이트 …)이라, CPU 처리 효율을 위해 32비트 기준 4바이트 메모리 얼라인먼트를 맞출 때 빈칸을 채운다.</div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] NOP과 보안</span><span class="pg">보충</span></div>
+버퍼 오버플로 공격에서는 셸코드 앞을 0x90으로 길게 채운 NOP sled를 깔아, 정확한 시작 주소를 몰라도 미끄러지듯 셸코드에 도달하게 만든다. 이후 챕터에서 다시 나올 가능성이 높은 개념.</div>
+</div>
+
+<div class="panel" data-p="5">
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> 셸코드란</span><span class="pg">ch6 p.1–2, p.46</span></div>
+셸(bash, dash, zsh 같은 셸 프로그램)을 띄우게 하는 머신코드. Ch5 어셈블리는 셸코드를 이해하기 위한 간단한 리뷰였고 "핵심은 이 셸코드".</div>
+<div class="card"><div class="ch"><span class="ct">실습 예제 sample.c</span><span class="pg">ch6 p.3</span></div>
+<pre>void main()
+{
+    int c;
+    c = function(1, 2);
+}
+
+int function(int a, int b)
+{
+    char buffer[10];
+    a = a + b;
+    return a;
+}</pre>
+main의 변수 c에 function의 리턴값을 저장. <code>buffer</code>는 실제로 쓰이지 않음 — 메모리 구조를 보여주기 위해 넣은 것.</div>
+<div class="card"><div class="ch"><span class="ct">VS Code 원격 환경</span><span class="pg">ch6 p.4–14</span></div>
+<div class="flow">
+<div class="fb"><b>호스트에 VS Code</b>p.4</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>포트 포워딩</b>p.5</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>Remote-SSH</b>p.6–13</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>확장 설치</b>C/C++, Memory View · p.14</div>
+</div>
+<pre>ssh seed@localhost -p 19001</pre>
+Memory View는 가상 메모리 구조를 보기 위해 설치.</div>
+<div class="card"><div class="ch"><span class="ct">컴파일 옵션</span><span class="pg">ch6 p.15–21</span></div>
+<ul>
+<li><code>launch.json</code> 21–22번째 줄 Intel → <code>att</code> (VS Code가 MS 것이라 기본 Intel, 우리는 리눅스라 AT&amp;T) <span class="pg">p.19</span></li>
+<li><code>tasks.json</code>의 args에 옵션 추가 <span class="pg">p.21</span></li>
+</ul>
+<pre>"args": [
+    ...,
+    "-m32",
+    "-fmessage-length=0",
+    "-fno-stack-protector",
+    "-mpreferred-stack-boundary=2",
+    "-fno-pie",
+    "-fcf-protection=none"
+]</pre>
+최신 PC는 64비트 OS → 이해에 불필요한 것을 제거하고 간단한 코드만 보기 위해 옵션이 필요.</div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] 옵션별 의미</span><span class="pg">보충</span></div>
+<div class="grid">
+<div class="gi"><b>-m32</b>32비트로 컴파일</div>
+<div class="gi"><b>-fno-stack-protector</b>스택 카나리 보호 끔</div>
+<div class="gi"><b>-mpreferred-stack-boundary=2</b>스택 정렬 2²=4바이트</div>
+<div class="gi"><b>-fno-pie</b>위치 독립 실행 파일 끔 → 주소 고정적</div>
+<div class="gi"><b>-fcf-protection=none</b>endbr32 등 CET 명령 제거</div>
+<div class="gi"><b>-fmessage-length=0</b>에러 메시지 줄바꿈 안 함</div>
+</div></div>
+<div class="card"><div class="ch"><span class="ct">디버그 → Disassembly View</span><span class="pg">ch6 p.22–25</span></div>
+<div class="flow">
+<div class="fb"><b>breakpoint</b>line 1</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>Debug C/C++ File</b>p.22–23</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>우클릭</b>Open Disassembly View · p.24</div>
+</div>
+10줄도 안 되는 C 코드가 오른쪽에 어셈블리로 펼쳐져 나온다(p.25).</div>
+</div>
+
+<div class="panel" data-p="6">
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> Disassembly View 읽는 법 (3열)</span><span class="pg">ch6 p.25–26</span></div>
+<div class="grid">
+<div class="gi"><b>① 주소값</b>0x…, 16진수. 그 명령이 들어 있는 주소 = 가상메모리의 코드(텍스트) 세그먼트</div>
+<div class="gi"><b>② 머신코드</b>16진수. 5바이트, 1바이트 등 길이 제각각. <code>90</code> = NOP</div>
+<div class="gi"><b>③ 어셈블리어</b>가운데 머신코드를 라인 바이 라인으로 해석해 보여준 것</div>
+</div>
+<div class="mut">가상메모리 복습: 위쪽 스택 → 중간 힙 → 아래 데이터/코드 세그먼트 (ch5 p.12–14)</div></div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> 실행 순서 1 → 18</span><span class="pg">ch6 p.26 · 주소 p.31</span></div>
+<div class="flow">
+<div class="fb"><b>main ①–⑥</b>위에서 차례로</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>⑥ call</b>PUSH EIP(0x565561ac)<br>+ JMP 0x565561b5</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>function ⑦–⑭</b>라인 바이 라인</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>⑭ ret</b>POP EIP → 저장 주소로</div><div class="ar"><i class="ti ti-arrow-right" aria-hidden="true"></i></div>
+<div class="fb"><b>main ⑮–⑱</b>이어서 실행</div>
+</div>
+⑥ 다음 줄이 아니라 function 시작(0x565561b5)으로 간다. ret을 만나면 call 직전에 PUSH해둔 주소를 POP해서 다시 main으로 돌아온다.</div>
+<div class="card"><div class="ch"><span class="ct">sample.c의 어셈블리 (AT&amp;T)</span><span class="pg">ch6 p.26–38</span></div>
+<pre>main:
+  &lt;1&gt;   push   %ebp
+  &lt;2&gt;   mov    %esp,%ebp
+  &lt;3&gt;   sub    $0x4,%esp
+  &lt;4&gt;   push   $0x2
+  &lt;5&gt;   push   $0x1
+  &lt;6&gt;   call   0x565561b5 &lt;function&gt;
+  &lt;15&gt;  add    $0x8,%esp
+  &lt;16&gt;  mov    %eax,-0x4(%ebp)
+  &lt;17&gt;  leave
+  &lt;18&gt;  ret
+
+function:
+  &lt;7&gt;   push   %ebp
+  &lt;8&gt;   mov    %esp,%ebp
+  &lt;9&gt;   sub    $0xc,%esp
+  &lt;10&gt;  mov    0xc(%ebp),%eax
+  &lt;11&gt;  add    %eax,0x8(%ebp)
+  &lt;12&gt;  mov    0x8(%ebp),%eax
+  &lt;13&gt;  leave
+  &lt;14&gt;  ret</pre>
+<div class="mut">오늘은 흐름(call/ret)까지만. 각 줄의 스택 변화 분석(p.27–38)은 다음 시간.</div></div>
+<div class="card imp"><div class="ch"><span class="ct"><i class="ti ti-star" aria-hidden="true"></i> 핵심 정리</span><span class="pg">강의 결론</span></div>
+모든 고급 언어 코드는 컴파일되면 결국 이런 머신코드로 바뀌고, CPU는 이 머신코드를 라인 바이 라인으로 읽어 실행한다.</div>
+<div class="card ext"><div class="ch"><span class="ct">[부연설명] 미리 보기: 프롤로그와 4바이트 정렬</span><span class="pg">ch6 p.28, p.34</span></div>
+<code>push %ebp</code> + <code>mov %esp,%ebp</code>는 함수 시작마다 나오는 프롤로그. ⑨ <code>sub $0xc</code>는 <code>buffer[10]</code>에 10바이트만 필요하지만 4바이트 정렬로 12바이트(0xc)를 잡은 것 — 오늘 NOP에서 말한 얼라인먼트와 같은 맥락.</div>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('#tabs button');
+  var ps = document.querySelectorAll('.panel');
+  function show(i){
+    ps.forEach(function(p){ p.style.display = p.getAttribute('data-p') == i ? 'block' : 'none'; });
+    btns.forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-t') == i); });
+  }
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){ show(b.getAttribute('data-t')); });
+  });
+  show('0');
+})();
+</script>
+</body>
+</html>
