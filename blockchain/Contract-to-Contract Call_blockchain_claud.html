@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Contract-to-Contract Call</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-1);padding:1px 5px;border-radius:5px}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-accent)}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.chip{background:var(--bg-accent);color:var(--text-accent);font-size:12px;padding:3px 10px;border-radius:var(--radius)}
+.src{font-size:12px;color:var(--text-secondary);margin:10px 0 6px;display:flex;align-items:center;gap:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.legend{font-size:12px;color:var(--text-secondary);margin:4px 0 16px;display:flex;gap:12px;flex-wrap:wrap}
+.legend .lw{color:var(--text-warning)}.legend .la{color:var(--text-accent)}
+.c{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:14px;line-height:1.7}
+.ci,.ca{background:var(--surface-2);border-radius:12px;margin:0 0 12px;overflow:hidden;font-size:14px;line-height:1.7}
+.ci{border:1px solid var(--border-warning)}.ca{border:1px solid var(--border-accent)}
+.ch{padding:7px 16px;font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ch>span:first-child{display:flex;align-items:center;gap:6px}
+.ci .ch{background:var(--bg-warning);color:var(--text-warning)}.ca .ch{background:var(--bg-accent);color:var(--text-accent)}
+.cb{padding:12px 16px}
+.pg{font-size:11px;color:var(--text-secondary);border:0.5px solid var(--border-strong);border-radius:6px;padding:1px 6px;white-space:nowrap;font-weight:400}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.k{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;font-size:13px;line-height:1.55}
+.k b{display:block;font-weight:500;font-size:13px;margin-bottom:2px}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;font-size:13px}
+.fl span.n{background:var(--surface-1);border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 10px;text-align:center}
+.fl small{color:var(--text-secondary)}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border-radius:var(--radius);padding:12px 14px;overflow-x:auto;line-height:1.55;margin:8px 0}
+pre code{background:none;padding:0;font-size:inherit}
+.t{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px}
+.t h3{font-size:15px;font-weight:500;margin:0}
+.addr{font-family:var(--font-mono);font-size:12px;color:var(--text-accent)}
+.tx-d{color:var(--text-danger)}.tx-s{color:var(--text-success)}.tx-w{color:var(--text-warning)}.tx-a{color:var(--text-accent)}
+ul,ol{margin:6px 0 0;padding-left:20px}
+li{margin:2px 0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 9l1 0"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M7 8l-4 4l4 4"/><path d="M17 8l4 4l-4 4"/><path d="M14 4l-4 16"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1"/><path d="M12 7v10"/></symbol>
+  <symbol id="i-gas" viewBox="0 0 24 24"><path d="M14 11h1a2 2 0 0 1 2 2v3a1.5 1.5 0 0 0 3 0v-7l-3 -3"/><path d="M4 20v-14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v14"/><path d="M3 20l12 0"/><path d="M18 7v1a1 1 0 0 0 1 1h1"/><path d="M4 11l10 0"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/><path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/></symbol>
+</svg>
+
+<div class="page">
+<a class="back" href="../index.html"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg>목차</a>
+<div class="title">
+  <svg class="i" aria-hidden="true" style="font-size:22px;color:var(--text-secondary)"><use href="#i-link"/></svg>
+  <h1>Contract-to-Contract Call</h1>
+  <span class="chip">블록체인</span>
+</div>
+<div class="src"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>강의자료: 26-2 2 Contract-Contract Call.pdf · p.1–11 (표지 포함 전체 범위)</div>
+<div class="tabs" id="tabs">
+  <button class="on" data-t="1">1. 단일 컨트랙트 TX</button><button data-t="2">2. 컨트랙트 간 호출이 필요한 이유</button><button data-t="3">3. 호출 원리 · 주소</button><button data-t="4">4. 방법① 인터페이스</button><button data-t="5">5. 방법② Low-level Call</button><button data-t="6">6. 예시 · 토큰 구매</button><button data-t="7">7. 가스비 부담</button><button data-t="8">핵심 요약</button>
+</div>
+<div class="legend">
+  <span class="lw"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> amber = 강의 강조/시험 포인트</span>
+  <span class="la"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> blue = [부연설명]</span>
+</div>
+
+<!-- ===================== SECTION 1 ===================== -->
+<section data-s="1">
+<div class="c"><div class="t"><h3>이번 강의: 스마트 컨트랙트 고급 — 컨트랙트 간 호출</h3><span class="pg">p.1</span></div>
+Web3 서비스를 블록체인 위에서 개발할 때, 핵심 작업은 <b>스마트 컨트랙트를 내 서비스에 맞게 작성해서 블록체인에 배포</b>하는 것이다. 기존 블록체인 영상에서 다룬 건 기초적인 내용이라, 이번 슬라이드에서는 스마트 컨트랙트의 고급 내용인 <b>Contract-to-Contract Call(컨트랙트가 또 다른 컨트랙트를 호출하는 것)</b>을 다룬다.</div>
+
+<div class="c"><div class="t"><h3>복습: 단일 컨트랙트 트랜잭션의 흐름</h3><span class="pg">p.2</span></div>
+먼저 우리가 기존에 알고 있던, 하나의 컨트랙트에서 트랜잭션이 발생하는 과정이다. 블록체인 개발자가 Solidity 언어로 비즈니스 로직을 작성한 뒤 다음 단계를 거친다.
+<div class="fl">
+  <span class="n">① Solidity로<br>컨트랙트 작성</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">② Compile<br><small>→ Bytecode</small></span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">③ 블록체인에<br>Deploy(배포)</span>
+</div>
+배포된 스마트 컨트랙트는 지갑 주소처럼 <b>자신만의 고유한 주소(address)</b>를 받고, 그 주소에 해당하는 <b>key-value 스토리지(저장소)</b>를 가진다.</div>
+
+<div class="c"><div class="t"><h3>배포 후 실행 과정</h3><span class="pg">p.2</span></div>
+<div class="fl">
+  <span class="n">1. 사용자가<br>트랜잭션 제출<br><small>(MetaMask 등)</small></span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">2. 컨트랙트 함수 실행<br><small>(노드의 EVM 안에서)</small></span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">3. 모든 노드 합의<br>→ 스토리지 업데이트</span>
+</div>
+dApp 브라우저에서 버튼을 누르면 트랜잭션이 발생하고, 컨트랙트 안의 함수 하나가 EVM 가상머신 안에서 실행된다. 실행이 끝나면 모든 노드가 상태를 바꿀지 합의하고, 최종 합의되면 컨트랙트 스토리지(key-value store)가 업데이트된다. 실행 비용은 트랜잭션을 발생시킨 유저가 부담한다.</div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 중간에 생략된 RPC 노드</span><span class="pg">p.2</span></div><div class="cb">
+개발자가 바이트코드를 블록체인에 배포하거나 사용자가 트랜잭션을 보낼 때, 실제로는 블록체인과 직접 연결해 주는 <b>RPC 노드(게이트웨이)</b>를 거친다. 강의에서는 흐름을 단순하게 보여주기 위해 이 부분을 생략했다. 또 이 수업의 블록체인은 <code>EVM</code> 계열(이더리움과 같은 Virtual Machine을 쓰는 체인 — Polygon, Arbitrum 등)을 기준으로 한다.</div></div>
+</section>
+
+<!-- ===================== SECTION 2 ===================== -->
+<section data-s="2">
+<div class="c"><div class="t"><h3>Beyond a Single-Contract Transaction</h3><span class="pg">p.3</span></div>
+이제 비즈니스 모델에 맞게 컨트랙트를 <b>두 개</b> 작성해서 배포했다고 하자. 각각 작성 → 컴파일 → 바이트코드 → 배포를 거쳐 컨트랙트 ❶, ❷ 두 개가 블록체인에 올라가 있다.
+<div class="fl" style="margin-top:10px">
+  <span class="n"><svg class="i" aria-hidden="true"><use href="#i-box"/></svg> Contract ❶</span>
+  <span class="n"><svg class="i" aria-hidden="true"><use href="#i-box"/></svg> Contract ❷</span>
+</div>
+기본 동작은, 사용자가 ❶의 함수를 호출하는 트랜잭션을 보내면 ❶의 함수가 실행되고 <b>❶의 스토리지만</b> 업데이트된다.</div>
+
+<div class="c"><div class="t"><h3>핵심 질문</h3><span class="pg">p.3</span></div>
+그런데 <b>❶의 상태 변경이 ❷에도 대응되는 업데이트를 필요로 한다면?</b> 사용자가 외부 브라우저에서 버튼 하나를 클릭했을 때, ❶번 컨트랙트 함수가 실행되고 이어서 ❷번 컨트랙트 함수까지 실행되어야 하는 비즈니스 모델을 상상해 보자. 이런 경우가 굉장히 많다.</div>
+
+<div class="c"><div class="t"><h3>예시로 상상하기 — 당근마켓</h3><span class="pg">강의 설명</span></div>
+사용자가 어떤 물건을 구입하려고 버튼을 클릭하면,
+<div class="fl">
+  <span class="n">물품 소유권(owner)을<br>구매자로 변경하는 TX</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">바로 이어서<br>돈을 이체하는 TX</span>
+</div>
+이렇게 여러 트랜잭션이 <b>연이어(연쇄적으로)</b> 발생해야 하는 경우가 있다. 즉 두 개의 트랜잭션이 서로 관계를 맺는다.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 실제 컨트랙트는 대부분 내부적으로 서로 호출한다</span><span class="pg">p.3</span></div><div class="cb">
+사용자가 하나의 스마트 컨트랙트를 호출하면, 관련된 또 다른 스마트 컨트랙트가 호출되면서 그 컨트랙트의 상태도 계속 업데이트될 수 있다. 그래서 <b>컨트랙트가 컨트랙트를 호출하는 일은 빈번</b>하며, 실제로 우리가 사용하는 스마트 컨트랙트 대부분은 내부적으로(internal) 컨트랙트 간 호출이 계속 일어난다.
+<div style="margin-top:8px">의문: 외부에서는 분명히 ❶번 컨트랙트 함수만 호출했는데, 어떻게 ❶이 ❷를 호출해서 연쇄적으로 트랜잭션을 발생시킬까? → 이번 강의의 주제.</div></div></div>
+</section>
+
+<!-- ===================== SECTION 3 ===================== -->
+<section data-s="3">
+<div class="c"><div class="t"><h3>원리: 컨트랙트마다 고유한 주소가 있다</h3><span class="pg">p.4</span></div>
+스마트 컨트랙트를 컴파일하고 배포(deploy)하면, 모든 스마트 컨트랙트는 지갑 주소처럼 <b>자신만의 고유한 주소(address)</b>를 가진다. 컨트랙트 A, B를 각각 컴파일해서 얻은 바이트코드를 배포하면 각각 다른 주소를 받는다.
+<div class="fl" style="margin-top:8px">
+  <span class="n">Contract A<br><span class="addr">0x2E9…2b28e3</span></span>
+  <span class="n">Contract B<br><span class="addr">0xDA07…d3dF</span></span>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 주소만 알면 호출할 수 있다</span><span class="pg">p.4</span></div><div class="cb">
+호출하는 쪽(A)이 배포된 상대 컨트랙트(B)의 <b>고유 주소를 알고 있으면</b>, B의 함수를 호출할 수 있다. 직관적으로 당연한 이야기 — A가 B의 주소만 알면 된다.
+<pre><code>contract ContractB {
+    uint256 public number;
+    function setNumber(uint256 n) external {
+        number = n;
+    }
+}
+
+contract ContractA {
+    function callB(address b) external {
+        ContractB(b).setNumber(10);   // B의 주소(b)를 받아 B의 함수 호출
+    }
+}</code></pre>
+<span class="tx-a">Contract A can call Contract B once it is given Contract B's address.</span></div></div>
+
+<div class="c"><div class="t"><h3>사용자 입장에서 본 전체 그림</h3><span class="pg">p.7</span></div>
+사용자는 사실 A가 아니라 <b>B를 호출</b>하고, B가 내부적으로 A를 연쇄적(internal)으로 호출하는 구조가 자주 쓰인다. 이때 사용자는 B를 호출하면서 <b>A의 주소를 트랜잭션의 인자(argument)로 함께 전달</b>한다.
+<div class="fl" style="margin-top:8px">
+  <span class="n"><svg class="i" aria-hidden="true"><use href="#i-wallet"/></svg> User</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">Contract B 호출<br><small>(인자로 A의 주소 전달)</small></span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">B가 내부에서<br>Contract A 호출</span>
+</div></div>
+</section>
+
+<!-- ===================== SECTION 4 ===================== -->
+<section data-s="4">
+<div class="c"><div class="t"><h3>방법① High-level Call (인터페이스 사용)</h3><span class="pg">p.5</span></div>
+두 개의 컨트랙트를 상상한다. 먼저 호출당하는 쪽인 <b>Contract A</b>를 작성해서 컴파일·배포한다.
+<pre><code>contract ContractA {
+    uint256 public number;
+
+    function setNumber(uint256 _number) public {
+        number = _number;
+    }
+}</code></pre>
+<ul>
+<li><code>number</code> = 상태값(변수). 자료형은 <code>uint256</code>.</li>
+<li><code>public</code> = 접근제어자. 외부에서 이 상태값을 읽을 수 있게 해 준다. (<code>private</code>이면 외부에서 읽지 못함)</li>
+<li><code>setNumber</code> = <code>public</code> 함수라 외부에서 호출 가능. 인자로 받은 값으로 <code>number</code> 상태를 변화시킨다.</li>
+</ul></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 상태를 바꾸면 트랜잭션 수수료(가스비), 읽기만 하면 공짜</span><span class="pg">p.5</span></div><div class="cb">
+<div class="g">
+<div class="k"><b class="tx-w">상태를 변화시키는 함수</b>영구 저장소(storage)에 쓰는 것이므로 호출한 사용자는 <b>무조건 트랜잭션 수수료(gas)를 낸다.</b></div>
+<div class="k"><b class="tx-s">읽기만 하는 함수 (view)</b>저장소를 쓰지 않고 값만 읽어서 반환 → <b>트랜잭션 수수료가 들지 않는다.</b></div>
+</div>
+<code>public</code> 상태값을 외부에서 읽는 것도 "읽기(read)" 작업이라 가스비가 들지 않는다. (Remix에서 색깔이 다른 버튼으로 표시됨)</div></div>
+
+<div class="c"><div class="t"><h3>Contract B — A를 호출하는 쪽</h3><span class="pg">p.6</span></div>
+이어서 A와 연관된 <b>Contract B</b>를 만든다. B에는 상태값 없이 함수 하나만 있고, 이 함수도 외부에서 호출 가능하다.
+<pre><code>contract ContractB {
+    function callSetNumber(address _contractA, uint256 _number) public {
+        IContractA(_contractA).setNumber(_number);
+    }
+}</code></pre>
+<ul>
+<li>첫 번째 인자 <code>_contractA</code> = 호출할 스마트 컨트랙트 A의 <b>주소</b> (배포된 40자리/20바이트 주소).</li>
+<li>두 번째 인자 <code>_number</code> = A의 상태값을 바꿀 값.</li>
+<li>받은 주소로 가서 A의 <code>setNumber</code> 함수를 호출 → A의 상태값을 바꾼다.</li>
+</ul></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> ⭐ 파일이 쪼개져 있으면 interface로 함수 시그니처를 알려줘야 한다</span><span class="pg">p.8</span></div><div class="cb">
+B가 A의 <code>setNumber</code>를 호출하려면, 그 함수가 <b>어떤 시그니처(함수명·인자·반환형)</b>로 되어 있는지 B가 알고 있어야 한다. A와 B가 <b>서로 다른 파일</b>로 쪼개져 있으면 그냥 호출할 수 없고, <code>interface</code> 문법으로 호출할 함수의 시그니처를 명시해 줘야 한다. (하나의 파일에 같이 작성하면 필요 없음)
+<pre><code>interface IContractA {
+    function setNumber(uint256 number) external;
+}
+
+contract ContractB {
+    function callSetNumber(address _contractA, uint256 _number) public {
+        IContractA(_contractA).setNumber(_number);
+    }
+}</code></pre>
+<div class="pg" style="display:inline-block;margin-top:4px">실습 Hands-on · p.8</div></div></div>
+
+<div class="c"><div class="t"><h3>Remix 실습 순서</h3><span class="pg">p.8</span></div>
+<ol>
+<li>Contract A를 작성하고 가상 블록체인 네트워크에 배포한다. (맨 위 라이선스 + <code>pragma solidity</code> 버전 두 줄은 꼭 써 준다)</li>
+<li>Contract B를 작성한다 — 다른 파일에 정의된 A의 함수에 접근하기 위해 <b>interface</b>를 사용한다.</li>
+<li>Contract B를 A와 같은 방식으로 배포한다.</li>
+<li>B의 <code>callSetNumber</code> 함수를, A의 배포된 주소를 인자로 넣어 호출한다.</li>
+<li>Contract A의 상태 변화를 확인한다.</li>
+</ol>
+<div class="fl" style="margin-top:8px">
+  <span class="n">A·B 각각 배포</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">A의 주소 복사</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">B.callSetNumber<br>(A주소, 1230) 호출</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n tx-s">A의 number가<br>1230으로 변경</span>
+</div>
+B의 함수를 호출했는데 A의 상태값이 바뀐 것을 확인할 수 있다. A의 <code>number</code>는 <code>public</code>이라 읽을 수 있고, 읽기 작업이라 트랜잭션 수수료가 들지 않는다(버튼 색이 다름).</div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 강의자료 p.6 코드의 오타</span><span class="pg">p.6</span></div><div class="cb">
+강의자료 p.6 코드에는 <code>ContractB(_contractA).setNumber(_number)</code>로 적혀 있는데, <code>_contractA</code>는 Contract A의 주소이므로 정확히는 <code>ContractA(_contractA)</code> 또는 p.8처럼 <b>인터페이스</b> <code>IContractA(_contractA)</code>로 캐스팅하는 것이 맞다. 그래서 위 본문 코드는 p.8의 인터페이스 방식에 맞춰 <code>IContractA</code>로 정리했다.</div></div>
+</section>
+
+<!-- ===================== SECTION 5 ===================== -->
+<section data-s="5">
+<div class="c"><div class="t"><h3>방법② Low-level Call (인터페이스 없이)</h3><span class="pg">p.9</span></div>
+하나의 컨트랙트가 다른 컨트랙트를 호출하는 두 번째 방법. 인터페이스 문법을 쓰지 않고도 가능한 <b>로우레벨 콜(low-level call)</b>이다.
+<pre><code>contract ContractB {
+    function callSetNumber(address _contractA, uint256 _number) public {
+        (bool success, bytes memory returnData) = _contractA.call(
+            abi.encodeWithSignature("setNumber(uint256)", _number)
+        );
+        require(success, "Call failed");
+    }
+}</code></pre></div>
+
+<div class="c"><div class="t"><h3>문법 뜯어보기</h3><span class="pg">p.9</span></div>
+<div class="g">
+<div class="k"><b><code>_contractA.call(...)</code></b>컨트랙트 주소값도 일종의 객체(object)라서 내장 메서드 <code>call</code>을 가진다. 이 메서드로 A의 함수를 호출한다.</div>
+<div class="k"><b><code>abi.encodeWithSignature(...)</code></b><code>abi</code>는 Solidity/EVM이 제공하는 전역 객체. 호출할 함수명과 인자를 넣으면 <b>바이트코드(calldata)</b>로 인코딩된다.</div>
+<div class="k"><b>반환값 2개</b><code>(bool success, bytes returnData)</code> — 호출 성공/실패 여부와, 호출된 함수의 반환값(있다면)을 돌려준다.</div>
+<div class="k"><b><code>require(success, ...)</code></b>호출이 실패하면 트랜잭션을 되돌린다(revert). <code>setNumber</code>는 반환값이 없어 <code>returnData</code>는 무시해도 된다.</div>
+</div></div>
+
+<div class="c"><div class="t"><h3>내부적으로 일어나는 일</h3><span class="pg">p.9</span></div>
+함수 시그니처와 인자가 <b>바이트로 인코딩되어 calldata로 Contract A에 전달</b>된다. 즉 <code>callSetNumber</code>가 호출되면 인코딩된 바이트코드가 트랜잭션에 실려 B에서 A로 함께 전달된다. 실행 결과는 인터페이스 방식과 완전히 동일하다.
+<div class="fl" style="margin-top:8px">
+  <span class="n">함수명 + 인자</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">abi.encodeWithSignature<br>→ bytecode(calldata)</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">B → A 로 전달,<br>A의 setNumber 실행</span>
+</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 왜 두 방법을 다 알아두면 좋은가</span><span class="pg">p.9</span></div><div class="cb">
+인터페이스 방식은 시그니처를 따로 적어야 하지만 타입 체크가 되어 안전하고, 로우레벨 콜은 인터페이스가 없어 겉보기엔 깔끔하지만 성공 여부를 직접 <code>require</code>로 확인해야 하는 등 불편한 문법이 들어간다. 강의에서는 "GPT·Claude로 Web3 서비스를 만들면 스마트 컨트랙트가 아마 이런 식으로 작성될 것이라, 코드를 직접 읽지 않더라도 문법을 알아두면 도움이 된다"고 언급했다.</div></div>
+</section>
+
+<!-- ===================== SECTION 6 ===================== -->
+<section data-s="6">
+<div class="c"><div class="t"><h3>예시: 토큰 구매 (Marketplace + Token)</h3><span class="pg">p.10</span></div>
+컨트랙트 간 호출의 대표 예시. 당근마켓 같은 웹사이트를 만든다고 할 때, 컨트랙트를 두 개로 나눈다.
+<div class="g">
+<div class="k"><b><svg class="i" aria-hidden="true"><use href="#i-box"/></svg> Marketplace Contract</b>주문을 저장하고, 구매가 완료됐는지 기록. 어떤 물품이 누구 소유인지 관리.</div>
+<div class="k"><b><svg class="i" aria-hidden="true"><use href="#i-coin"/></svg> Token Contract</b>각 사용자의 토큰 잔액(balance)을 저장하고, 사용자 간 토큰을 이체(transfer).</div>
+</div></div>
+
+<div class="c"><div class="t"><h3>Token Contract</h3><span class="pg">p.10</span></div>
+<pre><code>contract Token {
+    mapping(address =&gt; uint256) public balances;
+
+    constructor() {
+        // 배포자에게 1000 토큰 지급
+        balances[msg.sender] = 1000;
+    }
+
+    function transfer(address to, uint256 amount) external {
+        require(balances[msg.sender] &gt;= amount, "Not enough tokens");
+        balances[msg.sender] -= amount;
+        balances[to] += amount;
+    }
+}</code></pre></div>
+
+<div class="c"><div class="t"><h3>Marketplace Contract</h3><span class="pg">p.10</span></div>
+<pre><code>interface IToken {
+    function transfer(address to, uint256 amount) external;
+}
+
+contract Marketplace {
+    IToken public token;
+    uint256 public numberOfPurchases;
+
+    constructor(address tokenAddress) {
+        token = IToken(tokenAddress);
+    }
+
+    function buy(address seller, uint256 price) external {
+        // Marketplace 저장소 업데이트
+        numberOfPurchases += 1;
+        // 컨트랙트 간 호출
+        token.transfer(seller, price);
+    }
+}</code></pre></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 구매 한 번 → 두 컨트랙트가 연쇄 실행</span><span class="pg">p.10</span></div><div class="cb">
+구매가 일어나면 Marketplace에서 구매를 기록하고, 이어서 Token 컨트랙트의 <code>transfer</code>가 호출되면서 토큰이 구매자 → 판매자로 이체된다.
+<div class="fl" style="margin-top:8px">
+  <span class="n"><svg class="i" aria-hidden="true"><use href="#i-wallet"/></svg> User가<br>Marketplace.buy() 호출</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">numberOfPurchases += 1<br><small>(구매 기록)</small></span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">token.transfer(seller, price)<br><small>(토큰 이체)</small></span>
+</div>
+이렇게 하나의 컨트랙트가 실행되면 다음 컨트랙트가 실행되어, 구매 완료 시 돈이 이체되는 흐름이 연달아 발생한다. 프로젝트를 할 때 이런 상황을 많이 접하게 된다.</div></div>
+</section>
+
+<!-- ===================== SECTION 7 ===================== -->
+<section data-s="7">
+<div class="c"><div class="t"><h3>사용자는 B만 호출했지만, 내부는 B→A→B</h3><span class="pg">p.11</span></div>
+전체적으로 보면 유저는 Contract B를 호출했을 뿐이다. 하지만 블록체인 내부(노드의 EVM)에서는 B의 함수가 실행되고, 이어서 A의 함수가 호출되고, 다시 B로 돌아와 남은 로직이 실행된 뒤 종료된다.
+<div class="fl" style="margin-top:8px">
+  <span class="n">B 함수 호출</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">A 함수 호출</span>
+  <svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+  <span class="n">다시 B로 복귀<br>→ 남은 로직 실행 → 종료</span>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 가스비(트랜잭션 수수료)는 최초 호출자가 전부 부담한다</span><span class="pg">p.11</span></div><div class="cb">
+각 컨트랙트는 전부 opcode로 바뀌어 실행되고, 실행되는 opcode마다 얼마의 gas가 드는지 모두 계산된다. 사용자는 B 함수를 <b>한 번</b> 호출했지만, 내부적으로 A·C·D… 다른 컨트랙트 함수가 연쇄 호출되면 그 모든 실행 gas가 합산된다.
+<div style="font-family:var(--font-mono);font-size:14px;margin:10px 0;text-align:center">Total Gas = (A가 쓴 gas) + (B가 쓴 gas) + …</div>
+이 총 gas 비용을 <b>최초로 호출한 사용자가 전부 낸다.</b></div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 함부로 컨트랙트를 실행하는 것도 위험하다</span><span class="pg">p.11</span></div><div class="cb">
+"컨트랙트 한 번 호출한다고 별일 없겠지" 하고 호출했다가, 내부적으로 다른 트랜잭션이 계속 연쇄 호출되면 <b>생각보다 트랜잭션 수수료가 높게 책정</b>될 수 있다. 그래서 컨트랙트 간 호출 구조를 알고 있어야 한다. 트랜잭션 수수료는 전부 최초 호출한 사용자가 낸다는 점을 기억할 것.</div></div>
+</section>
+
+<!-- ===================== SECTION 8 ===================== -->
+<section data-s="8">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 핵심 요약 체크리스트</span><span class="pg">p.1–11</span></div><div class="cb">
+<ol style="margin:0">
+<li>단일 컨트랙트 TX: 작성 → 컴파일 → 배포 → (호출 → 함수 실행 → 합의 → 스토리지 업데이트) <span class="pg">p.2</span></li>
+<li>실제 스마트 컨트랙트는 대부분 내부적으로 컨트랙트 간 호출이 일어난다 <span class="pg">p.3</span></li>
+<li>모든 배포된 컨트랙트는 고유 주소를 가지며, <b>주소를 알면</b> 그 컨트랙트 함수를 호출할 수 있다 <span class="pg">p.4</span></li>
+<li>사용자는 B를 호출하며 <b>A의 주소를 인자로 전달</b> → B가 내부에서 A를 호출 <span class="pg">p.7</span></li>
+<li>방법① 인터페이스: 파일이 쪼개져 있으면 <code>interface</code>로 함수 시그니처를 명시해야 호출 가능 ⭐ <span class="pg">p.8</span></li>
+<li>방법② Low-level call: <code>addr.call(abi.encodeWithSignature("f(uint256)", x))</code>, <code>(success, returnData)</code> 반환, 인터페이스 불필요 <span class="pg">p.9</span></li>
+<li>상태 변경 함수 = 가스비 발생 / 읽기(view) = 가스비 없음 <span class="pg">p.5</span></li>
+<li>예시: Marketplace.buy() → Token.transfer() 연쇄 호출 <span class="pg">p.10</span></li>
+<li>연쇄 호출의 가스비(A+B+…)는 <b>최초 호출 사용자가 전부 부담</b> → 함부로 호출 주의 <span class="pg">p.11</span></li>
+</ol></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 이 강의의 위치 — 논문으로 이어지는 흐름</span><span class="pg">강의 설명</span></div><div class="cb">
+이 수업은 오프라인 수업과 하나의 흐름을 이룬다. 약 5주간 기초 내용을 다루고, 마지막 6주차쯤에 응용(리서치 토픽)을 소개하면서 "이 정도 지식이면 논문 한 편을 쓸 수 있다"는 것을 약 6번의 수업에 걸쳐 보여줄 예정이라고 강의에서 예고했다. Contract-to-Contract Call은 그 기초 흐름의 한 부분이다.</div></div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('#tabs button'), secs = document.querySelectorAll('section[data-s]');
+  function show(n){
+    secs.forEach(function(s){ s.style.display = s.getAttribute('data-s') === n ? 'block' : 'none'; });
+    tabs.forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-t') === n); });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.getAttribute('data-t')); window.scrollTo({top:0}); }); });
+  show('1');
+})();
+</script>
+</body>
+</html>
