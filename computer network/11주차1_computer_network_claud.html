@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>컴퓨터네트워크 11주차 1차시 — TCP 빠른 재전송 · 흐름제어 · 연결 관리(3-way/4-way)</title>
+<style>
+:root{
+  --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff; --surface-3:#f0eee7;
+  --text-primary:#1f1e1d; --text-secondary:#56544f; --text-muted:#8a877f;
+  --border:rgba(31,30,29,.12); --border-strong:rgba(31,30,29,.24);
+  --accent:#185FA5; --accent-soft:#E6F1FB; --accent-line:#4a8dcf;
+  --amber:#9a6a00; --amber-bg:#fdf5e3; --amber-border:#e8c766; --amber-accent:#c98a00;
+  --blue:#1f5fa8; --blue-bg:#eaf2fb; --blue-border:#9cc2e8;
+  --rose:#b03a52; --rose-bg:#fcebee; --rose-border:#e8a6b3;
+  --green:#2f7d52; --green-bg:#e8f5ec; --green-border:#9fd2b2;
+  --mono:'SF Mono','Menlo','Consolas','Noto Sans KR',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1a1918; --surface-1:#222120; --surface-2:#2a2927; --surface-3:#323230;
+    --text-primary:#ece9e1; --text-secondary:#b4b2a9; --text-muted:#86847c;
+    --border:rgba(255,255,255,.11); --border-strong:rgba(255,255,255,.22);
+    --accent:#85B7EB; --accent-soft:#0c2b4d; --accent-line:#3f7cb8;
+    --amber:#f0c66b; --amber-bg:#352a12; --amber-border:#6b5520; --amber-accent:#f0c66b;
+    --blue:#8fbdf0; --blue-bg:#122942; --blue-border:#2d4e74;
+    --rose:#eca3b2; --rose-bg:#3a1f26; --rose-border:#6e3c47;
+    --green:#8fd2a8; --green-bg:#15301f; --green-border:#2f5e40;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--sans);line-height:1.68;font-size:15px;-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:1.6rem 1.1rem 4rem}
+
+/* header */
+.src{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin:0 0 6px;letter-spacing:.01em}
+header h1{font-size:23px;font-weight:650;margin:0 0 6px;line-height:1.3;letter-spacing:-.01em}
+header .desc{font-size:13.5px;color:var(--text-secondary);margin:0 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary)}
+.chip.k{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+
+/* tabs */
+.tabs{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:4px;margin:18px 0 22px;padding:6px;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(8px)}
+.tab{flex:1 1 auto;min-width:fit-content;border:0;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:12.8px;font-weight:550;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:.14s;display:flex;align-items:center;gap:6px;justify-content:center}
+.tab:hover{background:var(--surface-3);color:var(--text-primary)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(24,95,165,.3)}
+.tab .tnum{font-family:var(--mono);font-size:11px;opacity:.65}
+.tab.active .tnum{opacity:.85}
+
+/* panels */
+.panel{display:none;animation:fade .25s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-start;gap:12px;margin:0 0 16px}
+.phead .pn{flex:none;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--mono);font-size:15px}
+.phead h2{font-size:18.5px;margin:2px 0 2px;font-weight:650;line-height:1.3}
+.phead .pg{font-size:11.5px;color:var(--text-muted);font-family:var(--mono)}
+
+/* cards */
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
+.card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px}
+.card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
+.card ul{margin:6px 0 10px;padding-left:2px;list-style:none}
+.card ul li{position:relative;padding-left:20px;margin:7px 0}
+.card ul li::before{content:"";position:absolute;left:4px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--accent-line)}
+.card ul li:last-child{margin-bottom:0}
+b,strong{color:var(--text-primary);font-weight:650}
+.ic{flex:none;width:18px;height:18px}
+
+/* important (amber) */
+.card.imp{background:var(--amber-bg);border-color:var(--amber-border)}
+.card.imp h3{color:var(--amber)}
+.card.imp ul li::before{background:var(--amber-accent)}
+.star{flex:none;width:17px;height:17px;color:var(--amber-accent)}
+.badge-exam{font-size:10.5px;font-weight:700;font-family:var(--mono);color:#fff;background:var(--amber-accent);padding:2px 7px;border-radius:6px;margin-left:auto;letter-spacing:.03em}
+
+/* note (blue) */
+.card.note{background:var(--blue-bg);border-color:var(--blue-border)}
+.card.note h3{color:var(--blue)}
+.card.note ul li::before{background:var(--blue)}
+.note-tag{font-size:10.5px;font-weight:700;font-family:var(--mono);color:var(--blue);border:1px solid var(--blue-border);padding:1px 7px;border-radius:6px;margin-left:auto}
+
+/* helpers */
+.lead{font-size:15.5px;color:var(--text-primary);margin:0 0 12px}
+.muted{color:var(--text-secondary)}
+.tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:1px 7px;border-radius:6px;background:var(--surface-3);border:1px solid var(--border);color:var(--text-secondary);white-space:nowrap}
+.tag.syn{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.tag.ack{color:var(--green);background:var(--green-bg);border-color:var(--green-border)}
+.tag.fin{color:var(--rose);background:var(--rose-bg);border-color:var(--rose-border)}
+.tag.loss{color:var(--rose);background:var(--rose-bg);border-color:var(--rose-border)}
+
+/* grid of mini-cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 2px}
+.mini{background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:13px 14px}
+.mini .mt{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin-bottom:4px}
+.mini .mv{font-size:14.5px;font-weight:600}
+.mini .ms{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+
+/* formula box */
+.formula{background:var(--surface-1);border:1px dashed var(--border-strong);border-radius:12px;padding:16px 18px;margin:10px 0;text-align:center;font-family:var(--mono);font-size:13.5px;overflow-x:auto}
+.formula .res{color:var(--accent);font-weight:700}
+.formula .step{display:block;margin:4px 0;color:var(--text-secondary);font-size:12.5px}
+
+/* code block */
+.code{background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:10px 0;font-family:var(--mono);font-size:12.5px;line-height:1.6;overflow-x:auto;color:var(--text-primary);white-space:pre}
+.code .cm{color:var(--text-muted)}
+.code .hl{color:var(--accent);font-weight:600}
+
+/* SVG diagram frame */
+.diag{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0 4px;overflow-x:auto}
+.diag svg{display:block;width:100%;height:auto;min-width:480px}
+.cap{font-size:12px;color:var(--text-muted);text-align:center;margin-top:6px}
+text{font-family:var(--sans)}
+
+/* seq segment strip */
+.seg{display:flex;flex-wrap:wrap;gap:0;margin:10px 0 4px;border-radius:9px;overflow:hidden;border:1px solid var(--border-strong)}
+.seg .f{flex:1 1 auto;padding:9px 6px;text-align:center;font-family:var(--mono);font-size:11.5px;border-right:1px solid var(--border);background:var(--surface-1)}
+.seg .f:last-child{border-right:0}
+.seg .f b{display:block;font-size:12.5px;color:var(--text-primary);margin-top:2px}
+.seg .f.k{background:var(--accent-soft);color:var(--accent)}
+
+/* buffer bar */
+.buf{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--border-strong);margin:12px 0 4px}
+.buf .used{background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-family:var(--mono)}
+.buf .free{background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-family:var(--mono)}
+
+.footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);text-align:center}
+@media(max-width:560px){
+  .wrap{padding:1.2rem .8rem 3rem}
+  header h1{font-size:20px}
+  .tab{font-size:12px;padding:7px 8px}
+  .card{padding:15px 15px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="src">강의자료 : 제3장-3 (Chap 3. Transport Layer 3) · p.8~16 (빠른 재전송·흐름제어·연결 관리) · 세그먼트 구조 복습 p.3~4</p>
+  <h1>TCP 빠른 재전송 · 흐름제어 · 연결 관리 (3-way / 4-way handshake)</h1>
+  <p class="desc">컴퓨터네트워크 &nbsp;|&nbsp; 11주차 1차시</p>
+  <div class="chips">
+    <span class="chip k">Fast Retransmit</span>
+    <span class="chip">3 중복 ACK</span>
+    <span class="chip">세그먼트 구조</span>
+    <span class="chip">Flow Control</span>
+    <span class="chip">3-way handshake</span>
+    <span class="chip">SYN Flooding</span>
+    <span class="chip">4-way 해제</span>
+    <span class="chip">TIME_WAIT</span>
+    <span class="chip">netstat</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-i="0"><span class="tnum">01</span>빠른 재전송</button>
+  <button class="tab" data-i="1"><span class="tnum">02</span>세그먼트 구조</button>
+  <button class="tab" data-i="2"><span class="tnum">03</span>흐름제어</button>
+  <button class="tab" data-i="3"><span class="tnum">04</span>연결 설정</button>
+  <button class="tab" data-i="4"><span class="tnum">05</span>SYN Flooding</button>
+  <button class="tab" data-i="5"><span class="tnum">06</span>연결 해제</button>
+  <button class="tab" data-i="6"><span class="tnum">07</span>상태 처리도</button>
+  <button class="tab" data-i="7"><span class="tnum">08</span>netstat·백도어</button>
+</nav>
+
+<!-- ============ PANEL 0 : Fast Retransmit ============ -->
+<section class="panel active" data-i="0">
+  <div class="phead">
+    <div class="pn">1</div>
+    <div>
+      <h2>빠른 재전송 (Fast Retransmit)</h2>
+      <div class="pg">제3장-3 · p.8~9 (지난 시간 복습)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>타임아웃을 기다리면 너무 늦다</h3>
+    <p class="lead">재전송 방법에는 두 가지가 있다. 하나는 <b>타임아웃 재전송</b>, 또 하나가 <b>빠른 재전송</b>이다. 패킷이 손실됐는데 <b>타임아웃이 될 때까지 기다리면 복구가 너무 늦다.</b> 더 빨리 손실을 알아채고 복구할 방법이 빠른 재전송이다.</p>
+    <ul>
+      <li>손실이 나면 수신자는 <b>같은 ACK(중복 ACK)를 계속 보낸다.</b> 누적 ACK라서 "다음에 받을 바이트"를 똑같이 반복해 알려주기 때문.</li>
+      <li>송신자가 <b>같은 ACK를 3번(3 중복 ACK) 받으면</b> → 타임아웃을 기다리지 않고 <b>곧바로 해당 세그먼트를 재전송</b>한다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>동작 예시 — 100번 데이터가 손실되면</h3>
+    <p>수신자가 기대하는 다음 바이트가 100번인데 100이 손실됐다. 이후 데이터가 도착해도 수신자는 계속 <b>"100을 달라"는 같은 ACK</b>만 되돌려 보낸다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 540 210" role="img" aria-label="중복 ACK 3회 수신 후 빠른 재전송">
+        <text x="95" y="22" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">송신자</text>
+        <text x="445" y="22" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">수신자</text>
+        <line x1="95" y1="30" x2="95" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="445" y1="30" x2="445" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <!-- lost 100 -->
+        <line x1="97" y1="40" x2="300" y2="64" stroke="var(--rose)" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="190" y="46" font-size="10.5" fill="var(--rose)">seq=100 (손실)</text>
+        <text x="312" y="66" font-size="16" fill="var(--rose)" font-weight="700">✕</text>
+        <!-- subsequent data arrive -->
+        <line x1="97" y1="70" x2="443" y2="92" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#a0)"/>
+        <line x1="443" y1="100" x2="97" y2="118" stroke="var(--green)" stroke-width="1.8" marker-end="url(#g0)"/>
+        <text x="250" y="116" font-size="10" fill="var(--green)">dup ACK 100 ①</text>
+        <line x1="443" y1="126" x2="97" y2="144" stroke="var(--green)" stroke-width="1.8" marker-end="url(#g0)"/>
+        <text x="250" y="142" font-size="10" fill="var(--green)">dup ACK 100 ②</text>
+        <line x1="443" y1="152" x2="97" y2="170" stroke="var(--green)" stroke-width="1.8" marker-end="url(#g0)"/>
+        <text x="250" y="168" font-size="10" fill="var(--green)">dup ACK 100 ③</text>
+        <!-- fast retransmit -->
+        <line x1="97" y1="178" x2="443" y2="196" stroke="var(--amber-accent)" stroke-width="2.4" marker-end="url(#am0)"/>
+        <text x="235" y="192" font-size="10.5" fill="var(--amber)" font-weight="650">빠른 재전송: seq=100 (100~210B)</text>
+        <defs>
+          <marker id="a0" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--accent)"/></marker>
+          <marker id="g0" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--green)"/></marker>
+          <marker id="am0" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--amber-accent)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">같은 ACK(100) 3회 중복 → 타임아웃 전에 100번 데이터를 즉시 재전송.</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>왜 하필 "3번"일까?<span class="badge-exam">시험·핵심</span></h3>
+    <p class="lead">교수님이 특별히 강조한 포인트. 1번도 2번도 아니고 <b>왜 3개의 중복 ACK를 기다렸다가 재전송</b>할까? 그냥 심심해서 정한 숫자가 아니다.</p>
+    <p>네트워크(IP 계층)에서는 패킷이 <b>보낸 순서와 다르게 도착</b>할 수 있다. 내가 1·2·3번 순서로 보내도 수신단에는 <b>1·3·2 순서</b>로 도착할 수 있다.</p>
+    <ul>
+      <li>이렇게 <b>순서만 뒤바뀌어도</b> 수신자는 잠깐 중복 ACK를 보낸다 — 실제로 손실된 게 아닌데도.</li>
+      <li>이때 섣불리 재전송하면 <b>멀쩡한 데이터를 괜히 다시 보내는 손해</b>가 생긴다.</li>
+      <li>그래서 <b>단순 순서 뒤바뀜을 걸러내고</b>, 중복 ACK가 <b>3개까지 쌓인 "확실한 손실"일 때만</b> 재전송한다.</li>
+    </ul>
+    <p class="muted">→ 1~2개의 중복 ACK는 "순서 뒤바뀜"일 가능성이 커서 무시, 3개부터 "진짜 손실"로 판단. 이 설계 의도가 핵심.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 1 : Segment structure (Wireshark) ============ -->
+<section class="panel" data-i="1">
+  <div class="phead">
+    <div class="pn">2</div>
+    <div>
+      <h2>TCP 세그먼트 구조 — Wireshark로 눈으로 확인</h2>
+      <div class="pg">제3장-3 · p.3~4 (세그먼트 구조 · Seq/ACK)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Wireshark 필터로 하나의 TCP 흐름만 본다</h3>
+    <p>패킷이 병렬로 너무 많이 움직여 보기 힘들다. 그래서 특정 조건만 남기도록 <b>필터링</b>한다 — 예: 특정 포트의 패킷만, 또는 <span class="tag">tcp.port == 6211</span> 같은 조건으로 하나의 연결만 추려서 본다.</p>
+    <div class="code"><span class="cm"># Wireshark 디스플레이 필터 예시</span>
+http <span class="hl">and</span> tcp.port == 58804   <span class="cm"># HTTP + 특정 포트만</span>
+tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span></div>
+    <p class="muted">필터를 걸면 GET HTTP 메시지와 그 아래 IP · TCP 헤더가 한눈에 들어온다.</p>
+  </div>
+
+  <div class="card">
+    <h3>세그먼트 헤더에서 확인한 값들</h3>
+    <div class="seg">
+      <div class="f k">Seq (순서번호)<b>내가 보내는 바이트 번호</b></div>
+      <div class="f k">ACK (확인응답)<b>다음에 받을 바이트</b></div>
+      <div class="f">Length<b>데이터 길이</b></div>
+      <div class="f">Header Len<b>20 bytes</b></div>
+      <div class="f">Window<b>버퍼 여유</b></div>
+      <div class="f">Checksum<b>에러 검출</b></div>
+    </div>
+    <ul>
+      <li><b>순서번호(Seq):</b> 내가 지금 <b>몇 번째 바이트</b>를 보내고 있는지. 데이터의 첫 바이트 번호.</li>
+      <li><b>확인응답(ACK):</b> 상대로부터 <b>다음에 받을 첫 바이트</b> 번호 = <b>누적 ACK</b>.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>ACK 번호 = Seq + Length<span class="badge-exam">핵심</span></h3>
+    <p>Wireshark에서 실제로 확인한 관계. 어떤 세그먼트의 <b>순서번호에 데이터 길이를 더하면</b> → 상대가 보내올 <b>다음 ACK 번호</b>가 된다.</p>
+    <div class="formula">
+      다음 ACK = Seq + Length<br>
+      <span class="step">예: Seq = 1812, Length = 709 bytes</span>
+      → <span class="res">1812 + 709 = 2521</span>
+    </div>
+    <p class="muted">확인응답 번호는 "내가 여기까지 받았으니 <b>다음은 이 바이트부터 보내라</b>"를 알려준다. 이것이 누적 ACK의 의미.</p>
+  </div>
+
+  <div class="card">
+    <h3>헤더 길이 · 체크섬</h3>
+    <ul>
+      <li><b>헤더 길이(4비트):</b> Wireshark 값이 <b>5(0101)</b>. 기본 단위가 <b>4바이트</b>이므로 5 × 4 = <b>20바이트</b>. 옵션이 없는 기본 TCP 헤더 크기.</li>
+      <li><b>체크섬(Checksum):</b> 에러가 있는지 검출. (UDP의 체크섬과 동일한 인터넷 체크섬 방식)</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>Window 값과 윈도우 스케일<span class="note-tag">부연설명</span></h3>
+    <p>Wireshark에서 Window 값이 <b>255</b>로 보였는데, 실제 버퍼는 그보다 훨씬 크다. <b>윈도우 스케일 팩터</b>가 적용되어 <b>255 × 256 = 65,280 바이트</b>의 버퍼를 의미한다.</p>
+    <p class="muted">작은 16비트 Window 필드로 큰 버퍼를 표현하기 위해 스케일 배수를 곱하는 옵션. 지금은 "숫자 뒤에 배수가 곱해진다" 정도로만 이해하면 충분.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 2 : Flow Control ============ -->
+<section class="panel" data-i="2">
+  <div class="phead">
+    <div class="pn">3</div>
+    <div>
+      <h2>흐름제어 (Flow Control)</h2>
+      <div class="pg">제3장-3 · p.10~11</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>버퍼가 넘치지 않게 — 속도를 맞추는 일</h3>
+    <p class="lead">수신측은 도착한 데이터를 <b>버퍼(buffer)에 쌓아 두고</b>, 응용 프로그램(CPU)이 그걸 꺼내어 실행한다. 미디어 플레이어로 영상을 재생하거나 게임이 데이터를 소비하는 것이 그 예다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 600 160" role="img" aria-label="네트워크에서 도착한 데이터가 버퍼에 쌓이고 응용이 소비">
+        <line x1="20" y1="60" x2="120" y2="60" stroke="var(--accent-line)" stroke-width="2" marker-end="url(#af)"/>
+        <text x="70" y="50" text-anchor="middle" font-size="11" fill="var(--text-muted)">도착(IP)</text>
+        <!-- buffer -->
+        <rect x="130" y="34" width="210" height="60" rx="9" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+        <rect x="140" y="44" width="30" height="40" rx="3" fill="var(--accent-soft)" stroke="var(--accent-line)"/>
+        <rect x="174" y="44" width="30" height="40" rx="3" fill="var(--accent-soft)" stroke="var(--accent-line)"/>
+        <rect x="208" y="44" width="30" height="40" rx="3" fill="var(--accent-soft)" stroke="var(--accent-line)"/>
+        <rect x="242" y="44" width="30" height="40" rx="3" fill="var(--surface-3)" stroke="var(--border)"/>
+        <rect x="276" y="44" width="30" height="40" rx="3" fill="var(--surface-3)" stroke="var(--border)"/>
+        <text x="235" y="110" text-anchor="middle" font-size="11" fill="var(--text-muted)">수신 버퍼(Receive Buffer)</text>
+        <!-- consume -->
+        <line x1="340" y1="60" x2="440" y2="60" stroke="var(--green)" stroke-width="2" marker-end="url(#ag2)"/>
+        <text x="390" y="50" text-anchor="middle" font-size="11" fill="var(--green)">소비(drain)</text>
+        <rect x="450" y="36" width="130" height="56" rx="9" fill="var(--green-bg)" stroke="var(--green-border)"/>
+        <text x="515" y="60" text-anchor="middle" font-size="12" font-weight="650" fill="var(--green)">응용 프로그램</text>
+        <text x="515" y="78" text-anchor="middle" font-size="10.5" fill="var(--green)">영상·게임 재생</text>
+        <defs>
+          <marker id="af" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--accent-line)"/></marker>
+          <marker id="ag2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--green)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">도착률(네트워크)과 소비율(응용)의 속도가 맞아야 한다.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>너무 느려도, 너무 빨라도 문제</h3>
+    <div class="grid">
+      <div class="mini" style="border-color:var(--rose-border)">
+        <div class="mt">데이터가 너무 느리게 오면</div>
+        <div class="mv" style="color:var(--rose)">버퍼가 빈다</div>
+        <div class="ms">재생할 데이터가 없어 <b>영상이 멈추고 게임에 랙</b>이 걸린다.</div>
+      </div>
+      <div class="mini" style="border-color:var(--amber-border)">
+        <div class="mt">데이터가 너무 빠르게 오면</div>
+        <div class="mv" style="color:var(--amber)">버퍼가 넘친다</div>
+        <div class="ms">저장 공간이 없어 <b>패킷 손실(packet loss)</b>이 발생한다.</div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:10px">네트워크가 너무 빠르면(소비 속도보다) 버퍼가 가득 차 패킷을 버리게 되고, 너무 느리면 재생이 끊긴다. 둘의 매치가 핵심.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>흐름제어 = 스피드 매칭 (Speed Matching)<span class="badge-exam">핵심</span></h3>
+    <p><b>송신자의 전송률</b>과 <b>수신자의 응용 소비율</b>을 같게 맞춰, 수신 버퍼가 넘치지 않도록 <b>데이터 양을 조절</b>하는 것이 흐름제어다.</p>
+    <ul>
+      <li>수신자는 <b>버퍼의 여유 공간</b>을 세그먼트의 <b>Receive Window(RcvWindow)</b>에 담아 송신자에게 알린다.</li>
+      <li>송신자는 자신의 <b>슬라이딩 윈도우</b> 크기를 이 값에 맞춘다 — 여유가 많으면 윈도우를 <b>늘려</b> 고속 전송, 거의 차면 <b>줄여서(멈춰서)</b> 더 보내지 않는다.</li>
+      <li>너무 멈춰도 안 되고, <b>적절한 중간 지점</b>을 유지하도록 조절하는 것이 목표.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Receive Window 계산식</h3>
+    <p>전체 버퍼 크기에서 "아직 응용이 읽어가지 않고 쌓여 있는 양"을 빼면 여유 공간이 나온다.</p>
+    <div class="formula">
+      RcvWindow = RcvBuffer − ( LastByteRcvd − LastByteRead )
+      <span class="step">전체 버퍼 − (받은 마지막 바이트 − 읽어간 마지막 바이트)</span>
+    </div>
+    <div class="buf">
+      <div class="used" style="flex:55">읽히지 않고 쌓인 데이터</div>
+      <div class="free" style="flex:45">RcvWindow (여유)</div>
+    </div>
+    <p class="muted">이 RcvWindow 값으로 송신 속도가 조절되어, 랙 없이 적절히 데이터를 읽을 수 있게 된다. 이것이 TCP 흐름제어의 역할.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 3 : Connection setup (3-way) ============ -->
+<section class="panel" data-i="3">
+  <div class="phead">
+    <div class="pn">4</div>
+    <div>
+      <h2>연결 설정 — 3-way handshake</h2>
+      <div class="pg">제3장-3 · p.12~13</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>TCP는 신뢰적 통신 → 먼저 연결을 요청한다</h3>
+    <p class="lead">TCP는 연결형·신뢰적 프로토콜이라 데이터를 보내기 전에 <b>연결 요청</b> 과정을 거친다. 연결 요청에는 플래그 비트 중 <span class="tag syn">SYN</span>을 사용한다.</p>
+    <ul>
+      <li>클라이언트가 <b>SYN 비트를 1로 설정</b>해 서버에 보낸다 = <b>연결 요청</b> (데이터 불포함, 초기 순서번호 명시).</li>
+      <li>SYN을 받은 서버는 <b>버퍼를 할당</b>하고, 요청에 대한 응답으로 <b>ACK</b>를 보낸다.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>TCP는 양방향 → 연결이 2개 필요하다<span class="badge-exam">핵심</span></h3>
+    <p>중요한 포인트: TCP는 <b>양방향(bidirectional)</b>이다. 클라이언트→서버 방향만 있는 게 아니라 <b>서버→클라이언트 방향 연결도</b> 있다. 그래서 <b>양쪽이 각자 연결을 요청</b>해야 한다.</p>
+    <ul>
+      <li>클라이언트 → 서버 방향: 클라이언트가 <span class="tag syn">SYN</span> 보냄, 서버가 <span class="tag ack">ACK</span>.</li>
+      <li>서버 → 클라이언트 방향: 서버도 <span class="tag syn">SYN</span>을 보내 연결 요청, 클라이언트가 <span class="tag ack">ACK</span>.</li>
+      <li>서버의 <b>SYN</b>과 클라이언트 요청에 대한 <b>ACK</b>를 <b>동시에</b> 하나로 묶어 보낸다 → <b>SYN-ACK</b>.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>3-way handshake (3방향 악수)<span class="badge-exam">시험·핵심</span></h3>
+    <p>원래는 SYN·ACK·SYN·ACK 4번이지만, 가운데 두 개(서버의 ACK + 서버의 SYN)를 <b>SYN-ACK 하나로 합쳐</b> 3번에 끝낸다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 520 190" role="img" aria-label="3-way handshake 흐름">
+        <text x="90" y="22" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">클라이언트</text>
+        <text x="430" y="22" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">서버</text>
+        <line x1="90" y1="30" x2="90" y2="176" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="430" y1="30" x2="430" y2="176" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <!-- SYN -->
+        <line x1="92" y1="48" x2="428" y2="74" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#c1)"/>
+        <text x="255" y="56" text-anchor="middle" font-size="12" fill="var(--accent)" font-weight="650">① SYN</text>
+        <text x="255" y="70" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">연결 요청 (클→서)</text>
+        <!-- SYN-ACK -->
+        <line x1="428" y1="92" x2="92" y2="118" stroke="var(--green)" stroke-width="2.2" marker-end="url(#c2)"/>
+        <text x="258" y="100" text-anchor="middle" font-size="12" fill="var(--green)" font-weight="650">② SYN-ACK</text>
+        <text x="258" y="114" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">응답 ACK + 서버 연결요청 SYN</text>
+        <!-- ACK -->
+        <line x1="92" y1="136" x2="428" y2="162" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#c1)"/>
+        <text x="255" y="144" text-anchor="middle" font-size="12" fill="var(--accent)" font-weight="650">③ ACK</text>
+        <text x="255" y="158" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">서버 SYN에 대한 응답 (데이터 포함 가능)</text>
+        <defs>
+          <marker id="c1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--accent)"/></marker>
+          <marker id="c2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--green)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">SYN → SYN-ACK → ACK. 양방향 연결 2개가 한꺼번에 설정된다.</div>
+    </div>
+    <p class="muted">연결이 끝나면 양쪽에 버퍼가 만들어지고, 흐름제어를 하며 데이터를 주고받는다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 4 : SYN Flooding ============ -->
+<section class="panel" data-i="4">
+  <div class="phead">
+    <div class="pn">5</div>
+    <div>
+      <h2>SYN Flooding 공격 — 연결 요청의 악용</h2>
+      <div class="pg">제3장-3 · 연결 관리 관련 · 보안 확장</div>
+    </div>
+  </div>
+
+  <div class="card note">
+    <h3>왜 이 이야기가 나오나<span class="note-tag">부연설명</span></h3>
+    <p>TCP의 연결·해제는 <b>공격을 가장 많이 당하는 부분</b> 중 하나다. 뉴스에 자주 나오는 <b>DDoS 공격으로 서버 다운</b> — "대량의 패킷이 도착해 서버가 죽었다"는 사건의 상당수가 <b>TCP 연결 요청(SYN)을 악용</b>한 것이다.</p>
+  </div>
+
+  <div class="card">
+    <h3>공격 원리 — 응답할 수 없는 가짜 연결 요청</h3>
+    <p>공격자는 <b>출발지 IP 주소를 랜덤하게(위장) 생성</b>해 서버에 대량의 SYN을 보낸다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 560 170" role="img" aria-label="SYN flooding: 위조 IP로 SYN을 보내 서버의 SYN-ACK가 허공으로">
+        <rect x="14" y="60" width="110" height="50" rx="9" fill="var(--rose-bg)" stroke="var(--rose-border)"/>
+        <text x="69" y="82" text-anchor="middle" font-size="12" font-weight="650" fill="var(--rose)">공격자</text>
+        <text x="69" y="99" text-anchor="middle" font-size="10" fill="var(--rose)">랜덤 출발지 IP</text>
+        <line x1="124" y1="85" x2="214" y2="85" stroke="var(--rose)" stroke-width="2" marker-end="url(#s1)"/>
+        <text x="169" y="76" text-anchor="middle" font-size="10.5" fill="var(--rose)">대량 SYN</text>
+        <rect x="216" y="56" width="120" height="58" rx="9" fill="var(--amber-bg)" stroke="var(--amber-border)"/>
+        <text x="276" y="80" text-anchor="middle" font-size="12" font-weight="650" fill="var(--amber)">서버</text>
+        <text x="276" y="97" text-anchor="middle" font-size="10" fill="var(--amber)">버퍼 할당·대기</text>
+        <!-- SYN-ACK to nowhere -->
+        <line x1="336" y1="78" x2="454" y2="52" stroke="var(--text-muted)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#s2)"/>
+        <text x="470" y="44" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">SYN-ACK</text>
+        <text x="500" y="78" text-anchor="middle" font-size="11" fill="var(--rose)">없는 주소 →</text>
+        <text x="500" y="94" text-anchor="middle" font-size="11" fill="var(--rose)">응답 없음 ✕</text>
+        <defs>
+          <marker id="s1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--rose)"/></marker>
+          <marker id="s2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--text-muted)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">서버는 SYN-ACK를 가짜 주소로 보내지만 ACK가 돌아오지 않아, 미완성 연결이 쌓이며 자원이 고갈된다.</div>
+    </div>
+    <ul>
+      <li>서버는 요청마다 <b>버퍼를 할당</b>하고 3-way handshake 완료를 기다린다.</li>
+      <li>그런데 ACK가 영영 오지 않아, <b>반쯤 열린 연결(half-open)</b>이 계속 쌓여 서버가 마비된다.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>왜 출발지 IP를 랜덤하게 만들까<span class="badge-exam">핵심</span></h3>
+    <ul>
+      <li>IP 주소가 <b>일정하면</b> 서버가 그 IP에서 오는 SYN을 쉽게 <b>차단(필터링)</b>할 수 있다.</li>
+      <li>그래서 공격자는 <b>IP를 매번 랜덤하게 위장</b> → 어느 것이 진짜 공격자인지 구분·추적이 어렵다.</li>
+      <li>물론 방어 기법도 많다 — 특정 포트 차단 등. 공격과 방어는 서로 쫓고 쫓기는 관계.</li>
+    </ul>
+    <p class="muted">이것이 <b>SYN Flooding(싱크 플러딩) 공격</b>. SYN 필드를 이용한 대표적 공격 유형이다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 5 : Teardown (4-way) + TIME_WAIT ============ -->
+<section class="panel" data-i="5">
+  <div class="phead">
+    <div class="pn">6</div>
+    <div>
+      <h2>연결 해제 — 4-way handshake & TIME_WAIT</h2>
+      <div class="pg">제3장-3 · p.14</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>FIN으로 "보낼 데이터 없음"을 알린다</h3>
+    <p class="lead">연결 해제는 플래그 비트 <span class="tag fin">FIN</span>을 설정해 보낸다. FIN = "이 방향으로 <b>더 이상 보낼 데이터가 없다</b>"는 뜻.</p>
+    <ul>
+      <li>클라이언트가 FIN을 보내면 → 클→서 방향으로 보낼 데이터가 끝났다는 의미 → 그쪽 버퍼를 비울 수 있다.</li>
+      <li>TCP는 양방향이므로 <b>반대 방향(서→클) 연결도 따로 닫아야</b> 한다 → 서버도 FIN을 보낸다.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>해제는 4단계 (FIN · ACK · FIN · ACK)<span class="badge-exam">시험·핵심</span></h3>
+    <p>설정은 SYN-ACK로 묶여 <b>3단계</b>였지만, 해제는 <b>4단계</b>다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 520 210" role="img" aria-label="4-way handshake 연결 해제 흐름">
+        <text x="90" y="22" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">클라이언트</text>
+        <text x="430" y="22" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">서버</text>
+        <line x1="90" y1="30" x2="90" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="430" y1="30" x2="430" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="92" y1="46" x2="428" y2="64" stroke="var(--rose)" stroke-width="2.2" marker-end="url(#f1)"/>
+        <text x="250" y="52" text-anchor="middle" font-size="11.5" fill="var(--rose)" font-weight="650">① FIN</text>
+        <line x1="428" y1="78" x2="92" y2="96" stroke="var(--green)" stroke-width="2.2" marker-end="url(#f2)"/>
+        <text x="250" y="84" text-anchor="middle" font-size="11.5" fill="var(--green)" font-weight="650">② ACK</text>
+        <line x1="428" y1="112" x2="92" y2="130" stroke="var(--rose)" stroke-width="2.2" marker-end="url(#f2)"/>
+        <text x="250" y="118" text-anchor="middle" font-size="11.5" fill="var(--rose)" font-weight="650">③ FIN</text>
+        <line x1="92" y1="144" x2="428" y2="162" stroke="var(--green)" stroke-width="2.2" marker-end="url(#f1)"/>
+        <text x="250" y="150" text-anchor="middle" font-size="11.5" fill="var(--green)" font-weight="650">④ ACK</text>
+        <rect x="18" y="168" width="150" height="26" rx="6" fill="var(--amber-bg)" stroke="var(--amber-border)"/>
+        <text x="93" y="185" text-anchor="middle" font-size="10.5" fill="var(--amber)" font-weight="600">TIME_WAIT (약 20초 대기)</text>
+        <defs>
+          <marker id="f1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--rose)"/></marker>
+          <marker id="f2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--green)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">설정 3단계(SYN·SYN-ACK·ACK) ↔ 해제 4단계(FIN·ACK·FIN·ACK).</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>TIME_WAIT — 왜 바로 종료하지 않고 20초 기다릴까<span class="badge-exam">시험·중요</span></h3>
+    <p class="lead">클라이언트는 마지막 ACK를 보낸 뒤 <b>곧바로 종료하지 않고</b> 약 <b>20초(Timed Wait)</b>를 기다렸다가 종료한다. 왜?</p>
+    <ul>
+      <li>만약 그 <b>마지막 ACK가 손실</b>되면, 서버는 ACK를 못 받아 <b>종료하지 못한다.</b></li>
+      <li>이미 클라이언트가 죽어버렸다면 서버는 응답받을 상대가 없어 <b>좀비(zombie) 프로세스</b>로 남는다.</li>
+      <li>그래서 서버는 ACK가 안 오면 <b>일정 시간 뒤 FIN을 다시 보낸다.</b> 이때 클라이언트가 살아 있어야 <b>다시 ACK로 응답</b>해 줄 수 있다.</li>
+      <li>→ 클라이언트는 20초 정도 기다렸다가, 재전송된 FIN이 더 안 오면 서버도 제대로 닫혔다고 보고 <b>자신도 종료</b>한다.</li>
+    </ul>
+    <p class="muted">핵심 아이디어: <b>양쪽이 같이(안전하게) 종료</b>하기 위한 장치. 한쪽만 먼저 죽어 상대를 좀비로 만들지 않도록 TIME_WAIT만큼 기다린다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 6 : State diagram ============ -->
+<section class="panel" data-i="6">
+  <div class="phead">
+    <div class="pn">7</div>
+    <div>
+      <h2>TCP 상태 처리도 (State Diagram)</h2>
+      <div class="pg">제3장-3 · p.15~16</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>연결은 여러 "상태"를 거쳐 이뤄진다</h3>
+    <p>TCP는 연결형이라, 연결 요청 → 설정 → 종료까지 <b>여러 개의 상태를 차례로 거친다.</b> 클라이언트와 서버가 각각 어떤 상태로 전환되는지 본다.</p>
+  </div>
+
+  <div class="card">
+    <h3>클라이언트 측 상태 전이</h3>
+    <div class="diag">
+      <svg viewBox="0 0 560 130" role="img" aria-label="클라이언트 상태 전이도">
+        <g font-size="11" font-family="var(--mono)">
+          <rect x="10" y="48" width="86" height="34" rx="7" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <text x="53" y="69" text-anchor="middle" fill="var(--text-primary)">CLOSED</text>
+          <rect x="130" y="48" width="96" height="34" rx="7" fill="var(--accent-soft)" stroke="var(--accent-line)"/>
+          <text x="178" y="69" text-anchor="middle" fill="var(--accent)">SYN_SENT</text>
+          <rect x="260" y="48" width="104" height="34" rx="7" fill="var(--green-bg)" stroke="var(--green-border)"/>
+          <text x="312" y="69" text-anchor="middle" fill="var(--green)">ESTABLISHED</text>
+          <rect x="398" y="48" width="96" height="34" rx="7" fill="var(--amber-bg)" stroke="var(--amber-border)"/>
+          <text x="446" y="69" text-anchor="middle" fill="var(--amber)">FIN_WAIT</text>
+          <rect x="398" y="96" width="150" height="28" rx="7" fill="var(--amber-bg)" stroke="var(--amber-border)" opacity=".7"/>
+          <text x="473" y="114" text-anchor="middle" fill="var(--amber)" font-size="10">TIME_WAIT → CLOSED</text>
+          <line x1="96" y1="65" x2="128" y2="65" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st)"/>
+          <text x="112" y="40" text-anchor="middle" font-size="9" fill="var(--text-muted)">SYN↑</text>
+          <line x1="226" y1="65" x2="258" y2="65" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st)"/>
+          <text x="242" y="40" text-anchor="middle" font-size="9" fill="var(--text-muted)">SYN-ACK↓/ACK↑</text>
+          <line x1="364" y1="65" x2="396" y2="65" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st)"/>
+          <text x="380" y="40" text-anchor="middle" font-size="9" fill="var(--text-muted)">FIN↑</text>
+          <line x1="446" y1="82" x2="446" y2="95" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st)"/>
+        </g>
+        <defs><marker id="st" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 z" fill="var(--text-muted)"/></marker></defs>
+      </svg>
+      <div class="cap">CLOSED → (SYN 보냄) SYN_SENT → (SYN-ACK 받고 ACK) ESTABLISHED → (FIN 보냄) FIN_WAIT → TIME_WAIT → CLOSED</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>서버 측 상태 전이</h3>
+    <div class="diag">
+      <svg viewBox="0 0 560 100" role="img" aria-label="서버 상태 전이도">
+        <g font-size="11" font-family="var(--mono)">
+          <rect x="10" y="40" width="86" height="34" rx="7" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <text x="53" y="61" text-anchor="middle" fill="var(--text-primary)">CLOSED</text>
+          <rect x="130" y="40" width="80" height="34" rx="7" fill="var(--accent-soft)" stroke="var(--accent-line)"/>
+          <text x="170" y="61" text-anchor="middle" fill="var(--accent)">LISTEN</text>
+          <rect x="244" y="40" width="104" height="34" rx="7" fill="var(--accent-soft)" stroke="var(--accent-line)"/>
+          <text x="296" y="61" text-anchor="middle" fill="var(--accent)" font-size="10">SYN_RCVD</text>
+          <rect x="382" y="40" width="104" height="34" rx="7" fill="var(--green-bg)" stroke="var(--green-border)"/>
+          <text x="434" y="61" text-anchor="middle" fill="var(--green)">ESTABLISHED</text>
+          <line x1="96" y1="57" x2="128" y2="57" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st2)"/>
+          <text x="112" y="32" text-anchor="middle" font-size="9" fill="var(--text-muted)">대기</text>
+          <line x1="210" y1="57" x2="242" y2="57" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st2)"/>
+          <text x="226" y="32" text-anchor="middle" font-size="9" fill="var(--text-muted)">SYN↓</text>
+          <line x1="348" y1="57" x2="380" y2="57" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#st2)"/>
+          <text x="364" y="32" text-anchor="middle" font-size="9" fill="var(--text-muted)">ACK↓</text>
+        </g>
+        <defs><marker id="st2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 z" fill="var(--text-muted)"/></marker></defs>
+      </svg>
+      <div class="cap">서버는 먼저 살아서 기다려야 한다: CLOSED → LISTEN → (SYN 받음) SYN_RCVD → (ACK 받음) ESTABLISHED</div>
+    </div>
+    <p class="muted">서버는 연결을 받으려면 <b>먼저 LISTEN 상태로 살아 있어야</b> 한다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 7 : netstat & backdoor ============ -->
+<section class="panel" data-i="7">
+  <div class="phead">
+    <div class="pn">8</div>
+    <div>
+      <h2>netstat로 TCP 상태 확인 · 백도어 탐지</h2>
+      <div class="pg">제3장-3 · 실습 · 보안 확장</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>내 컴퓨터의 TCP 연결 상태 보기</h3>
+    <p>지금 이 순간에도 내 컴퓨터에는 여러 포트가 열려 TCP 커넥션이 맺어져 있다. <span class="tag">netstat</span> 명령으로 그 상태를 직접 볼 수 있다.</p>
+    <div class="code"><span class="cm"># -n : 호스트/포트를 숫자로 표시</span>
+netstat -n</div>
+    <p class="muted">내 컴퓨터에 연결된 TCP 커넥션의 <b>상대 IP·포트 번호와 상태(State)</b>가 쭉 나온다.</p>
+  </div>
+
+  <div class="card">
+    <h3>상태(State) 읽기</h3>
+    <div class="grid">
+      <div class="mini"><div class="mt">ESTABLISHED</div><div class="mv">연결됨</div><div class="ms">현재 데이터를 주고받는 활성 연결</div></div>
+      <div class="mini"><div class="mt">TIME_WAIT</div><div class="mv">종료 직전</div><div class="ms">마지막 ACK 후 약 20초 대기 중</div></div>
+      <div class="mini"><div class="mt">CLOSE_WAIT</div><div class="mv">종료 진행</div><div class="ms">상대 FIN 받고 닫는 중</div></div>
+      <div class="mini"><div class="mt">SYN_SENT</div><div class="mv">연결 시도</div><div class="ms">SYN 보내고 응답 대기</div></div>
+    </div>
+    <p class="muted" style="margin-top:10px">웹사이트(예: 구글)를 열면 TCP 커넥션이 <b>여러 개 생겼다가</b>, 약 20초 뒤 TIME_WAIT가 지나면 <b>자동으로 사라진다.</b> 이미지 등을 가져오느라 많은 연결이 만들어지기 때문.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>백도어(backdoor) 탐지에 활용<span class="badge-exam">응용</span></h3>
+    <p>백도어가 설치되면 <b>몰래 포트가 열려(ESTABLISHED 유지)</b> 외부에서 내 컴퓨터 정보를 빼낼 통로가 된다. netstat로 수상한 연결을 찾아낼 수 있다.</p>
+    <ul>
+      <li>웹사이트를 닫거나 아무 작업을 안 해도 <b>지워지지 않고 계속 유지되는 연결</b>이 있다면 의심.</li>
+      <li>상대 IP의 <b>소유자를 조회(whois)</b> — Microsoft·Google 등 알려진 회사면 안심(예: Office 업데이트용 포트).</li>
+      <li><b>모르는 이상한 회사·국가</b>의 포트가 계속 떠 있으면 → 백도어 가능성을 의심하고 해당 연결을 정리해야 한다.</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>IP 소유자 조회(whois)<span class="note-tag">부연설명</span></h3>
+    <p>인터넷에서 IP 주소를 넣으면 <b>그 IP의 소유 기관</b>을 확인할 수 있다. 낯선 회사가 나오면 무엇을 하는 곳인지 확인해 보는 것이 안전하다. 광고·스니핑 목적의 수상한 팝업/사이트와 연결된 커넥션이라면 끊어 주는 것이 좋다.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>오늘의 결론<span class="badge-exam">시험 포인트</span></h3>
+    <p>오늘 핵심은 <b>TCP 연결(3-way)과 해제(4-way)를 명확히 이해</b>하는 것. <b>SYN·SYN-ACK·ACK</b>로 연결, <b>FIN·ACK·FIN·ACK</b>로 해제, 그리고 종료 전 <b>TIME_WAIT 대기</b>의 이유 — 이것만 확실히 하면 오늘은 성공.</p>
+  </div>
+</section>
+
+<div class="footer">컴퓨터네트워크 · 11주차 1차시 &nbsp;·&nbsp; 강의자료 제3장-3 (Transport Layer 3) p.8~16 &nbsp;·&nbsp; 강의 녹음 재구성</div>
+</div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tab');
+  var panels=document.querySelectorAll('.panel');
+  function go(i){
+    tabs.forEach(function(t){t.classList.toggle('active',t.dataset.i==i);});
+    panels.forEach(function(p){p.classList.toggle('active',p.dataset.i==i);});
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  tabs.forEach(function(t){t.addEventListener('click',function(){go(t.dataset.i);});});
+})();
+</script>
+</body>
+</html>
