@@ -61,8 +61,11 @@ header .desc{font-size:13.5px;color:var(--text-secondary);margin:0 0 4px}
 .phead .pg{font-size:11.5px;color:var(--text-muted);font-family:var(--mono)}
 
 /* cards */
-.card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
-.card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px}
+.card{position:relative;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
+.card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px;padding-right:50px}
+.cpg{position:absolute;top:15px;right:15px;font-size:10.5px;font-family:var(--mono);color:var(--text-muted);background:var(--surface-1);border:1px solid var(--border);padding:1px 7px;border-radius:6px;white-space:nowrap}
+.card.imp .cpg{background:var(--surface-2);border-color:var(--amber-border);color:var(--amber)}
+.card.note .cpg{background:var(--surface-2);border-color:var(--blue-border);color:var(--blue)}
 .card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
 .card ul{margin:6px 0 10px;padding-left:2px;list-style:none}
 .card ul li{position:relative;padding-left:20px;margin:7px 0}
@@ -179,6 +182,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.2</span>
     <h3>UDP에는 신뢰성을 위한 장치가 하나도 없다</h3>
     <p class="lead">UDP 규격을 아무리 들여다봐도 <b>신뢰적 통신을 위한 부분이 전혀 없다.</b> 보내는 패킷에 <b>넘버링(순서번호)도 없고</b>, 손실에 대비한 어떤 기차(장치)도 없다.</p>
     <ul>
@@ -189,6 +193,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.2</span>
     <h3>라우터는 왜 패킷을 버리는가</h3>
     <p>라우터는 받은 IP 패킷을 <b>큐(저장소, buffer)에 쌓아 두었다가</b> 다음 링크(다운스트림)로 내보낸다. 그런데 트래픽이 한 링크로 몰리면 —</p>
     <div class="diag">
@@ -236,6 +241,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card imp">
+    <span class="cpg">p.2</span>
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>손실은 양쪽 모두에게 보이지 않는다</h3>
     <p>송신자가 데이터를 보냈는데 중간에서 라우터가 버리면:</p>
     <ul>
@@ -257,6 +263,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.3~4</span>
     <h3>데이터가 도달했음을 반드시 알려준다</h3>
     <p class="lead">송신자가 데이터를 보내면, 수신자가 <b>“잘 받았다”는 신호 = ACK</b>를 돌려준다. ACK를 받으면 송신자는 <b>내 데이터가 수신자에 도달했구나</b>를 알 수 있다.</p>
     <div class="diag">
@@ -281,6 +288,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card imp">
+    <span class="cpg">p.3~4</span>
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>신뢰적 통신의 첫 번째 전제조건<span class="badge-exam">핵심</span></h3>
     <p><b>데이터를 보내고, 그에 대한 ACK를 받는다.</b> 이것이 신뢰적 통신(reliable communication)을 만드는 기본 원리다.</p>
     <ul>
@@ -290,6 +298,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card note">
+    <span class="cpg">p.3</span>
     <h3>순서번호(0, 1)는 왜 필요한가<span class="note-tag">부연설명</span></h3>
     <p>강의자료 p.3의 질문. ACK만으로는 부족한 경우가 있다 — ACK가 손실되거나 지연되면 송신자가 <b>같은 데이터를 재전송</b>하는데, 이때 수신자가 “<b>새 데이터인지 / 중복 재전송인지</b>” 구분하려면 패킷에 번호가 필요하다.</p>
     <p class="muted">그래서 가장 단순한 rdt에서도 0, 1 두 개의 순서번호를 번갈아 쓴다. 뒤에 나오는 파이프라이닝에서는 이 순서번호의 범위가 더 넓어진다.</p>
@@ -307,6 +316,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.5</span>
     <h3>하나 보내고 ACK 기다리면?</h3>
     <p class="lead">데이터를 하나 보내고 <b>ACK가 올 때까지 기다렸다가</b> 다음 데이터를 보내는 방식(Stop-and-Wait)이 얼마나 링크를 활용하는지 <b>이용률(Utilization)</b>로 계산해 본다.</p>
     <div class="grid">
@@ -318,6 +328,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.5</span>
     <h3>① 전송 시간 T<sub>transmit</sub></h3>
     <p>첫 비트 출발부터 마지막 비트까지 내보내는 데 걸리는 시간 = 패킷 비트수 / 링크 속도.</p>
     <div class="formula">
@@ -331,6 +342,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.5</span>
     <h3>② 이용률 U<sub>sender</sub></h3>
     <p>전체 시간(전송 + 왕복 대기) 중 <b>실제로 데이터를 보내고 있는 시간의 비율.</b></p>
     <div class="formula">
@@ -346,6 +358,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card imp">
+    <span class="cpg">p.5</span>
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>U = 0.00027의 의미<span class="badge-exam">핵심</span></h3>
     <ul>
       <li>이용률 <b>1 = 링크를 꽉(fully) 활용</b>, 항상 데이터를 보내는 중이라는 뜻.</li>
@@ -356,6 +369,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.5</span>
     <h3>해결 방향</h3>
     <p><b>ACK를 받기 전에도 데이터를 계속 보내야 한다.</b> 당연한 결론 — 이것이 다음 주제인 파이프라이닝이다.</p>
   </div>
@@ -372,6 +386,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.6</span>
     <h3>ACK를 기다리지 않고 연달아 보낸다</h3>
     <p class="lead">데이터 0, 1, 2, …를 <b>연속으로 쭉 보낸 다음</b>, 나중에 ACK를 <b>연달아 받는다.</b> 하나 보내고 ACK 기다리는 식이 아니다.</p>
     <div class="diag">
@@ -410,6 +425,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.6</span>
     <h3>파이프라이닝이 요구하는 것</h3>
     <ul>
       <li><b>순서번호(sequence number):</b> 연속으로 보내니 어느 것이 몇 번째인지 번호를 매겨야 한다. 범위가 넓어진다.</li>
@@ -418,6 +434,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card imp">
+    <span class="cpg">p.6</span>
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>파이프라이닝 프로토콜의 2가지 형태</h3>
     <div class="grid">
       <div class="mini" style="border-color:var(--amber-border)"><div class="mt">① Go-Back-N</div><div class="mv">GBN</div><div class="ms">이번 시간에 공부</div></div>
@@ -438,6 +455,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.7</span>
     <h3>송신자: 슬라이딩 윈도우 (Sliding Window)</h3>
     <ul>
       <li>패킷 헤더에 <b>k-bit 순서번호</b>를 담는다.</li>
@@ -447,6 +465,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.9</span>
     <h3>누적 ACK로 윈도우가 미끄러진다 (윈도우 크기 = 4)</h3>
     <p>0, 1, 2, 3을 보낸 상태. ACK가 돌아올 때마다 윈도우가 한 칸씩 오른쪽으로 미끄러지고, 그만큼 뒤쪽 새 패킷이 윈도우에 들어와 전송된다.</p>
     <div class="diag" style="padding:16px 14px">
@@ -480,6 +499,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card note">
+    <span class="cpg">p.7</span>
     <h3>누적 ACK(cumulative ACK)란<span class="note-tag">부연설명</span></h3>
     <p>“ACK n”은 <b>n번까지(그 이하 전부)를 정상 수신했다</b>는 의미. 그래서 중간 ACK 하나가 유실돼도, 다음 ACK가 그것까지 포함해 확인해 준다. GBN은 이 누적 ACK 방식을 쓴다.</p>
   </div>
@@ -496,6 +516,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <span class="cpg">p.8~9</span>
     <h3>데이터 3이 손실되면?</h3>
     <p class="lead">0, 1, 2는 잘 갔는데 <b>데이터 3이 손실</b>됐다고 하자. 수신자는 3을 못 받았으므로 <b>ACK 3(X3)을 보내지 못한다.</b></p>
     <div class="diag" style="padding:16px 14px">
@@ -514,6 +535,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card imp">
+    <span class="cpg">p.8~9</span>
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>“Go-Back-N” — 손실 지점부터 전부 다시 보낸다<span class="badge-exam">핵심</span></h3>
     <p>3만 다시 보내면 될 것 같지만, <b>GBN은 그렇게 하지 않는다.</b> 타임아웃이 걸리면 <b>에러가 난 3번부터 그 이후 전부(3, 4, 5, 6)를 재전송</b>한다. 이것이 Go-Back-N의 특징(이름의 유래).</p>
     <div class="diag" style="padding:16px 14px">
@@ -527,6 +549,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card imp">
+    <span class="cpg">p.8</span>
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>수신자의 윈도우 크기 = 1<span class="badge-exam">핵심</span></h3>
     <p>송신자는 크기 N 윈도우를 갖지만, <b>GBN 수신자의 윈도우는 단 1개</b>면 충분하다.</p>
     <ul>
@@ -539,6 +562,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card note">
+    <span class="cpg">p.10~13</span>
     <h3>이어서 — 다음 시간<span class="note-tag">부연설명</span></h3>
     <p>GBN은 순서 밖 패킷을 버려 버퍼가 없는 대신, 손실 하나에 여러 패킷을 다시 보내는 낭비가 있다. 이를 개선한 <b>Selective Repeat(SR)</b> — 개별 ACK + 수신 버퍼링 — 가 다음 강의 주제다. (강의자료 p.10~13)</p>
   </div>
