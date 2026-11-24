@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>IPFS - Distributed File Systems</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-warning:#FAEEDA;--text-warning:#633806;--border-warning:#EF9F27;
+  --bg-accent:#E6F1FB;--text-accent:#0C447C;--border-accent:#85B7EB;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",Menlo,Consolas,"Noto Sans KR",monospace;
+  --line:#888780;
+  --g-fill:#F1EFE8;--g-stroke:#5F5E5A;--g-t:#444441;
+  --a-fill:#FAC775;--a-stroke:#854F0B;--a-t:#412402;
+  --tl-fill:#E1F5EE;--tl-stroke:#0F6E56;--tl-t:#085041;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-accent:#042C53;--text-accent:#B5D4F4;--border-accent:#185FA5;
+    --line:#B4B2A9;
+    --g-fill:#444441;--g-stroke:#B4B2A9;--g-t:#F1EFE8;
+    --a-fill:#854F0B;--a-stroke:#FAC775;--a-t:#FAEEDA;
+    --tl-fill:#085041;--tl-stroke:#5DCAA5;--tl-t:#E1F5EE;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7;-webkit-text-size-adjust:100%}
+.page{max-width:760px;margin:0 auto;padding:1.5rem 16px 3rem}
+.back{font-size:13px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-primary)}
+h1{font-size:22px;font-weight:500;margin:12px 0 4px}
+.ti{display:inline-flex;width:1.15em;height:1.15em;flex-shrink:0;vertical-align:-0.18em}
+.ti svg{width:100%;height:100%}
+button{font-family:inherit;font-size:13px;color:var(--text-primary);background:transparent;border:0.5px solid var(--border-strong);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{background:var(--surface-1)}
+button:active{transform:scale(.98)}
+.tb{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 1rem}
+.tb button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.cd{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:0.9rem 1.1rem;margin:0 0 10px;font-size:14px;line-height:1.7}
+.cd.am{background:var(--bg-warning);border-color:var(--border-warning)}
+.cd.bl{background:var(--bg-accent);border-color:var(--border-accent)}
+.hd{display:flex;align-items:center;gap:8px;font-weight:500;font-size:15px;margin:0 0 4px}
+.am .hd{color:var(--text-warning)}.bl .hd{color:var(--text-accent)}
+.pg{font-size:11px;font-weight:400;padding:1px 7px;border-radius:999px;border:0.5px solid var(--border-strong);color:var(--text-secondary);margin-left:auto;white-space:nowrap}
+.bd{display:inline-block;font-size:12px;padding:2px 8px;border-radius:8px;background:var(--surface-1);border:0.5px solid var(--border);margin:2px 2px}
+pre{font-family:var(--font-mono);font-size:12px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:6px 0 0;line-height:1.6}
+.mono{font-family:var(--font-mono);font-size:12px;word-break:break-all}
+.fl{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:6px 0}
+.fl span.b{font-size:12px;padding:5px 10px;border-radius:8px;background:var(--surface-1);border:0.5px solid var(--border-strong)}
+.fl .ln{font-size:12px;color:var(--text-muted)}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.st{font-size:13px;color:var(--text-secondary);min-height:48px;margin:6px 0}
+.muted{font-size:13px;color:var(--text-secondary)}
+svg text{font-family:var(--font-sans)}
+.th{font-size:14px;font-weight:500}.ts{font-size:12px}
+.c-gray>rect,circle.c-gray{fill:var(--g-fill);stroke:var(--g-stroke)}
+.c-amber>rect,circle.c-amber{fill:var(--a-fill);stroke:var(--a-stroke)}
+.c-teal>rect,circle.c-teal{fill:var(--tl-fill);stroke:var(--tl-stroke)}
+.c-gray>text{fill:var(--g-t)}.c-amber>text{fill:var(--a-t)}.c-teal>text{fill:var(--tl-t)}
+text.tx{fill:var(--text-primary)}text.tm{fill:var(--text-secondary)}
+circle,rect{transition:fill .2s,stroke .2s}
+</style>
+</head>
+<body>
+<div class="page">
+<a class="back" href="../index.html"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M15 6l-6 6l6 6" /> </svg></i>목차</a>
+<h1>IPFS - Distributed File Systems</h1>
+<p style="font-size:12px;color:var(--text-muted);margin:0 0 10px">강의자료: 4 Distributed Storage.pdf · p.1 – p.52 (p.53–59 NFT/ERC-721은 다음 시간으로 미룸)</p>
+<div class="tb" id="tb">
+<button class="on">1. 서버 vs IPFS</button>
+<button>2. CID와 접근 방법</button>
+<button>3. 노드 실습·Pinning</button>
+<button>4. Merkle DAG</button>
+<button>5. DAG의 장점</button>
+<button>6. Content discovery</button>
+</div>
+
+<div class="pn">
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 7a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-2" /> <path d="M3 15a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -2" /> <path d="M7 8l0 .01" /> <path d="M7 16l0 .01" /> </svg></i>기존 방식: 클라이언트-서버 저장<span class="pg">p.2</span></div>
+<div class="fl"><span class="b">사용자</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">① 업로드</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">② 단일 서버(기관)</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">③ 요청·다운로드</span></div>
+구글 드라이브, 드롭박스, 아마존 S3 등. 실제로는 여러 서버로 구성되어 있어도 개념적으로는 하나의 주체가 운영하는 하나의 서버.</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M9 15l6 -6" /> <path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /> <path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /> </svg></i>URL 해부: URL은 물리적 주소다<span class="pg">p.3</span></div>
+<div class="mono" style="margin:6px 0">https://www.inu.ac.kr/sites/inu/images/sub/sub_06/character13.png</div>
+<span class="bd">https://</span><span class="bd">www.inu.ac.kr = IP 주소 (DNS가 변환)</span><span class="bd">/sites/…/sub_06/ = Path (서버 디렉토리)</span><span class="bd">character13.png = File name</span>
+<div style="margin-top:6px">도메인 이름은 사람이 외우기 쉽게 붙인 이름일 뿐, 결국 "어느 서버의 어느 폴더에 있는가"라는 위치(where)를 가리킨다.</div></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /> <path d="M15 6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /> <path d="M15 18a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /> <path d="M8.7 10.7l6.6 -3.4" /> <path d="M8.7 13.3l6.6 3.4" /> </svg></i>IPFS(P2P) 방식<span class="pg">p.4</span></div>
+많은 노드가 자기 컴퓨터 저장공간 일부를 기여해서 운영하는 거대한 P2P 스토리지. BitTorrent처럼 같은 데이터를 여러 노드가 저장할 수도, 청크로 쪼개 다른 노드에 나눠 저장할 수도 있다. 요청이 오면 어떤 피어가 갖고 있는지 탐색 후 전달.</div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>What vs Where<span class="pg">p.5</span></div>
+사람들은 콘텐츠가 무엇(what)인지에만 관심이 있고 어디(where)에 저장됐는지는 관심이 없다. 그런데 IP 기반 인터넷은 정반대로 where만 신경 쓴다. 이 간극이 비효율의 원인 → IPFS는 콘텐츠 자체(what)로 데이터를 찾는다.</div>
+
+<div class="cd bl"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /> <path d="M12 9h.01" /> <path d="M11 12h1v4h1" /> </svg></i>[부연설명] 위치 기반 vs 내용 기반 주소<span class="pg">보충</span></div>
+URL처럼 위치로 찾는 방식을 location-based addressing, IPFS처럼 내용의 해시로 찾는 방식을 content-based(content-addressed) addressing이라고 부른다. 위치 기반은 서버가 사라지거나 파일이 옮겨지면 링크가 깨지지만, 내용 기반은 누가 갖고 있든 같은 내용이면 같은 주소로 찾을 수 있다.</div>
+</div>
+
+<div class="pn">
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>CID (Content ID) — 강의의 핵심<span class="pg">p.6</span></div>
+IPFS에 업로드하면 콘텐츠 자체를 해싱해서 256비트 고유 식별자를 얻는다. 사진 한 장, 영화 한 편 모두 하나의 콘텐츠. 256비트 공간은 매우 커서 모든 파일에 서로 다른 해시값을 부여할 수 있다.
+<div class="mono" style="margin-top:6px">bafkreibwp2bj5sd4nznvh3e6teea2j3a3mnzrxdsmza3bwp7obwsurzitq</div></div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>1비트만 바뀌어도 CID는 완전히 달라진다<span class="pg">p.12</span></div>
+HTML 문서에 문자 하나만 추가해도 완전히 다른 CID. 반대로 누가 만들든 같은 내용의 파일이면 반드시 같은 CID를 얻는다.</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /> <path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /> <path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /> </svg></i>IPFS에서 콘텐츠를 가져오는 두 가지 방법<span class="pg">p.7</span></div>
+<div class="g2" style="margin-top:6px">
+<div><span class="bd">방법 1</span> 웹 브라우저로 접근<br><span class="muted">소프트웨어 설치 불필요. 공개 게이트웨이 주소 + CID</span></div>
+<div><span class="bd">방법 2</span> IPFS 노드 소프트웨어 설치<br><span class="muted">P2P에 직접 참여. 업로드·다운로드 모두 가능</span></div></div>
+<pre>https://ipfs.io/ipfs/&lt;CID&gt;</pre></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M6 5l0 14" /> <path d="M18 5l0 14" /> <path d="M2 15l20 0" /> <path d="M3 8a7.5 7.5 0 0 0 3 -2a6.5 6.5 0 0 0 12 0a7.5 7.5 0 0 0 3 2" /> <path d="M12 10l0 5" /> </svg></i>Gateway 구조<span class="pg">p.8</span></div>
+<div class="fl"><span class="b">사용자 (브라우저)</span><span class="ln">— HTTP —</span><span class="b">IPFS Gateway (웹 서버)</span><span class="ln">— IPFS 프로토콜 —</span><span class="b">IPFS P2P 네트워크</span></div>
+아무 소프트웨어 없이 P2P 네트워크에 직접 접속하는 건 불가능(이더리움 채굴도 소프트웨어 필요). 그래서 IPFS 노드를 운영하는 사람들이 게이트웨이 서버를 만들어 두고, 앞단은 HTTP, 뒷단은 IPFS 프로토콜로 콘텐츠를 찾아 전달한다. "ipfs.io도 결국 IP 주소 아니냐"는 의문의 답: ipfs.io는 중개 서버일 뿐, 실제 콘텐츠는 CID로 P2P에서 찾아온다.</div>
+
+<div class="cd bl"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /> <path d="M12 9h.01" /> <path d="M11 12h1v4h1" /> </svg></i>[부연설명] CID 문자열 구조<span class="pg">보충</span></div>
+bafy…/bafk…로 시작하는 문자열은 CIDv1(base32 인코딩)이다. 내부에는 "어떤 해시 함수인지(예: SHA-256)" 같은 정보와 256비트 해시 다이제스트가 함께 들어 있어서, 문자열 길이 자체는 256비트보다 길다. 예전 형식 CIDv0은 Qm…으로 시작한다.</div>
+</div>
+
+<div class="pn">
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /> <path d="M7 11l5 5l5 -5" /> <path d="M12 4l0 12" /> </svg></i>IPFS 노드 설치<span class="pg">p.9–10</span></div>
+GUI: IPFS Desktop 앱 설치 → 내 컴퓨터가 IPFS 노드로 동작. CLI(개발자): IPFS Kubo 데몬 설치.
+<pre># Mac OS
+$ brew install ipfs
+
+# Linux
+$ wget https://dist.ipfs.tech/kubo/v0.37.0/kubo_v0.37.0_linux-amd64.tar.gz
+$ tar -xvzf kubo_v0.37.0_linux-amd64.tar.gz
+$ cd kubo
+$ sudo bash install.sh
+
+# 노드 초기화 및 실행
+$ ipfs init
+$ ipfs daemon</pre></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M6 9a6 6 0 1 0 12 0a6 6 0 0 0 -12 0" /> <path d="M12 3c1.333 .333 2 2.333 2 6s-.667 5.667 -2 6" /> <path d="M12 3c-1.333 .333 -2 2.333 -2 6s.667 5.667 2 6" /> <path d="M6 9h12" /> <path d="M3 20h7" /> <path d="M14 20h7" /> <path d="M10 20a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /> <path d="M12 15v3" /> </svg></i>노드 상태 확인 (AWS 원격 노드 시연)<span class="pg">p.11</span></div>
+교수님 AWS 인스턴스의 노드가 수십 개 피어와 연결되어 메시지를 주고받는 모습 시연. 노드마다 물리 주소 외에 고유 ID를 가진다.
+<pre>$ ipfs id            # 내 노드 정보
+$ ipfs swarm peers   # 연결된 피어들 확인</pre></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /> <path d="M7 9l5 -5l5 5" /> <path d="M12 4l0 12" /> </svg></i>업로드 / 다운로드 시연<span class="pg">p.12–13</span></div>
+index.html(5줄)을 만들어 노드에 add → CID 획득 → 노드가 없는 맥북에서 게이트웨이로 요청 → "인천 송도" 페이지가 표시됨. 서버 비용 없음(P2P 노드들이 저장공간 기여).
+<pre># 파일 생성
+$ touch index.html
+$ vim index.html
+
+# IPFS에 업로드
+$ ipfs add index.html
+added bafybeihdwdce... index.html
+
+# CID로 내용 확인
+$ ipfs cat bafybeihdwdce...
+
+# CID로 다운로드
+$ ipfs get bafybeihdwdce... -o index_copy.html
+
+# Pinning (영구 보관) / 해제
+$ ipfs pin add bafybeihdwdce...
+$ ipfs pin rm bafybeihdwdce...</pre></div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>Pinning이 필요한 이유<span class="pg">p.12–14</span></div>
+IPFS 노드들은 업로드된 콘텐츠를 영구 저장할 의무가 없다. 남의 컴퓨터에 저장된 내 파일은 상대가 지우는 순간 영원히 사라진다. 그래서 "지우지 않고 고정(pin)해 두는 것"이 중요하다.</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /> <path d="M9 15l-4.5 4.5" /> <path d="M14.5 4l5.5 5.5" /> </svg></i>Pinning Service — Pinata, web3.storage, Infura<span class="pg">p.14–16</span></div>
+비개발자를 위한 서드파티 대행 서비스(블록체인 서비스 자체는 아님). 자체 IPFS 노드를 운영하며 "너희 파일은 절대 안 지운다"고 약속. 무료 플랜: 파일 500개, 1GB까지.
+<div class="fl" style="margin-top:8px"><span class="b">업로더</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">Pinata</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">Pinata IPFS 노드 (pin)</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M5 12l6 6" /> <path d="M5 12l6 -6" /> </svg></i><span class="b">Gateway</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M5 12l6 6" /> <path d="M5 12l6 -6" /> </svg></i><span class="b">다른 사용자</span></div></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M15 8h.01" /> <path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /> <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /> <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /> </svg></i>NFT 개발로의 연결 (예고)<span class="pg">p.56</span></div>
+이미지 자체를 이더리움에 올리면 비용이 막대하다. 그래서 이미지는 IPFS에 저장하고, NFT 스마트 컨트랙트에는 트랜잭션으로 CID(작은 값)만 기록한다.</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M4 13h5" /> <path d="M12 16v-8h3a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-3" /> <path d="M20 8v8" /> <path d="M9 16v-5.5a2.5 2.5 0 0 0 -5 0v5.5" /> </svg></i>Pinata API 활용 (CS 전공자)<span class="pg">p.17–18</span></div>
+Pinata는 피닝뿐 아니라 API를 제공. API 키(JWT)를 발급받아 내 애플리케이션에서 IPFS 업로드·다운로드 기능을 구현할 수 있다. 시연: 직접 만든 프로그램에 PNG를 보내면 Pinata API를 거쳐 업로드되고 CID 반환 → 게이트웨이로 인천대 로고 이미지 확인.</div>
+
+<div class="cd bl"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /> <path d="M12 9h.01" /> <path d="M11 12h1v4h1" /> </svg></i>[부연설명] Pin과 Garbage collection<span class="pg">보충</span></div>
+IPFS 노드는 저장공간이 차면 pin되지 않은 블록을 garbage collection으로 지울 수 있다. pin은 "이 블록은 GC 대상에서 제외"라는 표시다. 결국 콘텐츠의 생존은 최소 한 노드라도 pin해 두느냐에 달려 있다.</div>
+</div>
+
+<div class="pn">
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M9 3h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /> <path d="M17 16v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2" /> </svg></i>디렉토리 구조를 그래프로<span class="pg">p.20</span></div>
+pics 아래 cats(2개 파일), fish(3개 파일). 디렉토리가 파일을 "가리킨다(참조한다)"는 의미로 화살표를 그린다. 컴퓨터 공학에서 디렉토리도 일종의 파일이다.</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M5 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M15 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M7 8l0 8" /> <path d="M7 8a4 4 0 0 0 4 4h4" /> </svg></i>DAG (Directed Acyclic Graph)<span class="pg">p.21</span></div>
+<span class="bd">Directed: 방향성 있음</span><span class="bd">Acyclic: 사이클 없음</span><br>
+어떤 노드에서 화살표 방향을 따라가도 자기 자신으로 돌아올 수 없는 그래프. 노드를 vertex, 화살표를 edge라고도 부른다. 디렉토리 구조는 DAG(트리)로 표현된다.</div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>Merkle DAG: CID는 아래에서 위로 계산된다<span class="pg">p.22–27</span></div>
+<svg width="100%" viewBox="0 0 680 270" role="img"><title>Merkle DAG CID 계산</title><desc>pics 루트 아래 cats와 fish, 그 아래 다섯 개 이미지 파일</desc>
+<g stroke="var(--line)" stroke-width="0.8">
+<line x1="340" y1="74" x2="157" y2="118"/><line x1="340" y1="74" x2="462" y2="118"/>
+<line x1="157" y1="164" x2="96" y2="208"/><line x1="157" y1="164" x2="218" y2="208"/>
+<line x1="462" y1="164" x2="340" y2="208"/><line x1="462" y1="164" x2="462" y2="208"/><line x1="462" y1="164" x2="584" y2="208"/>
+</g>
+<g class="dg c-gray" data-l="2"><rect x="270" y="30" width="140" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="52" text-anchor="middle" dominant-baseline="central">pics (root)</text></g>
+<g class="dg c-gray" data-l="1"><rect x="97" y="120" width="120" height="44" rx="8" stroke-width="0.5"/><text class="th" x="157" y="142" text-anchor="middle" dominant-baseline="central">cats</text></g>
+<g class="dg c-gray" data-l="1"><rect x="402" y="120" width="120" height="44" rx="8" stroke-width="0.5"/><text class="th" x="462" y="142" text-anchor="middle" dominant-baseline="central">fish</text></g>
+<g class="dg c-gray" data-l="0"><rect x="41" y="210" width="110" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="96" y="232" text-anchor="middle" dominant-baseline="central">tabby.png</text></g>
+<g class="dg c-gray" data-l="0"><rect x="163" y="210" width="110" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="218" y="232" text-anchor="middle" dominant-baseline="central">black.png</text></g>
+<g class="dg c-gray" data-l="0"><rect x="285" y="210" width="110" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="340" y="232" text-anchor="middle" dominant-baseline="central">freshwater.png</text></g>
+<g class="dg c-gray" data-l="0"><rect x="407" y="210" width="110" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="462" y="232" text-anchor="middle" dominant-baseline="central">tropical.png</text></g>
+<g class="dg c-gray" data-l="0"><rect x="529" y="210" width="110" height="44" rx="8" stroke-width="0.5"/><text class="ts" x="584" y="232" text-anchor="middle" dominant-baseline="central">blowfish.png</text></g>
+</svg>
+<div class="st" id="dgs"></div>
+<div style="display:flex;gap:8px"><button id="dgp">이전</button><button id="dgn">다음 단계</button></div>
+<pre style="margin-top:10px">children1: Bafyaldkwe………akmde   (tabby.png의 CID)
+children2: Bafygmfbre………ixjkr   (black.png의 CID)
+folder: cats
+→ 이 문서를 해싱 → cats의 CID: Bafyaldkwe………aksfgf</pre></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5" /> <path d="M19 22v-6" /> <path d="M22 19l-3 -3l-3 3" /> </svg></i>폴더 업로드 시연 (Pinata)<span class="pg">p.27</span></div>
+pics 폴더를 Pinata에 폴더 업로드(이름 PICS는 관리용 표시일 뿐) → 루트 CID 획득. 루트 CID 뒤에 경로를 붙여 하위 파일에 바로 접근 가능.
+<pre>https://ipfs.io/ipfs/&lt;루트 CID&gt;/cats/tabby.png</pre></div>
+
+<div class="cd bl"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /> <path d="M12 9h.01" /> <path d="M11 12h1v4h1" /> </svg></i>[부연설명] Merkle Tree와의 관계<span class="pg">보충</span></div>
+블록체인의 Merkle Tree와 같은 원리다. 하위 노드 하나라도 바뀌면 그 위의 해시가 연쇄적으로 바뀌어 루트 해시가 달라진다. 다만 DAG는 트리와 달리 같은 하위 블록을 여러 부모가 공유할 수 있어서, 동일한 내용은 한 번만 저장하는 중복 제거 효과도 있다.</div>
+</div>
+
+<div class="pn">
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M4 7h3a1 1 0 0 0 1 -1v-1a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0 -1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-1a2 2 0 0 0 -4 0v1a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1h1a2 2 0 0 0 0 -4h-1a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1" /> </svg></i>청크 분할 · 분산 저장<span class="pg">p.28–29</span></div>
+IPFS는 파일을 일정 크기(슬라이드 예: 256KB)로 나눠 DAG로 만든다. 각 vertex를 서로 다른 IPFS 노드가 저장하고 있을 수 있다(하나의 노드가 전체를 갖고 있을 수도 있음).</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M7 21l0 -18" /> <path d="M20 18l-3 3l-3 -3" /> <path d="M4 18l3 3l3 -3" /> <path d="M17 21l0 -18" /> </svg></i>다운로드 순서: 루트부터<span class="pg">p.30</span></div>
+<div class="fl"><span class="b">루트 CID 요청</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">루트 vertex 받음</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">안의 자식 CID 요청</span><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></i><span class="b">반복 후 병합</span></div>
+루트를 먼저 받아야 그 다음에 무엇을 받을지 알 수 있다.</div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>장점 1: 무결성 검증 — 노드가 콘텐츠를 조작할 수 없다<span class="pg">p.31–33</span></div>
+불특정 다수가 참여하는 P2P라 악의적 노드가 악성코드를 심을 수 있다. 하지만 1비트만 바뀌어도 CID가 완전히 달라지므로, 받은 데이터를 실행하기 전에 해싱해서 요청한 CID와 비교 → 불일치하면 폐기.</div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>장점 2: 병렬 다운로드 ("굉장히 큰 장점")<span class="pg">p.34</span></div>
+루트를 받으면 자식 CID들을 모두 알게 되므로 하나씩 순서대로가 아니라 동시에 여러 개를 요청해 받을 수 있다. 다음 단계에서도 마찬가지.</div>
+
+<div class="cd bl"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /> <path d="M12 9h.01" /> <path d="M11 12h1v4h1" /> </svg></i>[부연설명] 무결성 검증은 블록 단위로 일어난다<span class="pg">보충</span></div>
+각 청크(vertex)마다 자신의 CID가 있으므로, 전체를 다 받은 뒤가 아니라 블록 하나를 받을 때마다 즉시 검증할 수 있다. 그래서 어느 노드에게서 받았는지와 상관없이(신뢰하지 않는 노드라도) 안전하게 조각을 모을 수 있다. BitTorrent의 조각 해시 검증과 같은 아이디어다.</div>
+</div>
+
+<div class="pn">
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /> <path d="M12 17l0 .01" /> <path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4" /> </svg></i>문제 제기: CID만으로 누가 갖고 있는지 어떻게 찾나?<span class="pg">p.35–37</span></div>
+낯선 도시에서 맛집을 찾을 때 아무에게나 묻지 않고 알 것 같은 사람에게 묻는 것과 같은 문제. 수많은 노드 중 어디에 질의해야 빨리 찾을까?</div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 4l-8 4l8 4l8 -4l-8 -4" /> <path d="M4 12l8 4l8 -4" /> <path d="M4 16l8 4l8 -4" /> </svg></i>Overlay network: 물리적 위치 vs 논리적 위치<span class="pg">p.38</span></div>
+서구·계양구·부평구·남동구·연수구에 흩어져 사는 학생 5명에게 수업 안에서만 #5, #10, #31, #45, #60 번호를 부여 → 물리적 관계와 별개인 논리적 관계(Ring)를 형성.
+<div style="margin-top:4px"><span class="bd">물리적: IP 주소</span><span class="bd">논리적: 해시 ID</span></div></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M5 9l14 0" /> <path d="M5 15l14 0" /> <path d="M11 4l-4 16" /> <path d="M17 4l-4 16" /> </svg></i>노드 ID와 Ring<span class="pg">p.39–42</span></div>
+노드가 IPFS에 들어오면 IP 주소를 해싱해 ID를 받는다(예시: 0~63 출력 해시, IP 23.123.12.3 → #8). ID 순서대로 하나의 논리적 링 위에 놓이고, 각 노드는 뒤따라오는 노드(최소 2개)의 IP를 알고 주기적으로 연락한다.</div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>CID도 Ring 위에 놓인다 → 메타데이터 담당 노드<span class="pg">p.43–47</span></div>
+CID를 해싱하면 링 위 위치가 나온다. 각 구간의 CID 메타데이터(실제로 누가 저장하고 있는지)는 그 다음에 오는 노드가 관리한다.
+<div style="margin-top:4px"><span class="bd">9~10 → #11</span><span class="bd">11~23 → #24</span><span class="bd">25~46 → #47</span><span class="bd">48~52 → #53</span><span class="bd">54~62 → #62</span><span class="bd">63~7 → #8</span></div></div>
+
+<div class="cd"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /> <path d="M21 21l-6 -6" /> </svg></i>Lookup 시나리오<span class="pg">p.48–52</span></div>
+<svg width="100%" viewBox="0 0 680 320" role="img"><title>Ring 기반 콘텐츠 탐색</title><desc>노드 8, 11, 24, 47, 53, 62와 CID 39가 놓인 링에서 단계별 탐색</desc>
+<circle cx="340" cy="170" r="120" fill="none" stroke="var(--line)" stroke-width="0.8" stroke-dasharray="4 4"/>
+<circle class="rn c-gray" data-n="62" cx="317" cy="52" r="18" stroke-width="0.5"/><text class="ts tx" x="317" y="52" text-anchor="middle" dominant-baseline="central">#62</text>
+<circle class="rn c-gray" data-n="8" cx="425" cy="85" r="18" stroke-width="0.5"/><text class="ts tx" x="425" y="85" text-anchor="middle" dominant-baseline="central">#8</text>
+<circle class="rn c-gray" data-n="11" cx="446" cy="114" r="18" stroke-width="0.5"/><text class="ts tx" x="446" y="114" text-anchor="middle" dominant-baseline="central">#11</text>
+<circle class="rn c-gray" data-n="24" cx="425" cy="255" r="18" stroke-width="0.5"/><text class="ts tx" x="425" y="255" text-anchor="middle" dominant-baseline="central">#24</text>
+<circle class="rn c-gray" data-n="39" cx="264" cy="263" r="12" stroke-width="0.5"/><text class="ts tx" x="264" y="294" text-anchor="middle" dominant-baseline="central">CID → #39</text>
+<circle class="rn c-gray" data-n="47" cx="221" cy="182" r="18" stroke-width="0.5"/><text class="ts tx" x="221" y="182" text-anchor="middle" dominant-baseline="central">#47</text>
+<circle class="rn c-gray" data-n="53" cx="234" cy="114" r="18" stroke-width="0.5"/><text class="ts tx" x="234" y="114" text-anchor="middle" dominant-baseline="central">#53</text>
+<text class="ts tm" x="474" y="118">IP 45.23.98.32</text>
+<text class="ts tm" x="452" y="259">IP 101.99.23.9</text>
+<text class="ts tm" x="80" y="186">IP 15.4.7.75</text>
+</svg>
+<div class="st" id="lks"></div>
+<div style="display:flex;gap:8px"><button id="lkp">이전</button><button id="lkn">다음 단계</button></div></div>
+
+<div class="cd am"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></i>설명은 Chord, 실제 IPFS는 Kademlia<span class="pg">p.38, 52</span></div>
+링 위에서 설명한 구조는 Chord라는 오버레이 네트워크. 실제 IPFS는 앞선 교육과정에서 배운 Kademlia로 오버레이(DHT)를 구축해 content discovery를 한다.</div>
+
+<div class="cd bl"><div class="hd"><i class="ti" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path stroke="none" d="M0 0h24v24H0z" fill="none" /> <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /> <path d="M12 9h.01" /> <path d="M11 12h1v4h1" /> </svg></i>[부연설명] DHT와 Kademlia<span class="pg">보충</span></div>
+DHT(Distributed Hash Table)는 "키 → 값" 표를 여러 노드에 나눠 저장하는 구조로, 여기서 키는 CID, 값은 그 콘텐츠를 가진 노드(provider) 정보다. Chord는 링 위의 숫자 거리를 쓰고, Kademlia는 두 ID의 XOR 값을 거리로 쓴다. Kademlia는 거리별로 아는 노드 목록(k-bucket)을 유지해서 N개 노드 중에서도 약 log N 번의 질의로 담당 노드에 도달한다.</div>
+</div>
+</div>
+
+<script>
+const btns=[...document.querySelectorAll('#tb button')],pns=[...document.querySelectorAll('.pn')];
+function show(i){pns.forEach((p,k)=>p.style.display=k===i?'block':'none');btns.forEach((b,k)=>b.classList.toggle('on',k===i))}
+btns.forEach((b,i)=>b.onclick=()=>show(i));show(0);
+const dsteps=['단계 0. 다섯 개의 이미지 파일이 DAG의 맨 아래 vertex에 들어 있다. 다음을 눌러 CID 계산을 따라가 보자.','단계 1. 맨 아래 파일들을 각각 해싱 → 파일마다 256비트 CID. 크기가 1GB든 2GB든 결과는 256비트.','단계 2. 상위 디렉토리(cats, fish)에 "children: 자식 CID 목록 + folder 이름"을 적은 문서를 만들고, 이 문서를 다시 해싱 → 디렉토리의 CID.','단계 3. 루트(pics)에 cats·fish의 CID를 기록하고 해싱 → 최종 루트 CID. 업로드 결과로 받는 CID가 바로 이것.'];
+let ds=0;const dgs=[...document.querySelectorAll('.dg')];
+function dr(){document.getElementById('dgs').textContent=dsteps[ds];dgs.forEach(g=>{const l=+g.dataset.l;g.setAttribute('class','dg '+(ds>0&&l===ds-1?'c-amber':(ds>0&&l<ds-1?'c-teal':'c-gray')))})}
+document.getElementById('dgn').onclick=()=>{ds=(ds+1)%4;dr()};document.getElementById('dgp').onclick=()=>{ds=(ds+3)%4;dr()};dr();
+const lsteps=[['단계 0. 링 위에 노드(#8 #11 #24 #47 #53 #62)와 CID 위치(#39)가 놓여 있다.',[]],['단계 1. 사용자가 아무 노드에나 질의한다. 여기서는 #24에게 "이 CID 누가 갖고 있어?"',['24']],['단계 2. #24는 자신이 갖고 있지 않다. CID를 해싱해 #39임을 계산 → 25~46 구간 담당은 바로 뒤의 #47. #24는 후속 노드 #47의 IP를 알고 있으므로 #47에게 묻는다.',['24','39','47']],['단계 3. #47은 #39 CID의 메타데이터를 관리한다: "실제 저장 노드는 #11, IP 45.23.98.32".',['47','11']],['단계 4. 그 IP(#11)로 직접 요청해 콘텐츠를 다운로드.',['11']]];
+let ls=0;const rns=[...document.querySelectorAll('.rn')];
+function lr(){const [t,h]=lsteps[ls];document.getElementById('lks').textContent=t;rns.forEach(c=>c.setAttribute('class','rn '+(h.includes(c.dataset.n)?'c-amber':'c-gray')))}
+document.getElementById('lkn').onclick=()=>{ls=(ls+1)%5;lr()};document.getElementById('lkp').onclick=()=>{ls=(ls+4)%5;lr()};lr();
+</script>
+</body>
+</html>
