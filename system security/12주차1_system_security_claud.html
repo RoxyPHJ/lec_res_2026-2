@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Ch 8. Control Hijacking Attacks — 12주차1</title>
+<style>
+  :root{
+    --bg:#0e1117; --bg2:#151b24; --panel:#1b2330; --panel2:#222c3c;
+    --line:#2b3648; --txt:#e6edf3; --txt2:#aeb9c7; --txt3:#7d8aa0;
+    --accent:#6ea8fe; --accent2:#4b7bec;
+    --amber:#f5b041; --amber-bg:rgba(245,176,65,.08); --amber-line:rgba(245,176,65,.4);
+    --blue:#5aa9ff; --blue-bg:rgba(90,169,255,.08); --blue-line:rgba(90,169,255,.4);
+    --green:#4cd3a5; --red:#ff6b6b; --purple:#b78cff;
+    --code-bg:#0b0f16; --radius:14px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:var(--sans);line-height:1.65;
+    -webkit-font-smoothing:antialiased;padding:28px 18px 80px}
+  .wrap{max-width:1000px;margin:0 auto}
+
+  /* Header */
+  header{margin-bottom:10px}
+  .eyebrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .session-badge{background:linear-gradient(135deg,var(--accent2),var(--purple));
+    color:#fff;font-weight:700;font-size:.78rem;padding:5px 12px;border-radius:20px;letter-spacing:.3px}
+  .course-tag{color:var(--txt3);font-size:.82rem;font-weight:600}
+  h1.title{font-size:1.9rem;font-weight:800;letter-spacing:-.4px;line-height:1.25}
+  h1.title .ko{display:block;font-size:1.1rem;color:var(--txt2);font-weight:600;margin-top:4px}
+  .srcnote{margin:14px 0 6px;font-size:.78rem;color:var(--txt3);
+    background:var(--bg2);border:1px dashed var(--line);border-radius:10px;padding:9px 13px;display:flex;gap:8px;align-items:flex-start}
+  .srcnote svg{flex-shrink:0;margin-top:2px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:6px 0 4px;margin:14px 0 22px;
+    border-bottom:1px solid var(--line);scrollbar-width:thin}
+  .tabs::-webkit-scrollbar{height:5px}
+  .tabs::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .tab{white-space:nowrap;background:transparent;border:none;color:var(--txt3);
+    font-family:var(--sans);font-size:.88rem;font-weight:600;padding:9px 14px;border-radius:9px 9px 0 0;
+    cursor:pointer;position:relative;transition:.15s;display:flex;align-items:center;gap:6px}
+  .tab:hover{color:var(--txt2);background:var(--bg2)}
+  .tab.active{color:var(--accent);background:var(--panel)}
+  .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:-5px;height:2px;background:var(--accent);border-radius:2px}
+  .tab .tnum{font-size:.72rem;opacity:.6;font-weight:700}
+  .tab.suppl.active{color:var(--blue)}
+  .tab.suppl.active::after{background:var(--blue)}
+
+  /* Sections */
+  .section{display:none;animation:fade .3s ease}
+  .section.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sec-head{margin-bottom:18px}
+  .sec-head h2{font-size:1.35rem;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+  .sec-head .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .sec-head p{color:var(--txt2);font-size:.92rem;margin-top:6px}
+
+  /* Cards */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-bottom:16px}
+  .card h3{font-size:1.02rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .card p{color:var(--txt2);font-size:.92rem;margin-bottom:8px}
+  .card p:last-child{margin-bottom:0}
+  .card ul{list-style:none;margin:8px 0}
+  .card li{color:var(--txt2);font-size:.92rem;padding:4px 0 4px 20px;position:relative}
+  .card li::before{content:"▸";position:absolute;left:2px;color:var(--accent);font-size:.85rem}
+  .pgbadge{margin-left:auto;font-size:.7rem;color:var(--txt3);font-weight:600;
+    background:var(--bg2);border:1px solid var(--line);padding:2px 8px;border-radius:12px;white-space:nowrap}
+  b,strong{color:var(--txt);font-weight:700}
+  code.inl{font-family:var(--mono);background:var(--bg2);color:var(--green);
+    font-size:.84em;padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+
+  /* Amber (important) card */
+  .card.amber{background:var(--amber-bg);border-color:var(--amber-line)}
+  .card.amber h3{color:var(--amber)}
+  .card.amber li::before{color:var(--amber)}
+  .star{color:var(--amber);flex-shrink:0}
+  .imp-tag{font-size:.68rem;font-weight:700;color:#1a1205;background:var(--amber);
+    padding:2px 8px;border-radius:10px;letter-spacing:.3px}
+
+  /* Blue (supplementary) card */
+  .card.blue{background:var(--blue-bg);border-color:var(--blue-line)}
+  .card.blue h3{color:var(--blue)}
+  .card.blue li::before{color:var(--blue)}
+  .sup-tag{font-size:.68rem;font-weight:700;color:#04121f;background:var(--blue);
+    padding:2px 8px;border-radius:10px;letter-spacing:.3px}
+
+  /* Code block */
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;overflow-x:auto;margin:10px 0;font-family:var(--mono);font-size:.82rem;line-height:1.6}
+  pre code{color:#c9d6e5;white-space:pre}
+  .c-key{color:#ff7b9c}.c-type{color:#6ec7ff}.c-fn{color:#f5d76e}
+  .c-str{color:#9fe88d}.c-com{color:#6b7a8d;font-style:italic}.c-num{color:#f0a868}.c-pre{color:#b78cff}
+
+  /* Flow diagram */
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0;justify-content:center}
+  .node{background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;
+    padding:9px 14px;font-size:.85rem;font-weight:600;text-align:center;min-width:54px}
+  .node.bad{border-color:var(--red);color:#ff9d9d;background:rgba(255,107,107,.08)}
+  .node.ok{border-color:var(--green);color:#9bead0;background:rgba(76,211,165,.08)}
+  .node.hl{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
+  .arrow{color:var(--txt3);font-size:1.1rem;font-weight:700}
+  .arrow.bad{color:var(--red)}
+  .flow-label{width:100%;text-align:center;font-size:.76rem;color:var(--txt3);margin-top:2px}
+
+  /* Grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .gcell{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+  .gcell .gh{font-weight:700;font-size:.92rem;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+  .gcell p{font-size:.85rem;color:var(--txt2)}
+  .chip{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:8px;margin:3px 4px 3px 0}
+  .chip.a{background:rgba(245,176,65,.14);color:var(--amber);border:1px solid var(--amber-line)}
+  .chip.g{background:rgba(76,211,165,.14);color:var(--green);border:1px solid rgba(76,211,165,.35)}
+  .chip.p{background:rgba(183,140,255,.14);color:var(--purple);border:1px solid rgba(183,140,255,.35)}
+  .chip.b{background:rgba(90,169,255,.14);color:var(--blue);border:1px solid var(--blue-line)}
+
+  /* Compare two columns */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  @media(max-width:620px){.cmp{grid-template-columns:1fr}}
+  .cmp .col{border-radius:11px;padding:14px;border:1px solid var(--line);background:var(--panel2)}
+  .cmp .col h4{font-size:.95rem;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .cmp .col.inj h4{color:var(--red)}
+  .cmp .col.reuse h4{color:var(--purple)}
+  .cmp .col ul{list-style:none}
+  .cmp .col li{font-size:.85rem;color:var(--txt2);padding:3px 0 3px 16px;position:relative}
+  .cmp .col li::before{content:"·";position:absolute;left:4px;font-weight:700}
+  .cmp .col.inj li::before{color:var(--red)}
+  .cmp .col.reuse li::before{color:var(--purple)}
+
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+    color:var(--txt3);font-size:.78rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">
+      <span class="session-badge">12주차1</span>
+      <span class="course-tag">시스템보안 · 강의녹음 재구성</span>
+    </div>
+    <h1 class="title">Ch 8. Control Hijacking Attacks
+      <span class="ko">제어흐름 탈취 공격 — 개요 · CFG · 코드 인젝션/재사용 · Return-to-libc · 함수 포인터</span>
+    </h1>
+    <div class="srcnote">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7d8aa0" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>강의자료: <b>ch8_control_hijacking_v1.pdf</b> · 본 차시는 대략 <b>p.1–14</b> 범위(개요→CFG→코드 인젝션/재사용→Return-to-libc 기초→함수 포인터). ROP/JOP·세부 공격절차(Task A/B/C)는 <b>명칭·개념만 소개</b>, 상세는 다음 차시. 각 카드 우측에 해당 페이지 표기.</span>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-sec="s1"><span class="tnum">01</span>개요</button>
+    <button class="tab" data-sec="s2"><span class="tnum">02</span>CFG</button>
+    <button class="tab" data-sec="s3"><span class="tnum">03</span>코드 인젝션</button>
+    <button class="tab" data-sec="s4"><span class="tnum">04</span>코드 재사용</button>
+    <button class="tab" data-sec="s5"><span class="tnum">05</span>방어기법</button>
+    <button class="tab" data-sec="s6"><span class="tnum">06</span>Return-to-libc</button>
+    <button class="tab" data-sec="s7"><span class="tnum">07</span>함수 포인터</button>
+    <button class="tab suppl" data-sec="s8"><span class="tnum">＋</span>부연설명</button>
+  </nav>
+
+  <!-- ============ S1 개요 ============ -->
+  <section class="section active" id="s1">
+    <div class="sec-head">
+      <h2><span class="dot"></span>컨트롤 하이재킹 공격 개요</h2>
+      <p>"무엇을 탈취하는가?" — 프로그램의 <b>제어흐름(control flow)</b>을 공격자가 원하는 방향으로 빼앗는다.</p>
+    </div>
+
+    <div class="card">
+      <h3>컨트롤 플로우(Control Flow)란?<span class="pgbadge">p.2</span></h3>
+      <p>프로그램은 결국 <b>명령어(instruction)의 나열</b>이다. 이 명령어들을 일정 단위로 묶어 <b>실행 순서(흐름)</b>를 나타낸 것이 컨트롤 플로우.</p>
+      <ul>
+        <li>개별 statement·instruction·함수 호출이 <b>실행/평가되는 순서</b></li>
+        <li>컨트롤 플로우 하이재킹 = <b>컨트롤 하이재킹</b> (같은 말)</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>핵심: 무엇을 바꿔 탈취하는가<span class="imp-tag">중요</span><span class="pgbadge">p.2</span></h3>
+      <p>컨트롤 하이재킹 공격 = <b>런타임 익스플로잇(Runtime exploit)</b>. 프로세스 실행 중 <b>메모리 손상 취약점·에러</b>를 트리거해 의도된 제어흐름을 전복시킨다.</p>
+      <p>탈취의 가장 핵심적인 조작 대상은 →</p>
+      <ul>
+        <li><b>코드 포인터(code pointer)</b> 값, 즉 <code class="inl">%eip</code>를 공격자가 원하는 곳으로 바꾼다</li>
+        <li><code class="inl">EIP</code> = <b>Instruction Pointer</b>(명령어 포인터): 실행할 명령어의 <b>주소를 항상 가리키는 레지스터</b></li>
+        <li>접근하면 안 되는 메모리 영역을 바라보게 만든다</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>대표 공격기법은 두 갈래<span class="imp-tag">중요</span><span class="pgbadge">p.2</span></h3>
+      <p>"제어흐름을 하이재킹한다"는 목표는 같되, <b>어떤 코드로 가게 하느냐</b>로 나뉜다.</p>
+      <div class="grid">
+        <div class="gcell">
+          <div class="gh"><span class="chip a">Code Injection</span></div>
+          <p>공격자가 <b>새 코드를 직접 주입</b>해서 그곳으로 간다. (코드를 "유지/주입")</p>
+        </div>
+        <div class="gcell">
+          <div class="gh"><span class="chip p">Code Reuse</span></div>
+          <p>이미 <b>프로그램에 들어있던 코드를 재사용</b>해서 그곳으로 간다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S2 CFG ============ -->
+  <section class="section" id="s2">
+    <div class="sec-head">
+      <h2><span class="dot"></span>컨트롤 플로우 그래프 (CFG)</h2>
+      <p>코드를 라인 단위가 아니라 <b>블록 단위</b>로 쪼개 흐름을 그래프로 나타낸 것.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>베이직 블록(Basic Block)<span class="imp-tag">중요</span><span class="pgbadge">p.3</span></h3>
+      <p>CFG를 구성하는 <b>네모 박스 하나 = 베이직 블록</b>. 코드를 <b>라인 바이 라인</b>이 아니라 뭉뚱그려 어디서 어디까지를 <b>그룹핑한 단위</b>.</p>
+      <ul>
+        <li>진입점(entry)이 <b>하나</b> — 첫 번째로 실행되는 명령어</li>
+        <li>출구(exit)가 <b>하나</b> — 마지막으로 실행되는 명령어</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>CFG = 방향 그래프(directed graph)<span class="pgbadge">p.3</span></h3>
+      <ul>
+        <li><b>노드(node)</b> = 베이직 블록</li>
+        <li><b>엣지(edge)</b> = 제어흐름 경로(control flow path)</li>
+        <li>Entry 1곳에서 시작 → 화살표 방향을 따라 → Exit 1곳으로 수렴</li>
+        <li>블록의 마지막 문장이 <b>분기(branch)</b>면, true/false에 따라 다음 베이직 블록이 갈라진다</li>
+      </ul>
+      <div class="flow">
+        <div class="node ok">Entry</div><span class="arrow">→</span>
+        <div class="node">BB1</div><span class="arrow">→</span>
+        <div class="node">BB3</div><span class="arrow">→</span>
+        <div class="node">BB5/BB6</div><span class="arrow">→</span>
+        <div class="node ok">Exit</div>
+        <div class="flow-label">entry 하나 · exit 하나 · 블록 단위로 흐름이 이어짐</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>왜 쓰나? — 큰 프로그램의 흐름 파악<span class="pgbadge">p.3</span></h3>
+      <p>수천 줄짜리 거대한 프로그램을 소스 텍스트로만 보면 이해하기 어렵다. CFG로 블록 단위로 해석해 보여주면 <b>동작 순서·흐름을 빠르게 파악</b>할 수 있다. (예: 팀장이 사원 코드 흐름을 검토할 때)</p>
+    </div>
+  </section>
+
+  <!-- ============ S3 코드 인젝션 ============ -->
+  <section class="section" id="s3">
+    <div class="sec-head">
+      <h2><span class="dot"></span>코드 인젝션 공격 (Code Injection)</h2>
+      <p>공격자가 준비한 <b>멜리셔스 코드를 직접 주입</b>하고, 제어흐름을 그쪽으로 꺾는다.</p>
+    </div>
+
+    <div class="card">
+      <h3>정의 & 셸코드<span class="pgbadge">p.5–6</span></h3>
+      <ul>
+        <li>의도된 제어흐름을 <b>미리 주입해둔 멜리셔스 코드</b>로 전복</li>
+        <li><b>셸코드(shellcode)</b>: 공격자가 공급하는 코드. 보통 오버플로우되는 <b>버퍼에 저장</b>되고, 전통적으로 셸(명령어 해석기)로 제어를 넘긴다</li>
+        <li><b>머신코드(machine code)</b>: 프로세서·OS에 종속. 예전엔 어셈블리 실력이 필요했으나 요즘은 자동화 도구 존재</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>공격 과정 (BOF 기반)<span class="imp-tag">중요</span><span class="pgbadge">p.5–6</span></h3>
+      <p>지난 강의의 <b>버퍼 오버플로우(BOF)</b>가 곧 대표적 코드 인젝션 공격이었다.</p>
+      <ol style="list-style:none;counter-reset:st">
+        <li style="padding:6px 0 6px 30px;position:relative;color:var(--txt2);font-size:.9rem" class="stepli">머신코드가 담긴 <b>bad file</b>을 준비한다</li>
+        <li style="padding:6px 0 6px 30px;position:relative;color:var(--txt2);font-size:.9rem" class="stepli"><code class="inl">strcpy()</code>를 쓰는 <b>취약한 프로그램</b>의 input file로 넣는다</li>
+        <li style="padding:6px 0 6px 30px;position:relative;color:var(--txt2);font-size:.9rem" class="stepli">복사가 일어나며 <b>스택(stack) 영역에 주입</b>된다</li>
+        <li style="padding:6px 0 6px 30px;position:relative;color:var(--txt2);font-size:.9rem" class="stepli"><b>리턴 어드레스(return address)를 덮어쓴다</b> — 이것이 제일 중요</li>
+        <li style="padding:6px 0 6px 30px;position:relative;color:var(--txt2);font-size:.9rem" class="stepli">EIP가 <b>공격자 코드의 시작점</b>으로 점프 → 셸코드 실행</li>
+      </ol>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>CFG 관점의 "납치"<span class="imp-tag">중요</span><span class="pgbadge">p.4–6</span></h3>
+      <p>정상 흐름이라면 BB3에서 BB5 또는 BB6(정상 리턴 어드레스, 예: main으로 복귀)으로 가야 한다. 그런데 리턴 어드레스를 덮어쓴 순간 →</p>
+      <div class="flow">
+        <div class="node ok">BB1</div><span class="arrow">→</span>
+        <div class="node">BB3</div><span class="arrow" style="text-decoration:line-through;opacity:.4">→</span>
+        <div class="node" style="opacity:.4">BB5/6</div>
+      </div>
+      <div class="flow">
+        <div class="node">BB3</div><span class="arrow bad">⇢</span>
+        <div class="node bad">A (주입된 코드)</div>
+        <div class="flow-label">원래 BB3→BB5/6 이던 흐름을 <b>납치(hijacking)</b>해서 공격자 코드 A로 끌고 감</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>이후 전개 — 방어기법의 등장<span class="pgbadge">p.6</span></h3>
+      <p>BOF 공격이 너무 잘 터져서 "이대로는 안 되겠다"며 디펜스 메커니즘이 줄줄이 나왔다. 그 결과 코드 인젝션이 점점 막히게 된다. → <b>코드 재사용 공격</b>으로 이어지는 배경.</p>
+    </div>
+  </section>
+
+  <!-- ============ S4 코드 재사용 ============ -->
+  <section class="section" id="s4">
+    <div class="sec-head">
+      <h2><span class="dot"></span>코드 재사용 공격 (Code Reuse)</h2>
+      <p>새 코드를 주입하지 않고, <b>원래 프로그램에 있던 코드를 재사용</b>해 공격한다. — 이 챕터의 핵심 주제.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>왜 등장했나?<span class="imp-tag">중요</span><span class="pgbadge">p.7</span></h3>
+      <p>코드 인젝션(버퍼 오버플로우)이 너무 잘 터지자 방어기법이 생겼다 → <b>인젝션이 더 이상 안 먹힌다.</b></p>
+      <ul>
+        <li><b>NX bit 세팅</b>(실행 불가 스택)</li>
+        <li><b>StackGuard의 캐너리(canary)</b></li>
+      </ul>
+      <p>그래서 공격자는 발상을 전환한다: <b>"새 코드를 주입하는 게 아니라, 이미 들어있는 코드 중 쓸만한 걸 찾아 그곳으로 점프시키자."</b></p>
+    </div>
+
+    <div class="card">
+      <h3>정의<span class="pgbadge">p.7</span></h3>
+      <p>원래 프로그램 코드 내부의 <b>의도치 않은 실행 경로를 호출</b>하도록 제어흐름을 전복. 공격자는 <b>기존 코드(existing code)</b>를 통해 제어흐름을 흘려보내 악의적 결과를 얻는다. (인젝션 아님 → "재사용")</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>대표 공격기법 3가지<span class="imp-tag">중요</span><span class="pgbadge">p.7</span></h3>
+      <div class="grid">
+        <div class="gcell"><div class="gh"><span class="chip g">Ret2Libc</span></div><p><b>Return-to-Libc</b> 공격. libc 함수(예: <code class="inl">system()</code>)로 리턴.</p></div>
+        <div class="gcell"><div class="gh"><span class="chip p">ROP</span></div><p><b>Return-Oriented Programming</b>. 지금은 아주 유명한 기법.</p></div>
+        <div class="gcell"><div class="gh"><span class="chip b">JOP</span></div><p><b>Jump-Oriented Programming</b>. return이 아니라 jump 기반.</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>CFG 관점 — 없던 루트로 하이재킹<span class="pgbadge">p.4</span></h3>
+      <p>익스플로잇하면 BB1→BB2→BB3까지는 간다. 정상이면 BB3→BB5/6 이어야 하는데, 갑자기 <b>원래 없던 루트</b>인 BB4로 가는 하이재킹이 일어난다. 그리고 BB4에서 또 다른 곳으로 이어 붙인다.</p>
+      <div class="flow">
+        <div class="node">BB1</div><span class="arrow">→</span>
+        <div class="node">BB2</div><span class="arrow">→</span>
+        <div class="node">BB3</div><span class="arrow bad">⇢</span>
+        <div class="node hl">BB4 (없던 루트)</div><span class="arrow bad">⇢</span>
+        <div class="node">…</div>
+        <div class="flow-label">기존 코드 블록들을 이어 붙여(chaining) 공격 흐름을 구성</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>공격 ↔ 방어의 역사<span class="pgbadge">p.9–10</span></h3>
+      <p>최초로 이런 시도가 나오면 → 디펜스 메커니즘이 나오고 → 또 새 공격이 나오고 → 또 방어가 나오고… 이렇게 <b>계속 반복</b>된다. 강의자료 타임라인은 약 10여 년 전까지지만, 지금은 2026년이니 그 사이 또 여러 기법이 나왔을 것.</p>
+    </div>
+  </section>
+
+  <!-- ============ S5 방어기법 ============ -->
+  <section class="section" id="s5">
+    <div class="sec-head">
+      <h2><span class="dot"></span>방어기법(Defense Mechanism) 정리</h2>
+      <p>코드 인젝션을 막기 위해 <b>개발자·OS·컴파일러</b> 세 층위에서 나온 대응책.</p>
+    </div>
+
+    <div class="card">
+      <h3>세 층위의 방어<span class="pgbadge">recap</span></h3>
+      <div class="grid">
+        <div class="gcell">
+          <div class="gh">👨‍💻 개발자</div>
+          <p><b>안전한 API 사용 / Secure Coding.</b> <code class="inl">strcpy</code> 대신 <code class="inl">strncpy</code>(n카피)처럼 조금 더 안전한 API로 코딩. → 이런 코딩을 <b>시큐어 코딩</b>이라 함.</p>
+        </div>
+        <div class="gcell">
+          <div class="gh">🖥️ OS</div>
+          <p><b>ASLR</b> (주소 랜덤화) · <b>NX bit / Non-executable Stack</b> (실행 불가 스택).</p>
+        </div>
+        <div class="gcell">
+          <div class="gh">⚙️ 컴파일러</div>
+          <p><b>StackGuard</b> — 캐너리(canary)를 심어 리턴 어드레스 변조를 탐지.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>NX bit = MX = DEP, 그리고 핵심 원리<span class="imp-tag">중요</span><span class="pgbadge">p.14</span></h3>
+      <ul>
+        <li>리눅스 진영: <b>NX</b> / 윈도우즈 진영: <b>DEP</b>(Data Execution Prevention) — <b>똑같은 개념</b></li>
+        <li>이 비트가 ON이면 → 스택의 내용은 <b>실행되지 못한다</b></li>
+        <li>핵심 원리: <b>EIP는 무조건 텍스트 세그먼트(text segment)만 바라봐야 한다.</b> 스택 쪽으로 눈을 돌리면 멈춘다 → 스택에 셸코드를 넣어도 실행 불가</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>NX = Non-eXecutable (명칭 주의)<span class="imp-tag">중요</span><span class="pgbadge">p.14</span></h3>
+      <p>"known-non-eXecutable". 보통 <b>e를 빼고</b> <code class="inl">NX</code>로 쓴다. <b>NE가 아니라 NX</b>, 그리고 <code class="inl">NX bit</code>.</p>
+    </div>
+
+    <div class="card">
+      <h3>코드 재사용은 왜 NX를 피해가나<span class="pgbadge">p.38–39</span></h3>
+      <p>코드 재사용도 <b>리턴 어드레스를 조작</b>하는 건 코드 인젝션과 같다. 다만 점프 목적지가 다르다 →</p>
+      <div class="cmp">
+        <div class="col inj"><h4>코드 인젝션</h4><ul><li>스택/힙에 주입한 코드로 점프</li><li>스택 실행 → <b>NX bit에 걸림 ❌</b></li></ul></div>
+        <div class="col reuse"><h4>코드 재사용 (Ret2Libc 등)</h4><ul><li>원래 <b>텍스트 세그먼트</b>의 기존 코드로 점프</li><li>텍스트 영역 실행 → <b>NX bit에 안 걸림 ✅</b></li></ul></div>
+      </div>
+      <p style="margin-top:8px">※ 추가 OS/컴파일러 방어로 <b>ASLR</b>, <b>CFI</b>(Control-flow Integrity)도 코드 재사용 대응으로 거론됨.</p>
+    </div>
+  </section>
+
+  <!-- ============ S6 Return-to-libc ============ -->
+  <section class="section" id="s6">
+    <div class="sec-head">
+      <h2><span class="dot"></span>Return-to-libc (Ret2Libc) 기초</h2>
+      <p>본격적인 공격 절차 전에, <b>libc가 무엇이고 왜 거기로 리턴하는지</b>부터.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>libc란?<span class="imp-tag">중요</span><span class="pgbadge">p.11,38</span></h3>
+      <ul>
+        <li><b>C 라이브러리(C library)</b> — C에서 쓰는 라이브러리</li>
+        <li>거의 모든 Unix/Linux 프로그램에 링크됨</li>
+        <li>우리가 매일 쓰는 <code class="inl">printf</code>, <code class="inl">scanf</code>, <code class="inl">strcpy</code>, <code class="inl">system()</code>, <code class="inl">open()</code>, <code class="inl">malloc()</code> 등이 여기에 들어있다</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>헤더파일 vs 본체(libc)<span class="pgbadge">p.11</span></h3>
+      <p>함수를 쓰려면 <code class="inl">#include &lt;stdio.h&gt;</code> 를 한다. 이 <b>stdio.h = 헤더 파일</b>.</p>
+      <div class="cmp">
+        <div class="col reuse"><h4>헤더 (stdio.h)</h4><ul><li><b>함수의 원형(prototype)만</b> 들어있음</li><li>컴파일 시 위에서부터 읽으며 <code class="inl">printf</code>가 사전에 정의돼 있어야 컴파일됨</li></ul></div>
+        <div class="col inj"><h4>본체 (libc)</h4><ul><li>실제 <b>함수의 몸통(body)</b>이 들어있음</li><li>실행 시 함수가 호출되려면 이 "다리"가 필요 → libc 안에 있음</li></ul></div>
+      </div>
+      <p style="margin-top:6px">예: <code class="inl">printf</code>의 원형 →</p>
+<pre><code><span class="c-type">int</span> <span class="c-fn">printf</span>(<span class="c-type">const char</span> *format, ...);  <span class="c-com">// ... = 가변 인자(variadic)</span></code></pre>
+      <p>문자열만 있을 수도, <code class="inl">%d</code> 뒤에 정수 인자를 함께 넣을 수도 있다 → 인자 개수가 정해지지 않은 <b>가변 인자</b>.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>Ret2Libc 핵심 아이디어<span class="imp-tag">중요</span><span class="pgbadge">p.16–17</span></h3>
+      <p>리턴 어드레스를 조작하는 건 같지만, 목적지가 <b>원래 텍스트 세그먼트에 있던 그 코드 영역(=libc 함수) 어딘가</b>로 점프시키는 것.</p>
+      <div class="flow">
+        <div class="node">RET addr</div><span class="arrow bad">덮어씀 ⇢</span>
+        <div class="node hl">libc의 system()</div>
+        <div class="flow-label">원래는 이 주소를 봐야 했는데, 갑자기 기존 코드 영역을 보게 만들 뿐 → <b>NX bit에 안 걸림</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S7 함수 포인터 ============ -->
+  <section class="section" id="s7">
+    <div class="sec-head">
+      <h2><span class="dot"></span>C의 함수 포인터 (Function Pointer)</h2>
+      <p>변수만 포인터를 갖는 게 아니다 — <b>함수도 포인터를 가질 수 있다.</b></p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>함수 포인터가 가리키는 것<span class="imp-tag">중요</span><span class="pgbadge">p.12</span></h3>
+      <ul>
+        <li>기본적으로 <b>함수의 시작 주소(start address)</b>를 가리킨다</li>
+        <li>선언하려면 <b>반환형(return type) · 인자(parameter) · 원형</b>이 필요</li>
+        <li>마치 <code class="inl">int *</code>, <code class="inl">char *</code> 처럼, 함수 포인터는 그 함수의 <b>인자·반환 모양</b>에 맞춰 만들어야 가리킬 수 있다</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>선언 · 초기화 · 사용<span class="pgbadge">p.12</span></h3>
+      <ul>
+        <li>변수 포인터처럼 <b>선언과 동시에 대입</b>하거나, 선언 후 값을 넣을 수 있다</li>
+        <li>포인터 변수에 넣을 때는 <b>함수 이름 + <code class="inl">&amp;</code>(주소 연산)</b> → 주소값을 끌고 온다</li>
+        <li>포인터가 가리키는 대상에 접근(호출)할 때는 <b><code class="inl">*</code>(역참조 연산)</b>을 사용</li>
+      </ul>
+<pre><code><span class="c-com">// 1) 함수의 원형 (반환형·인자 모양)</span>
+<span class="c-type">int</span> <span class="c-fn">foo</span>(<span class="c-type">int</span> a, <span class="c-type">int</span> b);
+
+<span class="c-com">// 2) foo와 같은 모양의 함수 포인터 선언 + 주소 대입</span>
+<span class="c-type">int</span> (*fp)(<span class="c-type">int</span>, <span class="c-type">int</span>) = &amp;foo;   <span class="c-com">// & : 함수의 시작 주소</span>
+
+<span class="c-com">// 3) 포인터로 함수 호출 (역참조)</span>
+<span class="c-type">int</span> r = (*fp)(<span class="c-num">3</span>, <span class="c-num">4</span>);          <span class="c-com">// * : 가리키는 함수를 실행</span></code></pre>
+      <p style="font-size:.82rem;color:var(--txt3)">※ 위 코드는 강의에서 말로 설명한 선언·<code class="inl">&amp;</code>/<code class="inl">*</code> 사용법을 문법에 맞게 재구성한 예시.</p>
+    </div>
+
+    <div class="card">
+      <h3>왜 이 장에서 다루나<span class="pgbadge">p.12</span></h3>
+      <p>함수 포인터는 "실행할 함수의 주소를 담는 값"이다. 제어흐름 탈취의 본질(=코드 포인터/EIP를 공격자가 원하는 함수 주소로 바꾸는 것)과 직결되므로, Ret2Libc·ROP로 넘어가기 전 기초로 짚는다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S8 부연설명 ============ -->
+  <section class="section" id="s8">
+    <div class="sec-head">
+      <h2><span class="dot" style="background:var(--blue)"></span>부연설명 <span class="sup-tag" style="margin-left:6px">강의 외 보충</span></h2>
+      <p>강의에 직접 나오진 않았지만 이해를 돕는 배경 지식. (시험 대비 핵심은 앞 탭의 <span style="color:var(--amber)">amber 카드</span> 참고)</p>
+    </div>
+
+    <div class="card blue">
+      <h3>EIP / RIP — 32bit vs 64bit</h3>
+      <p>강의의 <code class="inl">EIP</code>는 <b>32비트(x86)</b>의 명령어 포인터다. 64비트(x86-64)에서는 같은 역할을 <code class="inl">RIP</code>가 한다. 어느 쪽이든 "다음에 실행할 명령어 주소를 담는 레지스터"라는 의미는 동일하며, 컨트롤 하이재킹의 최종 목표는 이 값을 장악하는 것.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>캐너리(Canary)는 어떻게 탐지하나</h3>
+      <p>StackGuard는 리턴 어드레스 <b>바로 앞</b>에 임의의 값(canary)을 심는다. 함수가 리턴하기 직전 이 값이 그대로인지 검사하고, 버퍼 오버플로우로 값이 훼손됐으면 프로그램을 중단시킨다. "탄광의 카나리아"에서 유래.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>W^X (Write XOR eXecute) 원리</h3>
+      <p>NX/DEP의 바탕 원칙. 한 메모리 페이지는 <b>쓰기 가능</b>이거나 <b>실행 가능</b>이거나 둘 중 하나여야 하고 <b>둘 다일 수는 없다</b>. 그래서 "쓸 수 있는" 스택은 "실행 불가"가 되고, 주입된 셸코드가 실행되지 못한다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>ROP 더 보기 — 가젯(gadget)</h3>
+      <p>ROP는 프로그램에 이미 있는 짧은 코드 조각들, 즉 <code class="inl">...; ret</code>로 끝나는 <b>가젯(gadget)</b>들을 스택에 주소로 쭉 늘어놓아 체인처럼 이어 실행한다. 그래서 공격자는 "새 머신코드"가 아니라 <b>가젯 주소 목록(=몇 가지 데이터/메타데이터)</b>만 준비하면 된다 — 강의에서 "머신코드가 아니라 몇 가지 데이터를 준비한다"고 한 부분이 이것.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>CFI (Control-Flow Integrity)</h3>
+      <p>코드 재사용 공격에 대한 일반적 방어. 런타임에 <b>미리 정의된 CFG</b>에 맞는 제어흐름인지 검증해, 정상 그래프에 없는 엣지(없던 루트)로의 점프를 차단한다. 이 장 초반에 배운 CFG 개념이 방어기법에서 다시 쓰이는 지점.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>셸코드가 "20바이트대"인 이유</h3>
+      <p>강의에서 언급된 "20여 바이트짜리 셸 머신코드"는, 버퍼라는 좁은 공간에 들어가야 하므로 <code class="inl">execve("/bin/sh")</code>를 호출하는 최소한의 어셈블리만 아주 <b>컴팩트하게</b> 짠 것. NULL 바이트 회피 등 제약 때문에 정교하게 설계된다.</p>
+    </div>
+  </section>
+
+  <footer>
+    시스템보안 12주차1 · Ch 8 Control Hijacking Attacks · 강의녹음 재구성 (ch8_control_hijacking_v1.pdf 기준)
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var tabs = document.querySelectorAll('.tab');
+    var secs = document.querySelectorAll('.section');
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        var id = t.getAttribute('data-sec');
+        tabs.forEach(function(x){x.classList.remove('active')});
+        secs.forEach(function(x){x.classList.remove('active')});
+        t.classList.add('active');
+        var el = document.getElementById(id);
+        if(el) el.classList.add('active');
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+    });
+  })();
+</script>
+</body>
+</html>
