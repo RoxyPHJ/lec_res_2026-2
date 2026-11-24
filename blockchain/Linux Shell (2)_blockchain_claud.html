@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Linux Shell (2)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;--text-danger:#A32D2D;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-warning:#FAEEDA;--text-warning:#633806;--border-warning:#EF9F27;
+  --bg-accent:#E6F1FB;--text-accent:#0C447C;--border-accent:#85B7EB;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",Menlo,Consolas,"Noto Sans KR",monospace;
+  --arrow:#888780;
+  --g-fill:#F1EFE8;--g-stroke:#5F5E5A;--g-t:#444441;--g-s:#5F5E5A;
+  --p-fill:#EEEDFE;--p-stroke:#534AB7;--p-t:#3C3489;--p-s:#534AB7;
+  --c-fill:#FAECE7;--c-stroke:#993C1D;--c-t:#712B13;--c-s:#993C1D;
+  --tl-fill:#E1F5EE;--tl-stroke:#0F6E56;--tl-t:#085041;--tl-s:#0F6E56;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;--text-danger:#F09595;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-accent:#042C53;--text-accent:#B5D4F4;--border-accent:#185FA5;
+    --arrow:#B4B2A9;
+    --g-fill:#444441;--g-stroke:#B4B2A9;--g-t:#F1EFE8;--g-s:#D3D1C7;
+    --p-fill:#3C3489;--p-stroke:#AFA9EC;--p-t:#EEEDFE;--p-s:#CECBF6;
+    --c-fill:#712B13;--c-stroke:#F0997B;--c-t:#FAECE7;--c-s:#F5C4B3;
+    --tl-fill:#085041;--tl-stroke:#5DCAA5;--tl-t:#E1F5EE;--tl-s:#9FE1CB;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7;-webkit-text-size-adjust:100%}
+.page{max-width:760px;margin:0 auto;padding:1.5rem 16px 3rem}
+.back{font-size:13px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-primary)}
+button{font-family:inherit;font-size:13px;color:var(--text-primary);background:transparent;border:0.5px solid var(--border-strong);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{background:var(--surface-1)}
+button:active{transform:scale(.98)}
+input[type=checkbox]{accent-color:#185FA5}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 16px}
+.tabs button.on{background:var(--surface-1);border-color:var(--text-primary)}
+.sec{margin-bottom:28px}
+.sh{font-size:17px;font-weight:500;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:14px;line-height:1.7;color:var(--text-primary)}
+.imp{background:var(--bg-warning);border-color:var(--border-warning);color:var(--text-warning)}
+.ext{background:var(--bg-accent);border-color:var(--border-accent);color:var(--text-accent)}
+.off{background:var(--surface-1);color:var(--text-secondary)}
+.ct{font-weight:500;font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pg{font-size:11px;font-weight:400;padding:1px 8px;border-radius:999px;border:0.5px solid var(--border-strong);color:var(--text-secondary);margin-left:auto;white-space:nowrap}
+.imp .pg,.ext .pg{color:inherit;border-color:currentColor}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.6;color:var(--text-primary);white-space:pre}
+.cm{color:var(--text-muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
+.cell{background:var(--surface-1);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text-primary)}
+.bd{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--surface-1);border:0.5px solid var(--border);font-family:var(--font-mono);color:var(--text-primary)}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:13px}
+.st{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text-primary)}
+code{font-family:var(--font-mono);font-size:13px}
+ul{margin:4px 0 0;padding-left:20px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+svg text{font-family:var(--font-sans)}
+svg .t{font-size:14px;fill:var(--text-primary)}
+svg .ts{font-size:12px;fill:var(--text-secondary)}
+svg .th{font-size:14px;font-weight:500;fill:var(--text-primary)}
+svg .arr{stroke:var(--arrow);stroke-width:1.5;fill:none}
+.c-gray>rect{fill:var(--g-fill);stroke:var(--g-stroke)}.c-gray>.th{fill:var(--g-t)}.c-gray>.ts{fill:var(--g-s)}
+.c-purple>rect{fill:var(--p-fill);stroke:var(--p-stroke)}.c-purple>.th{fill:var(--p-t)}.c-purple>.ts{fill:var(--p-s)}
+.c-coral>rect{fill:var(--c-fill);stroke:var(--c-stroke)}.c-coral>.th{fill:var(--c-t)}.c-coral>.ts{fill:var(--c-s)}
+.c-teal>rect{fill:var(--tl-fill);stroke:var(--tl-stroke)}.c-teal>.th{fill:var(--tl-t)}.c-teal>.ts{fill:var(--tl-s)}
+</style>
+</head>
+<body>
+<div class="page">
+<a class="back" href="../index.html"><i class="ti ti-arrow-left" aria-hidden="true"></i>목차</a>
+<h2 class="sr-only">Linux Shell (2) 강의 정리: PATH 환경변수, 셸 스크립트, 사용자 관리, 파일 허가권, 하드·소프트 링크, 프로세스를 강의자료 페이지와 함께 탭별 카드로 정리</h2>
+<div style="padding:.75rem 0 0">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<h1 style="font-size:22px;font-weight:500;margin:0">Linux Shell (2)</h1>
+<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg-warning);color:var(--text-warning)"><i class="ti ti-star" aria-hidden="true"></i> 중요·시험</span>
+<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg-accent);color:var(--text-accent)"><i class="ti ti-info-circle" aria-hidden="true"></i> 부연설명</span>
+<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:var(--surface-1);color:var(--text-secondary)">출제 제외</span>
+</div>
+<div style="font-size:12px;color:var(--text-muted);margin-top:10px">강의자료 4_Linux.pdf (Linux Basics) · p.44 ~ p.122 · 환경변수 PATH → 셸 스크립트 → 사용자·그룹 → 허가권 → 링크 → 프로세스·서비스</div>
+<div class="tabs" role="tablist">
+<button data-t="t1">PATH·환경변수</button>
+<button data-t="t2">셸 스크립트</button>
+<button data-t="t3">사용자·그룹</button>
+<button data-t="t4">허가권</button>
+<button data-t="t5">링크·inode</button>
+<button data-t="t6">프로세스·서비스</button>
+<button data-t="t7">시험 체크</button>
+</div>
+
+<div class="sec" data-tab="t1">
+<div class="sh"><i class="ti ti-route" aria-hidden="true"></i>PATH 환경변수<span class="pg">p.44–45, 77</span></div>
+
+<div class="card">
+<div class="ct">PATH 확인: <code>echo $PATH</code><span class="pg">p.44</span></div>
+환경변수는 <code>echo $변수명</code>으로 출력. PATH는 콜론(<code>:</code>)으로 구분된 디렉토리 목록.
+<div class="flow"><span class="bd">/usr/local/sbin</span>:<span class="bd">/usr/local/bin</span>:<span class="bd">/usr/sbin</span>:<span class="bd">/usr/bin</span>:<span class="bd">…</span></div>
+<div class="flow" style="margin-top:12px"><span class="st">명령 이름만 입력</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">PATH의 디렉토리에서 탐색</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">있으면 경로 무관 실행 + Tab 자동완성</span></div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>"패스 잡는 게 굉장히 중요" — 실행 파일과 PATH<span class="pg">p.44</span></div>
+실행 파일이라도 PATH에 없으면 이름만으로는 실행되지 않음 → <code>./hello</code>처럼 현재 디렉토리(<code>.</code>)를 명시해야 함. PATH에 잡힌 디렉토리로 옮기면 어디서든 실행.
+<pre>sudo apt update                <span class="cm"># 패키지 관리자 업데이트 (가장 먼저)</span>
+sudo apt install gcc
+gcc -o hello main.c
+ls -l hello                    <span class="cm"># -rwxrwxr-x  → 끝의 x = 실행 파일</span>
+hello                          <span class="cm"># 실행 안 됨 (PATH에 없음)</span>
+./hello                        <span class="cm"># 현재 디렉토리의 hello 실행</span>
+sudo mv hello /usr/local/bin/  <span class="cm"># root 소유 디렉토리 → sudo 필요</span>
+hello                          <span class="cm"># 어디서든 실행</span></pre>
+<div style="margin-top:8px">★ <code>rwxrwxr-x</code> 퍼미션은 "시험 문제랑 똑같다"고 언급됨 → 허가권 탭 참고</div>
+</div>
+
+<div class="card">
+<div class="ct">내 디렉토리를 PATH에 추가: <code>export</code><span class="pg">p.44–45</span></div>
+<pre>mkdir incheon
+cd incheon
+pwd                                    <span class="cm"># /home/ubuntu/incheon</span>
+export PATH=$PATH:/home/ubuntu/incheon <span class="cm"># 기존 PATH + 새 경로</span>
+echo $PATH
+
+gcc -o INU main.c
+mv INU ./incheon                       <span class="cm"># 상대 경로</span>
+mv INU /home/ubuntu/incheon            <span class="cm"># 절대 경로 (위와 동일)</span>
+INU                                    <span class="cm"># 다른 디렉토리에서도 실행</span></pre>
+<div style="margin-top:8px">사용자 홈(<code>/home/ubuntu</code>) 아래는 사용자 권한 안이므로 <code>sudo</code> 불필요.</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>일시적 설정 vs 영구적 설정<span class="pg">p.45, 77</span></div>
+<div class="grid">
+<div class="cell"><b style="font-weight:500">터미널에서 export</b><br>셸이 살아있는 동안만 적용. <code>exit</code>로 접속을 끊으면 사라짐 (일시적)</div>
+<div class="cell"><b style="font-weight:500">profile에 export 작성</b><br>셸 시작 시 무조건 실행되는 파일 → 재접속해도 유지 (영구적)</div>
+</div>
+<div class="grid">
+<div class="cell"><code>/etc/profile</code><br>모든 사용자 공통</div>
+<div class="cell"><code>~/.profile</code><br>사용자 홈의 숨김 파일</div>
+</div>
+<pre>cd ~                       <span class="cm"># 홈 디렉토리 (/home/ubuntu)</span>
+ls -a                      <span class="cm"># 숨김 파일 .profile 확인</span>
+vi ~/.profile              <span class="cm"># 마지막 줄에 아래 한 줄 추가</span>
+export PATH=$PATH:/home/ubuntu/incheon
+
+source ~/.profile          <span class="cm"># 저장만으로는 X → 반영</span>
+echo $PATH
+exit                       <span class="cm"># 재접속 후 echo $PATH → 유지됨</span></pre>
+</div>
+
+<div class="card">
+<div class="ct">IaC 도구와 연결<span class="pg">슬라이드 외 언급</span></div>
+EC2 같은 인스턴스를 만들 때마다 패키지 업데이트, gcc·Java·Python 설치 등 초기 설정을 반복해야 함 → 여러 서비스가 함께 쓰는 환경에서는 Terraform 같은 IaC 도구로 프로비저닝·환경 설정을 자동화.
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>[부연설명] 왜 <code>$PATH:</code>를 앞에 붙이나</div>
+<code>export PATH=/home/ubuntu/incheon</code>처럼 덮어쓰면 기존 경로가 모두 사라져 <code>ls</code>, <code>gcc</code> 같은 명령도 찾지 못함. 반드시 기존 값(<code>$PATH</code>)을 유지하고 콜론으로 이어 붙인다. 슬라이드 p.45의 <code>.bashrc</code>는 bash 대화형 셸이 열릴 때마다 읽히는 파일로, 같은 방식으로 <code>source .bashrc</code>로 반영한다.
+</div>
+</div>
+
+<div class="sec" data-tab="t2">
+<div class="sh"><i class="ti ti-terminal-2" aria-hidden="true"></i>셸 스크립트 작성·실행<span class="pg">p.46–78</span></div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>시험에 나왔던 부분: 셸 스크립트 작성<span class="pg">p.46–47</span></div>
+<div class="flow"><span class="st">touch name.sh</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">#!/bin/sh 작성</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">sh name.sh</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">chmod +x</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">./name.sh</span></div>
+<pre>#!/bin/sh
+echo "사용자 이름: " $USER
+echo "홈 디렉터리: " $HOME
+exit 0</pre>
+<ul>
+<li>1행 <code>#!/bin/sh</code>: 주석처럼 보이지만 무조건 써야 함 → 셸이 "셸 스크립트구나" 인식</li>
+<li>확장자 <code>.sh</code>는 명시용일 뿐, 없어도 됨</li>
+<li><code>exit 0</code>: C의 <code>return 0</code>처럼 정상 종료를 셸에 알림 (생략 가능)</li>
+<li>환경변수는 대문자 (<code>$USER</code>, <code>$HOME</code>)</li>
+</ul>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>실행 방법 2가지와 chmod — "주의 깊게 봐야"<span class="pg">p.47</span></div>
+<div class="grid">
+<div class="cell"><code>sh name.sh</code><br>속성 변경 없이 실행. 파일은 실행 파일이 아님(색 다름), <code>./name.sh</code>는 불가</div>
+<div class="cell"><code>chmod +x name.sh</code> → <code>./name.sh</code><br>실행 권한 추가 → 실행 파일로 바뀌어 <code>sh</code> 없이 실행</div>
+</div>
+<pre>sh name.sh            <span class="cm"># 실행 결과: ubuntu, /home/ubuntu</span>
+./name.sh             <span class="cm"># Permission denied</span>
+chmod +x name.sh      <span class="cm"># Permission 관련 명령어 (시험)</span>
+ls -l name.sh         <span class="cm"># x 권한 생김</span>
+./name.sh             <span class="cm"># 실행됨</span></pre>
+</div>
+
+<div class="card">
+<div class="ct">셸 스크립트로 할 수 있는 것<span class="pg">p.48–76</span></div>
+파이썬·C로 프로그램 만드는 것과 같고 문법만 셸 문법.
+<div class="grid">
+<div class="cell">셸 명령 <span class="bd">echo</span> <span class="bd">ls</span><br><span style="color:var(--text-secondary)">p.46</span></div>
+<div class="cell">변수 생성·대입<br><span style="color:var(--text-secondary)">p.48–51</span></div>
+<div class="cell">사칙연산<br><span style="color:var(--text-secondary)">p.53</span></div>
+<div class="cell">입력·파라미터 <span class="bd">$1</span><br><span style="color:var(--text-secondary)">p.54</span></div>
+<div class="cell">조건문 if·case<br><span style="color:var(--text-secondary)">p.55–61</span></div>
+<div class="cell">반복문 for·while<br><span style="color:var(--text-secondary)">p.62–69</span></div>
+</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>if문 문법: 대괄호 안쪽 양 끝 공백 필수<span class="pg">p.55</span></div>
+<pre>#!/bin/sh
+if [ "woo" = "woo" ]
+then
+    echo "참이면 실행된다."
+fi
+exit 0</pre>
+<div style="margin-top:8px"><code>[</code> 뒤, <code>]</code> 앞에 공백이 하나씩 반드시 있어야 함 (<code>["woo" = "woo"]</code>는 오류).</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>출제 방식 안내<span class="pg">p.48–75</span></div>
+<ul>
+<li>슬라이드 예제(약 20개)를 직접 타이핑해서 모두 돌려보고 이해하기 → "이 부분도 문제를 내겠다", "거의 똑같이 나올 수도"</li>
+<li>공부했는지 노력을 판단하는 문제. 지엽적인 문법 암기 문제는 내지 않음</li>
+<li>중요 표시된 부분을 인지하고 전체 흐름을 이해하면 풀 수 있는 수준</li>
+</ul>
+</div>
+
+<div class="card off">
+<div class="ct">출제 제외: shift 등 지엽적 내용<span class="pg">p.76</span></div>
+셸 프로그래밍을 직접 할 일이 적고 너무 지엽적이라 p.76(shift) 같은 문제는 내지 않음.
+</div>
+
+<div class="card">
+<div class="ct">실습: 셸 스크립트로 역삼각형 별 찍기<span class="pg">p.78</span></div>
+C·파이썬 처음 배울 때 하던 별 찍기를 셸 문법으로. 입력으로 계속/종료 제어, <code>while</code>·<code>for</code> + 인덱스로 크기 조절, <code>'*********'</code> 문자열 직접 사용 금지.
+</div>
+
+<div class="card">
+<div class="ct">셸 스크립트는 어디에 쓰이나<span class="pg">p.45, 77</span></div>
+<ul>
+<li><code>/etc/profile</code>, <code>~/.profile</code> 자체가 셸 스크립트 → 조건·반복문으로 PATH를 설정</li>
+<li>리눅스 머신에서 자동화가 필요할 때 반드시 쓰게 됨</li>
+<li>연구실: 데모·실험을 항상 일정하게 재현해서 보여줄 때 셸 스크립트로 실행</li>
+</ul>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>[부연설명] <code>#!/bin/sh</code> vs <code>#!/bin/bash</code></div>
+<code>#!</code>(셔뱅) 뒤에 이 파일을 해석할 인터프리터 경로를 적는다. 슬라이드 p.46은 "배시셸을 사용하겠다는 의미"로 설명. 우분투의 <code>/bin/sh</code>는 dash로 연결되어 있어서, 배열·<code>[[ ]]</code> 같은 bash 전용 문법을 쓴다면 <code>#!/bin/bash</code>로 적는 편이 안전하다.
+</div>
+</div>
+
+<div class="sec" data-tab="t3">
+<div class="sh"><i class="ti ti-users" aria-hidden="true"></i>사용자·그룹 관리<span class="pg">p.80–94</span></div>
+
+<div class="card">
+<div class="ct">다중 사용자 시스템<span class="pg">p.80</span></div>
+리눅스·유닉스는 서버로 쓰이므로 여러 사용자를 위한 시스템. 예: 교수 서버에 학생 40명이 과제를 제출한다면 교수는 관리자(root), 학생은 일반 유저. 여러 사용자를 그룹으로 묶어 관리 가능.
+</div>
+
+<div class="card">
+<div class="ct"><code>/etc/passwd</code> 한 행의 구조<span class="pg">p.80–81</span></div>
+<div class="flow" style="font-family:var(--font-mono)"><span class="st">ubuntu</span>:<span class="st">x</span>:<span class="st">1000</span>:<span class="st">1000</span>:<span class="st">,,,</span>:<span class="st">/home/ubuntu</span>:<span class="st">/bin/bash</span></div>
+<div class="grid">
+<div class="cell">사용자 이름</div><div class="cell">비밀번호 (x → /etc/shadow)</div><div class="cell">사용자 ID (UID)</div><div class="cell">그룹 ID (GID)</div><div class="cell">추가 정보</div><div class="cell">홈 디렉토리</div><div class="cell">기본 셸 (bash)</div>
+</div>
+<div style="margin-top:8px">맨 위 root 사용자는 UID·GID 모두 0.</div>
+</div>
+
+<div class="card">
+<div class="ct">사용자 생성·삭제<span class="pg">p.83–84, 88–89</span></div>
+root 권한(<code>su</code>로 전환 또는 <code>sudo</code>)으로 생성.
+<pre>sudo adduser incheon        <span class="cm"># 비밀번호, 이름 등 입력</span>
+cat /etc/passwd             <span class="cm"># incheon:x:1001:1001:... (ubuntu 1000 다음)</span>
+sudo userdel -r incheon     <span class="cm"># 사용자 삭제 (-r: 홈 디렉토리까지)</span></pre>
+</div>
+
+<div class="card">
+<div class="ct"><code>/etc/skel</code> 디렉토리<span class="pg">p.94</span></div>
+<div class="flow"><span class="st">/etc/skel 에 파일 작성</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">adduser</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">새 유저 홈에 그대로 복사</span></div>
+<div style="margin-top:8px">공지사항·주의사항 파일을 넣어두면 사용자 생성 시 무조건 함께 들어감. 실습으로 따라해볼 것.</div>
+</div>
+
+<div class="card off">
+<div class="ct">출제 제외: 사용자·그룹 관리 명령 암기<span class="pg">p.85–86, 99</span></div>
+잘 안 쓰는 명령이라 외울 필요 없음 (chage, groups, groupadd 등). "그룹 같은 게 있다" 정도만. 서버 관리자 관점은 다루지 않음.
+</div>
+</div>
+
+<div class="sec" data-tab="t4">
+<div class="sh"><i class="ti ti-lock" aria-hidden="true"></i>파일 허가권 (Permission)<span class="pg">p.95–106</span></div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>퍼미션 문자열 읽기<span class="pg">p.95–97</span></div>
+<div style="display:grid;grid-template-columns:44px repeat(3,minmax(0,1fr));gap:6px;margin-top:6px;text-align:center;font-family:var(--font-mono)">
+<div class="cell" style="font-size:16px">-</div><div class="cell" style="font-size:16px">r w x</div><div class="cell" style="font-size:16px">r - -</div><div class="cell" style="font-size:16px">- - x</div>
+</div>
+<div style="display:grid;grid-template-columns:44px repeat(3,minmax(0,1fr));gap:6px;margin-top:4px;text-align:center;font-size:12px">
+<div>종류</div><div>소유자 (user)</div><div>그룹 (group)</div><div>그 외 (other)</div>
+</div>
+<div class="flow"><span class="bd">-</span> 일반 파일 <span class="bd">d</span> 디렉토리 <span class="bd">l</span> 링크</div>
+<div style="margin-top:8px">r = read, w = write, x = execute. "그 외"는 사용자가 수십 명일 때 소유자도 아니고 그룹에도 속하지 않은 나머지.</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>숫자로 권한 주기 (chmod) — "펌이션은 지금 배운 것만"<span class="pg">p.97–98</span></div>
+r = 4 (2²), w = 2 (2¹), x = 1 (2⁰) → 각 자리를 더한 값. 체크해서 직접 계산해보기:
+<div id="perm" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px"></div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px">
+<span style="font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--text-primary)" id="permstr">-rwxr----x</span>
+<span style="font-family:var(--font-mono);font-size:13px;color:var(--text-primary)" id="permcmd">chmod 741 name.sh</span>
+</div>
+<div class="flow" id="presets"></div>
+</div>
+
+<div class="card">
+<div class="ct">강의 실습 흐름<span class="pg">p.100–102</span></div>
+<pre>ls -l name.sh       <span class="cm"># -rw-rw-r--</span>
+chmod 741 name.sh   <span class="cm"># 소유자 7(rwx) / 그룹 4(r--) / 그 외 1(--x)</span>
+ls -l name.sh       <span class="cm"># -rwxr----x</span>
+./name.sh           <span class="cm"># 소유자에게 실행 권한 → 실행됨</span>
+chmod 444 name.sh   <span class="cm"># -r--r--r--</span>
+vi name.sh          <span class="cm"># [readonly] → 수정 시 경고</span>
+chmod 644 name.sh   <span class="cm"># 쓰려면 최소 6(rw-)</span></pre>
+<ul>
+<li>파일 소유자가 ubuntu면 <code>sudo</code> 불필요, root 소유라면 <code>sudo</code> 필요</li>
+<li>쓸 수 있는데 읽을 수 없는 권한은 말이 안 됨 → 쓰기를 주려면 최소 6</li>
+</ul>
+</div>
+
+<div class="card off">
+<div class="ct">출제 제외: 상대 모드, chown<span class="pg">p.98–99</span></div>
+<code>u+x</code> 같은 상대 모드는 "생각하지 마세요" — 대부분 숫자로 입력. 소유권 변경 <code>chown</code>(change owner)은 다른 사용자에게 파일 소유권을 넘기는 명령이지만 시험 범위 아님.
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>[부연설명] 강의 중 숫자 언급 정정 · chmod +x의 정체</div>
+<ul>
+<li>강의에서 "x는 2"로 들리지만 실제로는 x = 1. 바로 이어서 "4 + 2 + 1 = 7"로 설명하므로 1이 맞음</li>
+<li>셸 스크립트 탭의 <code>chmod +x</code>는 상대 모드 표기(<code>a+x</code>와 동일)로, 모든 대상에 x를 추가</li>
+<li>슬라이드 p.98 상대 모드 예시 설명은 일부 예시와 설명이 어긋나 있음 (예: <code>a+rw</code>는 모든 사용자에게 읽기·쓰기 추가)</li>
+</ul>
+</div>
+</div>
+
+<div class="sec" data-tab="t5">
+<div class="sh"><i class="ti ti-link" aria-hidden="true"></i>하드 링크 · 소프트 링크 · inode<span class="pg">p.107–111</span></div>
+
+<div class="card">
+<div class="ct">링크 = 윈도우의 "바로가기"<span class="pg">p.107</span></div>
+<div class="grid">
+<div class="cell"><code>ln 원본 링크</code><br>하드 링크: 원본과 같은 inode</div>
+<div class="cell"><code>ln -s 원본 링크</code><br>소프트(심벌릭) 링크: 새 inode → 원본 이름을 가리킴</div>
+<div class="cell"><code>ls -ail</code> / <code>stat</code><br>inode 번호 확인</div>
+</div>
+</div>
+
+<div class="card">
+<div class="ct">스택·힙 비유로 그린 구조<span class="pg">p.107</span></div>
+<svg width="100%" viewBox="0 0 680 300" role="img"><title>하드 링크와 소프트 링크의 inode 구조</title><desc>원본과 하드 링크는 같은 inode를 통해 데이터 블록을 가리키고, 소프트 링크는 별도 inode가 원본 파일 이름을 가리킨다.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<path d="M430 222 L655 222 L655 30 L125 30 L125 58" fill="none" stroke="#D85A30" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+<text class="ts" x="545" y="212" text-anchor="middle">이름(경로)으로 가리킴</text>
+<g class="c-gray"><rect x="40" y="60" width="170" height="44" rx="6" stroke-width="0.5"/><text class="th" x="125" y="82" text-anchor="middle" dominant-baseline="central">incheon.txt</text></g>
+<g class="c-gray"><rect x="40" y="130" width="170" height="44" rx="6" stroke-width="0.5"/><text class="th" x="125" y="152" text-anchor="middle" dominant-baseline="central">incheon_hl.txt</text></g>
+<g class="c-gray"><rect x="40" y="200" width="170" height="44" rx="6" stroke-width="0.5"/><text class="th" x="125" y="222" text-anchor="middle" dominant-baseline="central">incheon_sl.txt</text></g>
+<g class="c-purple"><rect x="280" y="95" width="150" height="56" rx="6" stroke-width="0.5"/><text class="th" x="355" y="113" text-anchor="middle" dominant-baseline="central">inode 262394</text><text class="ts" x="355" y="133" text-anchor="middle" dominant-baseline="central">원본·하드 공유</text></g>
+<g class="c-coral"><rect x="280" y="200" width="150" height="44" rx="6" stroke-width="0.5"/><text class="th" x="355" y="222" text-anchor="middle" dominant-baseline="central">별도 inode</text></g>
+<g class="c-teal"><rect x="500" y="95" width="140" height="56" rx="6" stroke-width="0.5"/><text class="th" x="570" y="113" text-anchor="middle" dominant-baseline="central">데이터 블록</text><text class="ts" x="570" y="133" text-anchor="middle" dominant-baseline="central">"인천"</text></g>
+<line x1="210" y1="82" x2="278" y2="110" class="arr" marker-end="url(#arrow)"/>
+<line x1="210" y1="152" x2="278" y2="136" class="arr" marker-end="url(#arrow)"/>
+<line x1="210" y1="222" x2="278" y2="222" class="arr" marker-end="url(#arrow)"/>
+<line x1="430" y1="123" x2="498" y2="123" class="arr" marker-end="url(#arrow)"/>
+<text class="ts" x="125" y="278" text-anchor="middle">디렉토리 (스택 느낌)</text>
+<text class="ts" x="355" y="278" text-anchor="middle">inode</text>
+<text class="ts" x="570" y="278" text-anchor="middle">파일 데이터 (힙 느낌)</text>
+</svg>
+</div>
+
+<div class="card">
+<div class="ct">단계별로 <code>cat</code> 결과 확인<span class="pg">p.109–111</span></div>
+<div class="flow" id="lsteps"></div>
+<div id="lout" style="margin-top:10px"></div>
+<pre>vi incheon.txt                     <span class="cm"># 내용: 인천</span>
+ls -ail                            <span class="cm"># inode 번호 확인</span>
+stat incheon.txt
+ln incheon.txt incheon_hl.txt      <span class="cm"># 하드 링크 → 같은 inode</span>
+ln -s incheon.txt incheon_sl.txt   <span class="cm"># 소프트 링크 → 다른 inode, -&gt; 표시</span>
+rm incheon.txt                     <span class="cm"># 원본 삭제 (sl은 빨간색 표시)</span>
+cat incheon_hl.txt                 <span class="cm"># 인천</span>
+cat incheon_sl.txt                 <span class="cm"># No such file or directory</span>
+vi incheon.txt                     <span class="cm"># 같은 이름으로 새로 생성, 내용: 송도</span>
+cat incheon_sl.txt                 <span class="cm"># 송도</span></pre>
+</div>
+
+<div class="card">
+<div class="ct">소프트 링크는 왜 쓰나<span class="pg">슬라이드 외 언급</span></div>
+이름(인터페이스)만 고정해두고 실체 파일을 계속 바꿔 끼우면, 같은 링크를 실행해도 동작이 바뀜.
+<ul>
+<li>API만 맞추고 모듈 교체 · 상속 대신 컴포지션 · 게임 캐릭터의 무기 교체</li>
+<li>C의 동적 라이브러리(DLL): 정적 라이브러리는 실행 파일에 다 포함돼 덩치가 커지지만, 동적 라이브러리는 링크로 연결 → 런타임에 바꿀 여지</li>
+</ul>
+<div style="margin-top:6px;color:var(--text-secondary)">리눅스에서 직접 만들 일은 많지 않으니 "이런 게 있다" 정도 이해하고 따라해보기.</div>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>[부연설명] 하드 링크가 살아남는 이유: 링크 카운트</div>
+inode는 자신을 가리키는 이름의 개수(링크 카운트, <code>ls -l</code>의 두 번째 열)를 기록한다. <code>rm</code>은 이름 하나를 지우고 카운트를 1 줄일 뿐이며, 0이 되어야 데이터가 해제된다. 강의의 "자바 가비지 컬렉터처럼 하나가 가지고 있으니 안 지운다"는 비유가 이 동작이다. 소프트 링크는 경로 문자열만 저장하므로 카운트에 포함되지 않는다.
+</div>
+</div>
+
+<div class="sec" data-tab="t6">
+<div class="sh"><i class="ti ti-cpu" aria-hidden="true"></i>프로세스 · 서비스<span class="pg">p.112–122</span></div>
+
+<div class="card">
+<div class="ct">프로세스<span class="pg">p.112–114</span></div>
+실행 파일이 실행되어 메모리에 올라온 것. <code>ps</code>로 확인 (예: 지금 돌고 있는 bash 셸). 포그라운드 / 백그라운드로 실행 가능하며, 컴퓨터에는 백그라운드 프로세스가 매우 많이 돌고 있음.
+<div class="grid">
+<div class="cell"><b style="font-weight:500">포그라운드</b><br>셸을 점유 → 끝날 때까지 새 프롬프트가 안 나옴</div>
+<div class="cell"><b style="font-weight:500">백그라운드</b> <span class="bd">&amp;</span><br>뒤에서 실행 → 프롬프트가 바로 찍힘</div>
+</div>
+</div>
+
+<div class="card">
+<div class="ct">무한 루프 프로세스 찾아서 강제 종료<span class="pg">p.114–116, 119</span></div>
+<div class="flow"><span class="st">yes &gt; /dev/null</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">새 터미널 접속</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">ps -ef | grep yes</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">kill -9 PID</span></div>
+<pre>yes &gt; /dev/null            <span class="cm"># 무한 루프 (포그라운드) → 멈춘 것처럼 보임</span>
+
+<span class="cm"># 원격 접속을 하나 더 열어서</span>
+ps -ef | grep yes          <span class="cm"># 모든 프로세스 중 yes만 필터 (파이프)</span>
+kill -9 1491               <span class="cm"># PID 1491 강제 종료 (-9)</span>
+
+yes &gt; /dev/null &amp;          <span class="cm"># 백그라운드 실행</span>
+ps -ef | grep yes          <span class="cm"># PID는 OS가 할당 → 실행할 때마다 바뀜</span>
+kill -9 &lt;PID&gt;</pre>
+<div style="margin-top:8px">윈도우에서 작업 관리자로 멈춘 프로그램을 죽이는 것과 같은 작업.</div>
+</div>
+
+<div class="card">
+<div class="ct">bg · fg — 알아두기만<span class="pg">p.117–118</span></div>
+<div class="flow"><span class="st">포그라운드</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="bd">Ctrl+Z</span> <span class="bd">bg</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">백그라운드</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="bd">fg 작업번호</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">포그라운드</span></div>
+</div>
+
+<div class="card">
+<div class="ct">서비스 (데몬)<span class="pg">p.120–121</span></div>
+특별한 백그라운드 프로세스의 일종. 내 컴퓨터에서 계속 돌고 있는 프로세스로 이해 (예: 방화벽). 서비스가 뭔지 한 번 읽어보기.
+</div>
+
+<div class="card off">
+<div class="ct">볼 필요 없음: 소켓<span class="pg">p.121–122</span></div>
+서비스와 소켓의 구분 중 소켓 부분까지는 보지 않아도 됨.
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>[부연설명] <code>/dev/null</code>과 <code>-9</code></div>
+<code>yes</code>는 "y"를 끝없이 출력하는 명령이고, <code>&gt; /dev/null</code>은 그 출력을 버리는 특수 장치로 리디렉션한다. <code>kill</code>의 기본 시그널은 15(SIGTERM, 정상 종료 요청)이고, <code>-9</code>(SIGKILL)는 프로세스가 무시할 수 없는 강제 종료다.
+</div>
+</div>
+
+<div class="sec" data-tab="t7">
+<div class="sh"><i class="ti ti-checklist" aria-hidden="true"></i>시험 체크리스트</div>
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>강의에서 강조·출제 언급</div>
+<ul>
+<li>PATH 개념, <code>export PATH=$PATH:경로</code>, 일시적 vs 영구적(<code>/etc/profile</code>, <code>~/.profile</code>, <code>source</code>) — p.44–45</li>
+<li>퍼미션 문자열 <code>rwxrwxr-x</code> 해석 — "시험 문제랑 똑같다" — p.95–97</li>
+<li>셸 스크립트 작성 (<code>#!/bin/sh</code>, <code>sh</code> 실행) — "시험 문제에 나왔던 거" — p.46–47</li>
+<li><code>chmod +x</code>로 실행 파일 만들기 — Permission 명령, 주의 깊게 — p.47</li>
+<li>if문 대괄호 공백 등 슬라이드 예제 직접 실행·이해 — 출제 예정 — p.48–75</li>
+<li>chmod 숫자 권한 (r4 · w2 · x1) — p.97–98</li>
+</ul>
+</div>
+<div class="card off">
+<div class="ct">출제 제외·암기 불필요</div>
+<ul>
+<li>지엽적 셸 문법 암기, shift 등 — p.76</li>
+<li>사용자·그룹 관리 명령 암기 — p.85–86</li>
+<li>chmod 상대 모드 — p.98</li>
+<li>chown 소유권 변경 — p.99</li>
+<li>소켓 — p.121–122</li>
+</ul>
+</div>
+<div class="card">
+<div class="ct">직접 따라해볼 실습</div>
+<div class="flow"><span class="bd">셸 예제 약 20개</span><span class="bd">별 찍기 p.78</span><span class="bd">사용자 관리 p.87–94</span><span class="bd">허가권 p.100–106</span><span class="bd">링크 p.108–111</span><span class="bd">프로세스 p.115–119</span></div>
+</div>
+</div>
+</div>
+</div>
+<script>
+const tabs=[...document.querySelectorAll('.tabs button')];
+function show(id){document.querySelectorAll('.sec').forEach(s=>s.style.display=s.dataset.tab===id?'block':'none');tabs.forEach(b=>b.classList.toggle('on',b.dataset.t===id));window.scrollTo({top:0});}
+tabs.forEach(b=>b.onclick=()=>show(b.dataset.t));
+show('t1');
+const names=['소유자','그룹','그 외'],bits=[['r',4],['w',2],['x',1]];
+let st=[[1,1,1],[1,0,0],[0,0,1]];
+const permEl=document.getElementById('perm');
+function renderPerm(){
+permEl.innerHTML=st.map((g,i)=>'<div class="cell"><div style="font-weight:500;margin-bottom:4px">'+names[i]+' <span style="font-family:var(--font-mono)">'+g.reduce((a,v,j)=>a+v*bits[j][1],0)+'</span></div>'+bits.map((b,j)=>'<label style="display:inline-flex;align-items:center;gap:3px;margin-right:8px;font-family:var(--font-mono);cursor:pointer"><input type="checkbox" data-g="'+i+'" data-b="'+j+'" '+(g[j]?'checked':'')+'>'+b[0]+'('+b[1]+')</label>').join('')+'</div>').join('');
+permEl.querySelectorAll('input').forEach(c=>c.onchange=()=>{st[c.dataset.g][c.dataset.b]=c.checked?1:0;renderPerm();});
+const num=st.map(g=>g.reduce((a,v,j)=>a+v*bits[j][1],0)).join('');
+document.getElementById('permstr').textContent='-'+st.map(g=>g.map((v,j)=>v?bits[j][0]:'-').join('')).join('');
+document.getElementById('permcmd').textContent='chmod '+num+' name.sh';
+}
+const pre=document.getElementById('presets');
+['741','444','644','755','777'].forEach(p=>{const b=document.createElement('button');b.textContent=p;b.style.fontSize='12px';b.onclick=()=>{st=p.split('').map(d=>{d=+d;return[(d>>2)&1,(d>>1)&1,d&1];});renderPerm();};pre.appendChild(b);});
+renderPerm();
+const L=[
+{t:'① 링크 생성',r:[['incheon.txt','인천','inode 262394'],['incheon_hl.txt','인천','같은 inode 262394'],['incheon_sl.txt','인천','다른 inode → 원본 이름 따라감']]},
+{t:'② 원본 삭제',r:[['incheon.txt','(없음)','삭제됨'],['incheon_hl.txt','인천','inode가 남아 있어 살아있음'],['incheon_sl.txt','No such file or directory','따라갈 길이 끊김 (빨간색)']]},
+{t:'③ 같은 이름 재생성',r:[['incheon.txt','송도','새 inode'],['incheon_hl.txt','인천','기존 inode 그대로'],['incheon_sl.txt','송도','이름이 같으니 새 파일을 가리킴']]}];
+const ls=document.getElementById('lsteps'),lo=document.getElementById('lout');
+function showL(k){[...ls.children].forEach((b,i)=>{b.style.borderColor=i===k?'var(--text-primary)':'';b.style.background=i===k?'var(--surface-1)':'';});
+lo.innerHTML=L[k].r.map(r=>'<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,1.5fr);gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px"><code>cat '+r[0]+'</code><span style="font-family:var(--font-mono);color:'+(r[1].startsWith('No')?'var(--text-danger)':'var(--text-primary)')+'">'+r[1]+'</span><span style="color:var(--text-secondary)">'+r[2]+'</span></div>').join('')+(k===2?'<div style="font-size:13px;color:var(--text-secondary);margin-top:6px">이 시점에서 세 파일의 inode 값이 모두 다름</div>':'');}
+L.forEach((s,i)=>{const b=document.createElement('button');b.textContent=s.t;b.style.fontSize='12px';b.onclick=()=>showL(i);ls.appendChild(b);});
+showL(0);
+</script>
+</body>
+</html>
