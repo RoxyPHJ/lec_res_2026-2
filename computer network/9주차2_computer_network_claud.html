@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>컴퓨터네트워크 9주차 2차시 — 신뢰적 데이터 전송 · 파이프라이닝 · Go-Back-N</title>
+<style>
+:root{
+  --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff; --surface-3:#f0eee7;
+  --text-primary:#1f1e1d; --text-secondary:#56544f; --text-muted:#8a877f;
+  --border:rgba(31,30,29,.12); --border-strong:rgba(31,30,29,.24);
+  --accent:#185FA5; --accent-soft:#E6F1FB; --accent-line:#4a8dcf;
+  --amber:#9a6a00; --amber-bg:#fdf5e3; --amber-border:#e8c766; --amber-accent:#c98a00;
+  --blue:#1f5fa8; --blue-bg:#eaf2fb; --blue-border:#9cc2e8;
+  --rose:#b03a52; --rose-bg:#fcebee; --rose-border:#e8a6b3;
+  --green:#2f7d52; --green-bg:#e8f5ec; --green-border:#9fd2b2;
+  --mono:'SF Mono','Menlo','Consolas','Noto Sans KR',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1a1918; --surface-1:#222120; --surface-2:#2a2927; --surface-3:#323230;
+    --text-primary:#ece9e1; --text-secondary:#b4b2a9; --text-muted:#86847c;
+    --border:rgba(255,255,255,.11); --border-strong:rgba(255,255,255,.22);
+    --accent:#85B7EB; --accent-soft:#0c2b4d; --accent-line:#3f7cb8;
+    --amber:#f0c66b; --amber-bg:#352a12; --amber-border:#6b5520; --amber-accent:#f0c66b;
+    --blue:#8fbdf0; --blue-bg:#122942; --blue-border:#2d4e74;
+    --rose:#eca3b2; --rose-bg:#3a1f26; --rose-border:#6e3c47;
+    --green:#8fd2a8; --green-bg:#15301f; --green-border:#2f5e40;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--sans);line-height:1.68;font-size:15px;-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:1.6rem 1.1rem 4rem}
+
+/* header */
+.src{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin:0 0 6px;letter-spacing:.01em}
+header h1{font-size:23px;font-weight:650;margin:0 0 6px;line-height:1.3;letter-spacing:-.01em}
+header .desc{font-size:13.5px;color:var(--text-secondary);margin:0 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary)}
+.chip.k{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+
+/* tabs */
+.tabs{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:4px;margin:18px 0 22px;padding:6px;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(8px)}
+.tab{flex:1 1 auto;min-width:fit-content;border:0;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:12.8px;font-weight:550;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:.14s;display:flex;align-items:center;gap:6px;justify-content:center}
+.tab:hover{background:var(--surface-3);color:var(--text-primary)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(24,95,165,.3)}
+.tab .tnum{font-family:var(--mono);font-size:11px;opacity:.65}
+.tab.active .tnum{opacity:.85}
+
+/* panels */
+.panel{display:none;animation:fade .25s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-start;gap:12px;margin:0 0 16px}
+.phead .pn{flex:none;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--mono);font-size:15px}
+.phead h2{font-size:18.5px;margin:2px 0 2px;font-weight:650;line-height:1.3}
+.phead .pg{font-size:11.5px;color:var(--text-muted);font-family:var(--mono)}
+
+/* cards */
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
+.card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px}
+.card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
+.card ul{margin:6px 0 10px;padding-left:2px;list-style:none}
+.card ul li{position:relative;padding-left:20px;margin:7px 0}
+.card ul li::before{content:"";position:absolute;left:4px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--accent-line)}
+.card ul li:last-child{margin-bottom:0}
+b,strong{color:var(--text-primary);font-weight:650}
+.ic{flex:none;width:18px;height:18px}
+
+/* important (amber) */
+.card.imp{background:var(--amber-bg);border-color:var(--amber-border)}
+.card.imp h3{color:var(--amber)}
+.card.imp ul li::before{background:var(--amber-accent)}
+.star{flex:none;width:17px;height:17px;color:var(--amber-accent)}
+.badge-exam{font-size:10.5px;font-weight:700;font-family:var(--mono);color:#fff;background:var(--amber-accent);padding:2px 7px;border-radius:6px;margin-left:auto;letter-spacing:.03em}
+
+/* note (blue) */
+.card.note{background:var(--blue-bg);border-color:var(--blue-border)}
+.card.note h3{color:var(--blue)}
+.card.note ul li::before{background:var(--blue)}
+.note-tag{font-size:10.5px;font-weight:700;font-family:var(--mono);color:var(--blue);border:1px solid var(--blue-border);padding:1px 7px;border-radius:6px;margin-left:auto}
+
+/* helpers */
+.lead{font-size:15.5px;color:var(--text-primary);margin:0 0 12px}
+.muted{color:var(--text-secondary)}
+.tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:1px 7px;border-radius:6px;background:var(--surface-3);border:1px solid var(--border);color:var(--text-secondary);white-space:nowrap}
+.tag.udp{color:var(--amber);background:var(--amber-bg);border-color:var(--amber-border)}
+.tag.ack{color:var(--green);background:var(--green-bg);border-color:var(--green-border)}
+.tag.loss{color:var(--rose);background:var(--rose-bg);border-color:var(--rose-border)}
+
+/* grid of mini-cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 2px}
+.mini{background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:13px 14px}
+.mini .mt{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin-bottom:4px}
+.mini .mv{font-size:14.5px;font-weight:600}
+.mini .ms{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+
+/* formula box */
+.formula{background:var(--surface-1);border:1px dashed var(--border-strong);border-radius:12px;padding:16px 18px;margin:10px 0;text-align:center;font-family:var(--mono);font-size:14px;overflow-x:auto}
+.formula .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px}
+.formula .frac .num{border-bottom:1.5px solid var(--text-secondary);padding:0 8px 2px}
+.formula .frac .den{padding:2px 8px 0}
+.formula .res{color:var(--accent);font-weight:700}
+.formula .step{display:block;margin:4px 0;color:var(--text-secondary);font-size:13px}
+
+/* utilization bar */
+.ubar{height:30px;border-radius:7px;background:var(--surface-3);border:1px solid var(--border);position:relative;overflow:hidden;margin:12px 0 6px}
+.ubar i{position:absolute;left:0;top:0;bottom:0;background:var(--rose);min-width:2px}
+.ubar .lbl{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;font-family:var(--mono);color:var(--text-secondary)}
+
+/* SVG diagram frame */
+.diag{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0 4px;overflow-x:auto}
+.diag svg{display:block;width:100%;height:auto;min-width:480px}
+.cap{font-size:12px;color:var(--text-muted);text-align:center;margin-top:6px}
+text{font-family:var(--sans)}
+
+/* window strip */
+.winrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0}
+.winrow .wl{font-size:12px;font-family:var(--mono);color:var(--text-muted);min-width:64px}
+.pk{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:600;border:1.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-secondary)}
+.pk.win{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pk.sent{border-color:var(--green-border);background:var(--green-bg);color:var(--green)}
+.pk.lost{border-color:var(--rose-border);background:var(--rose-bg);color:var(--rose);text-decoration:line-through}
+.pk.rtx{border-color:var(--amber-border);background:var(--amber-bg);color:var(--amber)}
+.winbox{border:2px dashed var(--accent-line);border-radius:9px;padding:3px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--text-secondary)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:13px;height:13px;border-radius:4px;display:inline-block;border:1.5px solid}
+.li-win{border-color:var(--accent);background:var(--accent-soft)}
+.li-lost{border-color:var(--rose-border);background:var(--rose-bg)}
+.li-rtx{border-color:var(--amber-border);background:var(--amber-bg)}
+
+.footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);text-align:center}
+@media(max-width:560px){
+  .wrap{padding:1.2rem .8rem 3rem}
+  header h1{font-size:20px}
+  .tab{font-size:12px;padding:7px 8px}
+  .card{padding:15px 15px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="src">강의자료 : 제3장-2 (Chap 3. Transport Layer 2) · p.2 ~ p.9</p>
+  <h1>신뢰적 데이터 전송의 원리 · 파이프라이닝 · Go-Back-N</h1>
+  <p class="desc">컴퓨터네트워크 &nbsp;|&nbsp; 9주차 2차시</p>
+  <div class="chips">
+    <span class="chip k">rdt 원리</span>
+    <span class="chip">ACK</span>
+    <span class="chip">Stop-and-Wait 이용률</span>
+    <span class="chip">Pipelining</span>
+    <span class="chip">Sliding Window</span>
+    <span class="chip">Go-Back-N</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-i="0"><span class="tnum">01</span>신뢰 못 할 환경</button>
+  <button class="tab" data-i="1"><span class="tnum">02</span>ACK</button>
+  <button class="tab" data-i="2"><span class="tnum">03</span>이용률</button>
+  <button class="tab" data-i="3"><span class="tnum">04</span>파이프라이닝</button>
+  <button class="tab" data-i="4"><span class="tnum">05</span>GBN 정상</button>
+  <button class="tab" data-i="5"><span class="tnum">06</span>GBN 에러</button>
+</nav>
+
+<!-- ============ PANEL 0 ============ -->
+<section class="panel active" data-i="0">
+  <div class="phead">
+    <div class="pn">1</div>
+    <div>
+      <h2>UDP의 한계와 신뢰할 수 없는 네트워크</h2>
+      <div class="pg">제3장-2 · p.2</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>UDP에는 신뢰성을 위한 장치가 하나도 없다</h3>
+    <p class="lead">UDP 규격을 아무리 들여다봐도 <b>신뢰적 통신을 위한 부분이 전혀 없다.</b> 보내는 패킷에 <b>넘버링(순서번호)도 없고</b>, 손실에 대비한 어떤 기차(장치)도 없다.</p>
+    <ul>
+      <li>패킷을 <b>잃어버리면 그냥 끝</b> — 분실을 복구할 방법이 없다.</li>
+      <li><span class="tag udp">UDP</span> <b>손실이 발생했다는 사실조차</b> 송신자도 수신자도 알 수 없다.</li>
+    </ul>
+    <p class="muted">→ 비신뢰적인 채널 위에서 신뢰성을 만들려니, 신뢰성 데이터 전송 프로토콜이 복잡해진다. (네트워크 top-10 문제)</p>
+  </div>
+
+  <div class="card">
+    <h3>라우터는 왜 패킷을 버리는가</h3>
+    <p>라우터는 받은 IP 패킷을 <b>큐(저장소, buffer)에 쌓아 두었다가</b> 다음 링크(다운스트림)로 내보낸다. 그런데 트래픽이 한 링크로 몰리면 —</p>
+    <div class="diag">
+      <svg viewBox="0 0 640 210" role="img" aria-label="라우터 큐 오버플로로 패킷이 버려지는 그림">
+        <!-- sender -->
+        <rect x="8" y="78" width="96" height="50" rx="9" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+        <text x="56" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary)">송신자</text>
+        <text x="56" y="117" text-anchor="middle" font-size="11" fill="var(--text-muted)">Sender</text>
+        <!-- arrows into router -->
+        <line x1="104" y1="103" x2="150" y2="103" stroke="var(--accent-line)" stroke-width="2" marker-end="url(#ar)"/>
+        <!-- extra traffic in -->
+        <line x1="150" y1="40" x2="196" y2="80" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <line x1="150" y1="166" x2="196" y2="126" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <text x="150" y="30" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">다른 링크 트래픽</text>
+        <!-- router with queue -->
+        <rect x="200" y="58" width="150" height="92" rx="11" fill="var(--amber-bg)" stroke="var(--amber-border)"/>
+        <text x="275" y="76" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--amber)">라우터</text>
+        <!-- queue cells -->
+        <rect x="214" y="90" width="20" height="20" rx="3" fill="var(--surface-2)" stroke="var(--amber-border)"/>
+        <rect x="238" y="90" width="20" height="20" rx="3" fill="var(--surface-2)" stroke="var(--amber-border)"/>
+        <rect x="262" y="90" width="20" height="20" rx="3" fill="var(--surface-2)" stroke="var(--amber-border)"/>
+        <rect x="286" y="90" width="20" height="20" rx="3" fill="var(--surface-2)" stroke="var(--amber-border)"/>
+        <rect x="310" y="90" width="20" height="20" rx="3" fill="var(--rose-bg)" stroke="var(--rose-border)"/>
+        <text x="275" y="134" text-anchor="middle" font-size="10.5" fill="var(--amber)">큐(buffer) 가득 참</text>
+        <!-- drop -->
+        <line x1="350" y1="104" x2="402" y2="104" stroke="var(--rose)" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="420" y="90" text-anchor="middle" font-size="22" fill="var(--rose)" font-weight="700">✕</text>
+        <text x="420" y="124" text-anchor="middle" font-size="11" fill="var(--rose)">패킷 삭제</text>
+        <!-- receiver -->
+        <rect x="486" y="78" width="96" height="50" rx="9" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+        <text x="534" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary)">수신자</text>
+        <text x="534" y="117" text-anchor="middle" font-size="11" fill="var(--text-muted)">Receiver</text>
+        <defs>
+          <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M0,0 L7,4 L0,8 z" fill="var(--accent-line)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="cap">큐가 가득 차면 라우터는 — 앞/뒤 어느 쪽이든 — 패킷을 삭제한다. 그래야 라우터 자신이 살아남는다.</div>
+    </div>
+    <ul>
+      <li>삭제 기능이 <b>없으면 라우터 자체가 죽어버린다.</b> 무한정 받아들일 수 없으므로 상황에 따라 언제든 버린다.</li>
+      <li>그래서 라우터·링크 계층은 <b>unreliable(믿을 수 없는) 환경</b>이다 — 멀리면(몰리면) 언제든 데이터를 삭제하는 것이 라우터의 숙명.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>손실은 양쪽 모두에게 보이지 않는다</h3>
+    <p>송신자가 데이터를 보냈는데 중간에서 라우터가 버리면:</p>
+    <ul>
+      <li>송신자: <b>“난 이미 보냈다”</b> — 손실 사실을 알 수 없다.</li>
+      <li>수신자: <b>데이터가 안 왔으니 애초에 뭐가 왔는지도 모른다.</b></li>
+    </ul>
+    <p>즉 <b>손실됐다는 사실 자체를 아무도 알 수 없는 상황.</b> 라우터가 따로 알려주지도 않는다. → 복구할 방법이 필요하다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 1 ============ -->
+<section class="panel" data-i="1">
+  <div class="phead">
+    <div class="pn">2</div>
+    <div>
+      <h2>신뢰적 전송의 첫걸음 — ACK</h2>
+      <div class="pg">제3장-2 · p.3 (순서번호가 왜 필요한가)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>데이터가 도달했음을 반드시 알려준다</h3>
+    <p class="lead">송신자가 데이터를 보내면, 수신자가 <b>“잘 받았다”는 신호 = ACK</b>를 돌려준다. ACK를 받으면 송신자는 <b>내 데이터가 수신자에 도달했구나</b>를 알 수 있다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 520 170" role="img" aria-label="데이터 전송 후 ACK 수신 흐름">
+        <text x="90" y="24" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">송신자</text>
+        <text x="430" y="24" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--text-primary)">수신자</text>
+        <line x1="90" y1="34" x2="90" y2="150" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="430" y1="34" x2="430" y2="150" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <!-- data -->
+        <line x1="92" y1="52" x2="426" y2="86" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#ar2)"/>
+        <text x="250" y="60" text-anchor="middle" font-size="12" fill="var(--accent)" font-weight="600">data</text>
+        <!-- ack -->
+        <line x1="428" y1="100" x2="94" y2="134" stroke="var(--green)" stroke-width="2.2" marker-end="url(#ag)"/>
+        <text x="262" y="134" text-anchor="middle" font-size="12" fill="var(--green)" font-weight="600">ACK ✓</text>
+        <defs>
+          <marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--accent)"/></marker>
+          <marker id="ag" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L7,4 L0,8 z" fill="var(--green)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">data를 보내고 → 그에 대한 ACK를 받는다. 도달 확인 성공.</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>신뢰적 통신의 첫 번째 전제조건<span class="badge-exam">핵심</span></h3>
+    <p><b>데이터를 보내고, 그에 대한 ACK를 받는다.</b> 이것이 신뢰적 통신(reliable communication)을 만드는 기본 원리다.</p>
+    <ul>
+      <li>TCP의 기본 동작 = <b>데이터를 보내고 ACK를 받는 방식</b>으로 신뢰성을 구현한다.</li>
+      <li>ACK를 받아야 비로소 “전달 성공”을 확인할 수 있다 → 첫 번째 문제 해결.</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>순서번호(0, 1)는 왜 필요한가<span class="note-tag">부연설명</span></h3>
+    <p>강의자료 p.3의 질문. ACK만으로는 부족한 경우가 있다 — ACK가 손실되거나 지연되면 송신자가 <b>같은 데이터를 재전송</b>하는데, 이때 수신자가 “<b>새 데이터인지 / 중복 재전송인지</b>” 구분하려면 패킷에 번호가 필요하다.</p>
+    <p class="muted">그래서 가장 단순한 rdt에서도 0, 1 두 개의 순서번호를 번갈아 쓴다. 뒤에 나오는 파이프라이닝에서는 이 순서번호의 범위가 더 넓어진다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 2 ============ -->
+<section class="panel" data-i="2">
+  <div class="phead">
+    <div class="pn">3</div>
+    <div>
+      <h2>Stop-and-Wait의 비효율 — 이용률 계산</h2>
+      <div class="pg">제3장-2 · p.5 (Performance of RDT)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>하나 보내고 ACK 기다리면?</h3>
+    <p class="lead">데이터를 하나 보내고 <b>ACK가 올 때까지 기다렸다가</b> 다음 데이터를 보내는 방식(Stop-and-Wait)이 얼마나 링크를 활용하는지 <b>이용률(Utilization)</b>로 계산해 본다.</p>
+    <div class="grid">
+      <div class="mini"><div class="mt">링크 속도 R</div><div class="mv">1 Gbps</div></div>
+      <div class="mini"><div class="mt">패킷 크기 L</div><div class="mv">1 KByte</div><div class="ms">= 8,000 bit</div></div>
+      <div class="mini"><div class="mt">편도 지연</div><div class="mv">15 ms</div></div>
+      <div class="mini"><div class="mt">왕복 RTT</div><div class="mv">30 ms</div><div class="ms">15 × 2 (갔다 다시 옴)</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>① 전송 시간 T<sub>transmit</sub></h3>
+    <p>첫 비트 출발부터 마지막 비트까지 내보내는 데 걸리는 시간 = 패킷 비트수 / 링크 속도.</p>
+    <div class="formula">
+      T<sub>transmit</sub> =
+      <span class="frac"><span class="num">L (패킷 bit)</span><span class="den">R (전송속도)</span></span>
+      =
+      <span class="frac"><span class="num">8,000 bit</span><span class="den">10⁹ bps</span></span>
+      = 8 × 10⁻⁶ s = <span class="res">8 µs = 0.008 ms</span>
+    </div>
+    <p class="muted">8,000 = 8×10³, 1 Gbps = 10⁹ → 10³/10⁹ = 10⁻⁶ 초 단위. 고속 링크라 전송 자체는 눈 깜짝할 새.</p>
+  </div>
+
+  <div class="card">
+    <h3>② 이용률 U<sub>sender</sub></h3>
+    <p>전체 시간(전송 + 왕복 대기) 중 <b>실제로 데이터를 보내고 있는 시간의 비율.</b></p>
+    <div class="formula">
+      U =
+      <span class="frac"><span class="num">T<sub>transmit</sub></span><span class="den">T<sub>transmit</sub> + RTT</span></span>
+      ≈
+      <span class="frac"><span class="num">0.008</span><span class="den">30</span></span>
+      = <span class="res">0.00027</span>
+      <span class="step">(0.008 ms 보내고, 30 ms를 아무것도 안 하고 기다림)</span>
+    </div>
+    <div class="ubar"><i style="width:0.9%"></i><span class="lbl">U ≈ 0.00027 (0.027%)</span></div>
+    <p class="muted">빨간 칸이 실제 사용 구간. 나머지 거의 전부가 ACK를 기다리며 노는 시간.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>U = 0.00027의 의미<span class="badge-exam">핵심</span></h3>
+    <ul>
+      <li>이용률 <b>1 = 링크를 꽉(fully) 활용</b>, 항상 데이터를 보내는 중이라는 뜻.</li>
+      <li>0.00027은 <b>거의 이용을 못 하고 있다</b>는 뜻 — 1 Gbps짜리 비싼 링크를 만들어 놓고 놀리는 셈.</li>
+      <li><b>비유:</b> 서울–부산 고속도로를 깔아 놓고 <b>차 한 대 보낸 뒤, 부산 갔다 돌아올 때까지</b> 다음 차를 안 보내는 격. 바보도 이런 바보가 없다.</li>
+    </ul>
+    <p>물리 자원(링크)을 전송 프로토콜이 제대로 못 살려 한계가 생긴다. → <b>그럼 어떻게?</b></p>
+  </div>
+
+  <div class="card">
+    <h3>해결 방향</h3>
+    <p><b>ACK를 받기 전에도 데이터를 계속 보내야 한다.</b> 당연한 결론 — 이것이 다음 주제인 파이프라이닝이다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 3 ============ -->
+<section class="panel" data-i="3">
+  <div class="phead">
+    <div class="pn">4</div>
+    <div>
+      <h2>파이프라이닝 (Pipelining)</h2>
+      <div class="pg">제3장-2 · p.6</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>ACK를 기다리지 않고 연달아 보낸다</h3>
+    <p class="lead">데이터 0, 1, 2, …를 <b>연속으로 쭉 보낸 다음</b>, 나중에 ACK를 <b>연달아 받는다.</b> 하나 보내고 ACK 기다리는 식이 아니다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 520 190" role="img" aria-label="Stop-and-Wait 대 파이프라이닝 비교">
+        <!-- left: stop and wait -->
+        <text x="90" y="20" text-anchor="middle" font-size="12" font-weight="650" fill="var(--rose)">Stop-and-Wait</text>
+        <line x1="40" y1="30" x2="40" y2="175" stroke="var(--border-strong)"/>
+        <line x1="150" y1="30" x2="150" y2="175" stroke="var(--border-strong)"/>
+        <line x1="42" y1="40" x2="148" y2="62" stroke="var(--accent)" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="62" y="42" font-size="10" fill="var(--accent)">0</text>
+        <line x1="148" y1="70" x2="42" y2="92" stroke="var(--green)" stroke-width="2" marker-end="url(#apg)"/>
+        <line x1="42" y1="110" x2="148" y2="132" stroke="var(--accent)" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="62" y="112" font-size="10" fill="var(--accent)">1</text>
+        <line x1="148" y1="140" x2="42" y2="162" stroke="var(--green)" stroke-width="2" marker-end="url(#apg)"/>
+        <text x="95" y="107" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">⋯ 대기 ⋯</text>
+        <!-- right: pipelining -->
+        <text x="400" y="20" text-anchor="middle" font-size="12" font-weight="650" fill="var(--green)">Pipelining</text>
+        <line x1="350" y1="30" x2="350" y2="175" stroke="var(--border-strong)"/>
+        <line x1="470" y1="30" x2="470" y2="175" stroke="var(--border-strong)"/>
+        <line x1="352" y1="40" x2="468" y2="58" stroke="var(--accent)" stroke-width="2" marker-end="url(#ap)"/>
+        <line x1="352" y1="52" x2="468" y2="70" stroke="var(--accent)" stroke-width="2" marker-end="url(#ap)"/>
+        <line x1="352" y1="64" x2="468" y2="82" stroke="var(--accent)" stroke-width="2" marker-end="url(#ap)"/>
+        <line x1="352" y1="76" x2="468" y2="94" stroke="var(--accent)" stroke-width="2" marker-end="url(#ap)"/>
+        <text x="360" y="38" font-size="9.5" fill="var(--accent)">0 1 2 3 …</text>
+        <line x1="468" y1="108" x2="352" y2="126" stroke="var(--green)" stroke-width="2" marker-end="url(#apg)"/>
+        <line x1="468" y1="120" x2="352" y2="138" stroke="var(--green)" stroke-width="2" marker-end="url(#apg)"/>
+        <line x1="468" y1="132" x2="352" y2="150" stroke="var(--green)" stroke-width="2" marker-end="url(#apg)"/>
+        <text x="410" y="170" text-anchor="middle" font-size="9.5" fill="var(--green)">ACK 연달아</text>
+        <defs>
+          <marker id="ap" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 z" fill="var(--accent)"/></marker>
+          <marker id="apg" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L6,3.5 L0,7 z" fill="var(--green)"/></marker>
+        </defs>
+      </svg>
+      <div class="cap">같은 시간에 훨씬 많은 패킷을 링크에 태운다 → 이용률이 크게 올라간다.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>파이프라이닝이 요구하는 것</h3>
+    <ul>
+      <li><b>순서번호(sequence number):</b> 연속으로 보내니 어느 것이 몇 번째인지 번호를 매겨야 한다. 범위가 넓어진다.</li>
+      <li><b>송신자·수신자 양쪽에 버퍼</b>가 필요하다.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>파이프라이닝 프로토콜의 2가지 형태</h3>
+    <div class="grid">
+      <div class="mini" style="border-color:var(--amber-border)"><div class="mt">① Go-Back-N</div><div class="mv">GBN</div><div class="ms">이번 시간에 공부</div></div>
+      <div class="mini"><div class="mt">② Selective Repeat</div><div class="mv">SR</div><div class="ms">다음 시간</div></div>
+    </div>
+    <p class="muted" style="margin-top:10px">두 프로토콜을 먼저 공부한 뒤 본격적으로 TCP로 넘어간다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 4 ============ -->
+<section class="panel" data-i="4">
+  <div class="phead">
+    <div class="pn">5</div>
+    <div>
+      <h2>Go-Back-N — 정상 동작</h2>
+      <div class="pg">제3장-2 · p.7, p.9 (GBN in action)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>송신자: 슬라이딩 윈도우 (Sliding Window)</h3>
+    <ul>
+      <li>패킷 헤더에 <b>k-bit 순서번호</b>를 담는다.</li>
+      <li>크기 <b>N인 윈도우</b> 범위 안에서는 ACK를 받지 않아도 <b>연속으로 전송</b> 가능. (= 슬라이딩 윈도우 프로토콜)</li>
+      <li><b>단일 타이머</b> 하나만 사용한다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>누적 ACK로 윈도우가 미끄러진다 (윈도우 크기 = 4)</h3>
+    <p>0, 1, 2, 3을 보낸 상태. ACK가 돌아올 때마다 윈도우가 한 칸씩 오른쪽으로 미끄러지고, 그만큼 뒤쪽 새 패킷이 윈도우에 들어와 전송된다.</p>
+    <div class="diag" style="padding:16px 14px">
+      <div class="winrow"><span class="wl">전송</span>
+        <span class="winbox"><span style="display:inline-flex;gap:6px">
+          <span class="pk win">0</span><span class="pk win">1</span><span class="pk win">2</span><span class="pk win">3</span>
+        </span></span>
+        <span class="pk">4</span><span class="pk">5</span><span class="pk">6</span><span class="pk">7</span>
+      </div>
+      <div class="winrow"><span class="wl">ACK0 수신</span>
+        <span class="pk sent">0</span>
+        <span class="winbox"><span style="display:inline-flex;gap:6px">
+          <span class="pk win">1</span><span class="pk win">2</span><span class="pk win">3</span><span class="pk win">4</span>
+        </span></span>
+        <span class="pk">5</span><span class="pk">6</span><span class="pk">7</span>
+      </div>
+      <div class="winrow"><span class="wl">ACK1 수신</span>
+        <span class="pk sent">0</span><span class="pk sent">1</span>
+        <span class="winbox"><span style="display:inline-flex;gap:6px">
+          <span class="pk win">2</span><span class="pk win">3</span><span class="pk win">4</span><span class="pk win">5</span>
+        </span></span>
+        <span class="pk">6</span><span class="pk">7</span>
+      </div>
+      <div class="legend">
+        <span><i class="li-win"></i> 윈도우 안 (전송됨, ACK 대기)</span>
+        <span><i style="border-color:var(--green-border);background:var(--green-bg)"></i> ACK 완료</span>
+        <span><i style="border-color:var(--border-strong);background:var(--surface-2)"></i> 아직 못 보냄</span>
+      </div>
+    </div>
+    <p class="muted">ACK 0이 오면 → 윈도우 한 칸 이동 → 4가 들어와 전송. ACK 1이 오면 → 5가 들어옴 … 이렇게 옆으로 미끄러진다.</p>
+  </div>
+
+  <div class="card note">
+    <h3>누적 ACK(cumulative ACK)란<span class="note-tag">부연설명</span></h3>
+    <p>“ACK n”은 <b>n번까지(그 이하 전부)를 정상 수신했다</b>는 의미. 그래서 중간 ACK 하나가 유실돼도, 다음 ACK가 그것까지 포함해 확인해 준다. GBN은 이 누적 ACK 방식을 쓴다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 5 ============ -->
+<section class="panel" data-i="5">
+  <div class="phead">
+    <div class="pn">6</div>
+    <div>
+      <h2>Go-Back-N — 에러(손실) 처리</h2>
+      <div class="pg">제3장-2 · p.8, p.9</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>데이터 3이 손실되면?</h3>
+    <p class="lead">0, 1, 2는 잘 갔는데 <b>데이터 3이 손실</b>됐다고 하자. 수신자는 3을 못 받았으므로 <b>ACK 3(X3)을 보내지 못한다.</b></p>
+    <div class="diag" style="padding:16px 14px">
+      <div class="winrow"><span class="wl">송신</span>
+        <span class="pk sent">0</span><span class="pk sent">1</span><span class="pk sent">2</span>
+        <span class="pk lost">3</span>
+        <span class="pk">4</span><span class="pk">5</span><span class="pk">6</span>
+      </div>
+      <div class="winrow"><span class="wl">결과</span>
+        <span style="font-size:12.5px;color:var(--text-secondary)">
+          3 손실 → X3 안 옴 → 슬라이딩이 <b>3에서 멈춤</b> → 데이터 3의 <b>타이머 만료(timeout)</b>
+        </span>
+      </div>
+      <div class="legend"><span><i class="li-lost"></i> 손실된 패킷</span></div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>“Go-Back-N” — 손실 지점부터 전부 다시 보낸다<span class="badge-exam">핵심</span></h3>
+    <p>3만 다시 보내면 될 것 같지만, <b>GBN은 그렇게 하지 않는다.</b> 타임아웃이 걸리면 <b>에러가 난 3번부터 그 이후 전부(3, 4, 5, 6)를 재전송</b>한다. 이것이 Go-Back-N의 특징(이름의 유래).</p>
+    <div class="diag" style="padding:16px 14px">
+      <div class="winrow"><span class="wl">재전송</span>
+        <span class="pk rtx">3</span><span class="pk rtx">4</span><span class="pk rtx">5</span><span class="pk rtx">6</span>
+        <span style="font-size:12.5px;color:var(--amber);margin-left:8px">→ 에러 지점부터 되돌아가(Go Back) 전부 다시</span>
+      </div>
+      <div class="legend"><span><i class="li-rtx"></i> 재전송되는 패킷</span></div>
+    </div>
+    <p class="muted">이미 잘 도착했던 4, 5, 6도 다시 보낸다(수신 측에서 버려졌기 때문).</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>수신자의 윈도우 크기 = 1<span class="badge-exam">핵심</span></h3>
+    <p>송신자는 크기 N 윈도우를 갖지만, <b>GBN 수신자의 윈도우는 단 1개</b>면 충분하다.</p>
+    <ul>
+      <li>수신자는 지금 받아야 할 <b>그 번호 하나</b>만 기다린다. (예: 3번을 기다리는 중)</li>
+      <li>3을 못 받은 상태에서 4, 5, 6이 먼저 도착하면? → <b>순서가 어긋난 패킷은 그냥 폐기(discard).</b></li>
+      <li>따라서 <b>수신 버퍼가 필요 없다</b> — 저장할 이유가 없다.</li>
+      <li>정상 수신한 <b>최상위 번호에 대한 ACK를 재전송</b>한다. (중복 ACK가 생길 수 있음)</li>
+    </ul>
+    <p>어차피 잘못 도착한 패킷부터 전부 다시 보낼 것이므로, 순서 밖 패킷을 보관할 필요가 없다. → 수신자 윈도우 = 1.</p>
+  </div>
+
+  <div class="card note">
+    <h3>이어서 — 다음 시간<span class="note-tag">부연설명</span></h3>
+    <p>GBN은 순서 밖 패킷을 버려 버퍼가 없는 대신, 손실 하나에 여러 패킷을 다시 보내는 낭비가 있다. 이를 개선한 <b>Selective Repeat(SR)</b> — 개별 ACK + 수신 버퍼링 — 가 다음 강의 주제다. (강의자료 p.10~13)</p>
+  </div>
+</section>
+
+<div class="footer">컴퓨터네트워크 · 9주차 2차시 &nbsp;·&nbsp; 강의자료 제3장-2 (Transport Layer 2) p.2~9 &nbsp;·&nbsp; 강의 녹음 재구성</div>
+</div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tab');
+  var panels=document.querySelectorAll('.panel');
+  function go(i){
+    tabs.forEach(function(t){t.classList.toggle('active',t.dataset.i==i);});
+    panels.forEach(function(p){p.classList.toggle('active',p.dataset.i==i);});
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  tabs.forEach(function(t){t.addEventListener('click',function(){go(t.dataset.i);});});
+})();
+</script>
+</body>
+</html>
