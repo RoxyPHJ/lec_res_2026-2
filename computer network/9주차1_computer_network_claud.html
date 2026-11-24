@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>역다중화 · 멀티스레드 서버 · UDP · 9주차1</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --page:#f1f5f9;
+    --card:#ffffff;
+    --ink:#1e293b;
+    --ink-soft:#475569;
+    --ink-mute:#64748b;
+    --line:#e2e8f0;
+    --brand:#4f46e5;
+    --brand-soft:#eef2ff;
+    --amber:#f59e0b;
+    --amber-bg:#fffbeb;
+    --amber-line:#fcd34d;
+    --amber-ink:#92400e;
+    --blue:#3b82f6;
+    --blue-bg:#eff6ff;
+    --blue-line:#bfdbfe;
+    --blue-ink:#1e40af;
+    --code-bg:#1e293b;
+    --code-ink:#e2e8f0;
+    --code-key:#c4b5fd;
+    --code-com:#64748b;
+    --code-str:#86efac;
+    --code-num:#fca5a5;
+    --radius:14px;
+    --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:var(--sans);
+    background:var(--page);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 60px;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+  /* Header */
+  header{
+    background:linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#4338ca 100%);
+    color:#fff;padding:34px 0 30px;margin-bottom:6px;
+  }
+  header .wrap{display:flex;flex-direction:column;gap:12px}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{
+    font-size:12px;font-weight:600;letter-spacing:.3px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    padding:4px 11px;border-radius:999px;color:#e0e7ff;
+  }
+  .chip.solid{background:#fbbf24;color:#78350f;border-color:transparent}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.25}
+  header p.sub{color:#c7d2fe;font-size:14.5px;max-width:720px}
+
+  /* Source line above tabs */
+  .srcline{
+    font-size:12.5px;color:var(--ink-mute);
+    display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+    padding:16px 2px 10px;
+  }
+  .srcline b{color:var(--ink-soft);font-weight:700}
+  .srcline .dot{width:4px;height:4px;border-radius:50%;background:var(--ink-mute);display:inline-block}
+
+  /* Tabs */
+  .tabs{
+    display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;
+    border-bottom:2px solid var(--line);scrollbar-width:thin;
+  }
+  .tab{
+    flex:0 0 auto;border:none;background:none;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:600;color:var(--ink-mute);
+    padding:11px 15px;border-radius:10px 10px 0 0;position:relative;white-space:nowrap;
+    transition:.15s;
+  }
+  .tab:hover{color:var(--ink);background:#fff}
+  .tab.active{color:var(--brand)}
+  .tab.active::after{
+    content:"";position:absolute;left:10px;right:10px;bottom:-2px;height:3px;
+    background:var(--brand);border-radius:3px;
+  }
+  .tab .n{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:6px;background:var(--line);
+    font-size:11.5px;margin-right:7px;color:var(--ink-soft);
+  }
+  .tab.active .n{background:var(--brand);color:#fff}
+
+  /* Panels */
+  .panel{display:none;animation:fade .25s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .panel-head{padding:24px 2px 6px}
+  .panel-head h2{font-size:21px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .panel-head .pg{font-size:11.5px;font-weight:700;color:var(--brand);background:var(--brand-soft);
+    padding:3px 9px;border-radius:7px;white-space:nowrap}
+  .panel-head p{color:var(--ink-soft);font-size:14px;margin-top:6px}
+
+  /* Cards */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-top:14px;
+  }
+  .card h3{font-size:16px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card p{font-size:14.5px;color:var(--ink-soft);margin:6px 0}
+  .card ul{margin:8px 0 2px;padding-left:4px;list-style:none}
+  .card li{font-size:14.5px;color:var(--ink-soft);padding:4px 0 4px 22px;position:relative}
+  .card li::before{content:"›";position:absolute;left:6px;top:3px;color:var(--brand);font-weight:800}
+  .card .pgbadge{font-size:11px;font-weight:700;color:var(--ink-mute);background:#f1f5f9;
+    padding:2px 8px;border-radius:6px;margin-left:auto;white-space:nowrap}
+
+  .card.amber{background:var(--amber-bg);border-color:var(--amber-line)}
+  .card.amber h3{color:var(--amber-ink)}
+  .card.amber li::before{color:var(--amber)}
+  .card.amber .star{color:var(--amber)}
+  .card.amber .pgbadge{background:#fde68a;color:#92400e}
+
+  .card.blue{background:var(--blue-bg);border-color:var(--blue-line)}
+  .card.blue h3{color:var(--blue-ink)}
+  .card.blue li::before{color:var(--blue)}
+  .card.blue .pgbadge{background:#dbeafe;color:#1e40af}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+  .tag.imp{background:#fde68a;color:#92400e}
+  .tag.sup{background:#dbeafe;color:#1e40af}
+  .tag.exam{background:#fecaca;color:#991b1b}
+
+  /* Code */
+  pre{
+    background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+    padding:15px 17px;margin:12px 0 4px;overflow-x:auto;
+    font-family:var(--mono);font-size:13px;line-height:1.7;
+  }
+  pre .c{color:var(--code-com)}
+  pre .k{color:var(--code-key)}
+  pre .s{color:var(--code-str)}
+  pre .num{color:var(--code-num)}
+  pre .r{color:#fca5a5;font-weight:700}
+  pre .g{color:#86efac;font-weight:700}
+
+  /* Flow diagram */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0 4px}
+  .flow .step{
+    flex:1;min-width:120px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:12px 13px;text-align:center;
+  }
+  .flow .step .big{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--brand)}
+  .flow .step .lbl{font-size:12px;color:var(--ink-mute);margin-top:4px}
+  .flow .arrow{display:flex;align-items:center;justify-content:center;color:var(--ink-mute);
+    font-size:20px;padding:0 6px;flex:0 0 auto}
+
+  /* grid map */
+  .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  .vgrid .v{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .vgrid .v code{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink)}
+  .vgrid .v .arr{color:var(--ink-mute);margin:0 6px}
+  .vgrid .v .seg{font-weight:700;font-size:13.5px}
+  .vgrid .v .note{display:block;font-size:12px;color:var(--ink-mute);margin-top:4px}
+
+  /* comparison / data table */
+  table.cmp{width:100%;border-collapse:collapse;margin:12px 0 4px;font-size:13.7px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  table.cmp th{background:#f1f5f9;font-weight:700;color:var(--ink)}
+  table.cmp td:first-child{font-weight:700;color:var(--ink-soft);white-space:nowrap}
+  .u{color:#92400e;font-weight:700}.t{color:#1e40af;font-weight:700}
+
+  /* packet header grid */
+  .pkt{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:14px 0 4px;font-family:var(--mono)}
+  .pkt .bits{display:flex;background:#f8fafc;border-bottom:1px solid var(--line);font-size:11px;color:var(--ink-mute)}
+  .pkt .bits span{flex:1;text-align:center;padding:5px;border-right:1px dashed var(--line)}
+  .pkt .bits span:last-child{border-right:none}
+  .pkt .prow{display:flex;border-bottom:1px solid var(--line)}
+  .pkt .prow:last-child{border-bottom:none}
+  .pkt .fld{flex:1;padding:13px 10px;text-align:center;border-right:1px dashed var(--line)}
+  .pkt .fld:last-child{border-right:none}
+  .pkt .fld .fn{font-weight:700;color:var(--ink);font-size:13px}
+  .pkt .fld .fb{font-size:11px;color:var(--ink-mute);margin-top:3px}
+  .pkt .fld.h{background:var(--brand-soft)}
+  .pkt .fld.data{background:#f0fdf4;color:#15803d}
+
+  .callout{font-size:13px;color:var(--ink-mute);margin-top:10px;padding-left:14px;border-left:3px solid var(--line)}
+  .kcard{background:#fff;border:1px dashed var(--amber-line);border-radius:10px;padding:12px 14px;margin:12px 0 4px}
+  .kcard .kk{font-size:12px;font-weight:800;color:var(--amber-ink);letter-spacing:.3px}
+  .kcard .kv{font-family:var(--mono);font-size:14px;color:var(--ink);margin-top:5px}
+
+  footer{text-align:center;color:var(--ink-mute);font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
+  @media(max-width:620px){
+    h1{font-size:23px}
+    .vgrid{grid-template-columns:1fr}
+    .flow .step{min-width:100%}
+    .flow .arrow{transform:rotate(90deg);padding:4px 0}
+    .pkt .fld{font-size:12px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="chip-row">
+      <span class="chip solid">9주차1</span>
+      <span class="chip">컴퓨터네트워크</span>
+      <span class="chip">제3장 Transport Layer (1)</span>
+      <span class="chip">UDP · Demux · Checksum</span>
+    </div>
+    <h1>역다중화 · 멀티스레드 서버 · UDP</h1>
+    <p class="sub">중간고사 큐잉 지연 문제 복습으로 시작해, 소켓 식별(역다중화)의 UDP 2-tuple·TCP 4-tuple 차이, 멀티스레드 웹서버의 필요성과 오해, 그리고 UDP의 특징·세그먼트 포맷·체크섬·DNS 패킷 분석까지 정리합니다.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="srcline">
+    📄 <b>강의자료 매칭</b>
+    <span class="dot"></span> 제3장-1.pptx <b>p.5~15</b> (주 내용)
+    <span class="dot"></span> 제2장-3.pptx <b>p.12~14</b> (웹서버·멀티스레드 참고)
+    <span class="dot"></span> 제1장·제2장 <b>지연·웹 캐싱</b> (시험 복습)
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-i="0"><span class="n">1</span>시험 복습·큐잉 지연</button>
+    <button class="tab" data-i="1"><span class="n">2</span>역다중화 (UDP·TCP)</button>
+    <button class="tab" data-i="2"><span class="n">3</span>멀티스레드 웹서버</button>
+    <button class="tab" data-i="3"><span class="n">4</span>UDP 개요·특징</button>
+    <button class="tab" data-i="4"><span class="n">5</span>UDP 세그먼트·헤더</button>
+    <button class="tab" data-i="5"><span class="n">6</span>체크섬</button>
+    <button class="tab" data-i="6"><span class="n">7</span>HTTP/3 (QUIC)</button>
+    <button class="tab" data-i="7"><span class="n">8</span>Wireshark DNS 분석</button>
+  </nav>
+
+  <!-- ===== TAB 1 : 시험 복습 ===== -->
+  <section class="panel active">
+    <div class="panel-head">
+      <h2>중간고사 리뷰 — 큐잉 지연 문제 <span class="pg">제1장 지연 · 제2장 캐싱 복습</span></h2>
+      <p>프록시(캐시) 서버가 있는 네트워크에서 응답 지연시간을 구하는 문제. 강사가 "제일 어려운 문제였고, 핵심 계산만 해도 절반은 준다"고 강조한 부분.</p>
+    </div>
+
+    <div class="card">
+      <h3>📝 문제 상황</h3>
+      <p>프록시(캐시) 서버를 둔 네트워크에서, HTTP 리퀘스트를 보내고 응답이 올 때까지의 <b>지연시간(응답 지연)</b>을 구하는 문제입니다. 요청(request)을 보내는 시간은 무시합니다.</p>
+      <ul>
+        <li>객체(object) 크기 = <b>1 Mbit (1메가짜리)</b></li>
+        <li>초당 요청 수 = <b>100개/초</b></li>
+        <li>프록시 서버 <b>적중률(hit ratio) = 0.4</b></li>
+        <li>경로상의 링크들: 1Mbps(1Mbit 전송 = 1초), 100Mbps, 1Gbps 급 — 각각 전송지연과 큐잉 지연이 발생</li>
+      </ul>
+      <p class="callout">"다 예상했던 문제"라고 하면서도 맞춘 학생이 별로 없었던, 큐잉 지연(queueing delay)을 실제 수식으로 계산하는 문제입니다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 핵심 ①: 트래픽 강도는 "개수"로 계산한다 <span class="tag exam">시험핵심</span><span class="pgbadge">절반 배점</span></h3>
+      <p>큐잉 지연을 구하려면 먼저 <b>트래픽 강도(traffic intensity)</b>를 구해야 합니다. 이것이 이 문제의 핵심이며, 강사가 "이것만 계산했으면 절반 이상"이라고 한 부분입니다.</p>
+      <div class="kcard">
+        <div class="kk">TRAFFIC INTENSITY</div>
+        <div class="kv">트래픽 강도 = 들어오는 개수(초당) ÷ 처리 가능한 개수(초당)</div>
+      </div>
+      <ul>
+        <li>단위는 <b>대역폭(Mbps)이 아니라 "초당 객체 개수"</b>로 생각해야 한다</li>
+        <li>100Mbps 링크 = 1Mbit 객체를 <b>초당 100개</b> 내보낼 수 있다 → 처리율 100개/초</li>
+        <li>식당 비유: 자리가 100개인데(처리 능력) 반복해서 들어오는 손님이 60명(도착률) → 강도 = 60/100 = 0.6</li>
+      </ul>
+      <p class="callout">강사의 식당 비유: "자리수(처리 능력) 100개 vs 반복해 오는 손님(도착률) 60명 → 0.6". 여기서 처리 능력을 나타내는 것은 <b>개수</b>이지 100메가(대역폭)가 아니다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 핵심 ②: 적중률 0.4 → 60개만 위로 올라간다 <span class="tag exam">시험핵심</span><span class="pgbadge">제2장 캐싱</span></h3>
+      <p>초당 100개 요청 중, 프록시 적중률이 0.4이므로:</p>
+      <div class="flow">
+        <div class="step"><div class="big">100개/초</div><div class="lbl">전체 요청</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">40개 (0.4)</div><div class="lbl">캐시에서 바로 처리<br>(hit)</div></div>
+        <div class="arrow">+</div>
+        <div class="step"><div class="big">60개 (0.6)</div><div class="lbl">원 서버로 올라감<br>(miss)</div></div>
+      </div>
+      <ul>
+        <li>캐시를 지나 원 서버 쪽으로 올라가는 트래픽 = <b>60개/초</b> (miss분)</li>
+        <li>해당 링크 처리율이 100개/초라면 → 트래픽 강도 = 60/100 = <b>0.6</b></li>
+        <li>적중률에 따라 경로별로 흐르는 요청 수가 달라지므로, 각 구간마다 트래픽 강도를 따로 구한다</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🧮 지연 구성요소 — 전송지연 + 큐잉 지연의 합 <span class="pgbadge">제1장 지연</span></h3>
+      <p>경로의 각 링크마다 <b>전송지연(transmission delay)</b>과 <b>큐잉 지연</b>이 더해집니다. 전송지연 = 객체 크기 ÷ 링크 속도.</p>
+      <table class="cmp">
+        <tr><th>링크</th><th>전송지연 (1Mbit ÷ 속도)</th><th>트래픽 강도</th></tr>
+        <tr><td>1Mbps 급</td><td>1 Mbit / 1 Mbps = <b>1초</b></td><td>(지배적 지연)</td></tr>
+        <tr><td>100Mbps</td><td>1 Mbit / 100 Mbps = <b>0.01초</b></td><td>60/100 = <b>0.6</b></td></tr>
+        <tr><td>1Gbps</td><td>1 Mbit / 1 Gbps = <b>0.001초</b></td><td>100/1000 = <b>0.1</b> (거의 무시)</td></tr>
+      </table>
+      <p>큐잉 지연은 <b>주어진 수식 y = f(x)</b> (x = 트래픽 강도)에 각 트래픽 강도를 대입해 구합니다. 1Gbps 링크처럼 강도가 0.1로 작으면 큐잉 지연은 거의 0(무시 가능)입니다.</p>
+      <p>이 모든 성분을 적중/미스 비율(0.4 / 0.6)로 가중해 합치면 최종 응답 지연 ≈ <b>약 1.016초</b>가 나옵니다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 왜 많이 틀렸나 — 흔한 실수 <span class="tag sup">부연설명</span></h3>
+      <p>강사가 짚은 가장 흔한 실수는 <b>처리율(서비스율)을 "100개"가 아니라 "100메가(대역폭)"로 계산</b>한 것입니다.</p>
+      <ul>
+        <li>트래픽 강도 = 도착률 ÷ 서비스율에서, 서비스율을 100M(대역폭)로 넣으면 분모가 너무 커져 큐잉 지연이 거의 0으로 나와 엉뚱한 결과가 된다</li>
+        <li>올바른 관점: "1Mbit짜리 객체를 초당 몇 개 처리/전송할 수 있는가" = <b>개수(count)</b> 기준</li>
+        <li>또 다른 실수: 마지막에 적중률(0.6 / 0.4)을 각 성분에 곱해주는 것을 빠뜨림</li>
+      </ul>
+      <p class="callout">강사: "트래픽 강도(핵심 요거)만 제대로 계산했으면 의도한 배점의 절반 이상은 맞은 것." 분수로만 두고 소수 계산을 안 했어도 과정이 맞으면 부분점수를 준다고 언급.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 2 : 역다중화 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>역다중화 — UDP vs TCP 소켓 식별 <span class="pg">제3장-1 p.5~11</span></h2>
+      <p>수신된 세그먼트를 올바른 소켓으로 전달하는 역다중화(demultiplexing). UDP 소켓과 TCP 소켓이 각각 무엇으로 식별되는지가 핵심.</p>
+    </div>
+
+    <div class="card">
+      <h3>🔀 다중화 / 역다중화란 <span class="pgbadge">p.5~6</span></h3>
+      <ul>
+        <li><b>다중화(송신)</b>: 여러 소켓에서 데이터를 모아 헤더(포트번호)를 붙여 내려보냄</li>
+        <li><b>역다중화(수신)</b>: 받은 세그먼트를 헤더의 포트번호를 보고 올바른 소켓에 전달</li>
+        <li>포트번호 범위 중 <b>0~1023은 well-known 포트</b>(시스템 전용, 사용자가 쓰면 안 됨)</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> UDP 소켓 = 2개 튜플로 식별 <span class="tag imp">중요</span><span class="pgbadge">p.7~8</span></h3>
+      <p>UDP 서버 소켓은 <b>(서버 IP 주소, 포트 번호)</b> 2가지로만 정의됩니다.</p>
+      <div class="kcard">
+        <div class="kk">UDP SOCKET</div>
+        <div class="kv">( 수신 IP 주소 , 수신 포트 번호 )  ← 2-tuple</div>
+      </div>
+      <ul>
+        <li><b>소켓 하나</b>로 여러 개의 단말(클라이언트)로부터 데이터를 다 받을 수 있다</li>
+        <li>송신 IP·포트가 서로 달라도, 목적지 포트가 같으면 <b>같은 소켓</b>으로 전달된다</li>
+        <li>실습 팁: UDP 소켓 변수를 출력해 보면 서버 IP와 포트번호가 명시되어 있음을 확인할 수 있다</li>
+      </ul>
+      <pre><span class="k">serverSocket</span> = socket(AF_INET, <span class="num">SOCK_DGRAM</span>)   <span class="c"># UDP</span>
+serverSocket.bind((serverName, serverPort))  <span class="c"># (IP, port) 로 식별</span></pre>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> TCP 소켓 = 4개 튜플로 식별 <span class="tag imp">중요</span><span class="pgbadge">p.9~10</span></h3>
+      <p>TCP 소켓(연결 소켓)은 <b>4가지 팩터</b>가 모두 일치해야 식별됩니다. 연결형이라 <b>클라이언트마다 별도의 연결 소켓</b>이 생성됩니다.</p>
+      <div class="kcard">
+        <div class="kk">TCP CONNECTION SOCKET</div>
+        <div class="kv">( 송신 IP , 송신 포트 , 수신 IP , 수신 포트 )  ← 4-tuple</div>
+      </div>
+      <ul>
+        <li>서버 IP·포트만 같아도 <b>송신 IP·포트가 다르면 서로 다른 소켓</b>(P4, P5, P6)으로 역다중화됨</li>
+        <li>따라서 특정 소켓을 통과하려면 <b>4가지가 전부 일치</b>해야 한다</li>
+        <li>서버는 동시에 많은 TCP 소켓을 지원 — 웹서버는 연결마다 다른 소켓을 가짐</li>
+      </ul>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 세션 하이재킹(Session Hijacking) — 보안 여담 <span class="tag sup">부연설명</span></h3>
+      <p>강사가 든 예시: 두 호스트가 TCP로 연결된 세션에 끼어들어 데이터를 집어넣거나 삭제하는 공격을 <b>세션 하이재킹</b>이라 합니다.</p>
+      <ul>
+        <li>UDP처럼 "서버 IP·포트만 알면 되지 않나?" 생각하기 쉽지만 — <b>전혀 아니다</b></li>
+        <li>TCP 세션을 가로채려면 <b>4가지 팩터(송·수신 IP·포트)를 모두 알아야</b> 그 세션에 패킷을 끼워 넣을 수 있다</li>
+        <li>즉 TCP의 4-tuple 식별 구조가 보안 측면에서도 의미를 가진다</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== TAB 3 : 멀티스레드 웹서버 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>멀티스레드 웹서버 <span class="pg">제3장-1 p.11 · 제2장-3 p.12~14</span></h2>
+      <p>왜 요청마다 프로세스를 만들면 안 되는지(메모리 폭발), 단일 스레드 서버가 왜 죽는지, 그리고 멀티스레드가 해결하는 것 — 그러나 "빨라지는 것"은 아니라는 점.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 프로세스 vs 스레드 — 왜 프로세스는 안 되나 <span class="tag imp">중요</span><span class="pgbadge">p.11</span></h3>
+      <p>하드디스크의 프로그램(스몰 프로그램)이 <b>메모리에 로드되면 프로세스</b>입니다. 역다중화된 P4·P5·P6을 각각 <b>별도의 프로세스</b>로 동작시킨다면:</p>
+      <ul>
+        <li>동일한 웹서버 프로그램이 수천 개 복사되어 메모리에 올라감</li>
+        <li>유저 리퀘스트가 올 때마다 프로세스를 계속 생성 → <b>메모리가 곧 폭발</b></li>
+        <li>결국 서비스를 못 하게 됨</li>
+      </ul>
+      <p>해결: 동일한 프로세스 <b>하나</b>에, <b>실행 포인트(스레드)만 여러 개</b> 두는 방식이 필요하다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 단일 스레드 서버는 왜 죽나 <span class="tag imp">중요</span><span class="pgbadge">제2장-3 p.12~14</span></h3>
+      <p>지난번에 만든 간단한 웹서버는 <b>단일 스레드</b>였습니다. 기능은 "HTTP 리퀘스트를 해석해 리스폰스를 만들어 주는 것".</p>
+      <ul>
+        <li>여러 명이 동시에 들어오는 상황을 전혀 고려하지 않았다</li>
+        <li>한 사람을 처리하는 중에 다른 사람이 들어오면 → <b>실행할 포인트가 없어 죽어버림</b></li>
+        <li>실제로 60명이 동시에 리퀘스트 → 프로그램이 다 죽었던 이유가 이것(동시성 미고려)</li>
+      </ul>
+      <pre><span class="k">while</span> True:
+    connectionSocket, addr = serverSocket.accept()
+    message = connectionSocket.recv(<span class="num">2048</span>).decode()
+    <span class="c"># ↑ 이 처리 중에 새 요청이 오면 받아줄 수가 없다 (단일 스레드)</span></pre>
+    </div>
+
+    <div class="card">
+      <h3>🧵 멀티스레드 웹서버 구조 <span class="pgbadge">p.11</span></h3>
+      <p><b>하나의 프로세스</b>에 스레드를 여러 개(예: 3개) 두면, 각 스레드가 들어오는 연결을 하나씩 맡아 처리합니다.</p>
+      <div class="flow">
+        <div class="step"><div class="big">요청 도착</div><div class="lbl">소켓 생성</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">Thread 배정</div><div class="lbl">소켓 = 스레드 1:1</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">또 요청</div><div class="lbl">새 스레드로 처리</div></div>
+      </div>
+      <ul>
+        <li>리퀘스트가 오면 소켓을 만들고 <b>하나의 스레드와 1:1로 동일시</b> → 또 오면 또 다른 스레드</li>
+        <li>웹서버 프로그램을 <b>두 파트로 분리</b>해야 한다:
+          <br>① 외부에서 들어오는 연결을 받는 루틴, ② 리퀘스트·리스폰스를 생성·처리하는 루틴</li>
+        <li>기존엔 두 부분이 한 덩어리라 뒷부분 처리 중 새 요청이 오면 멈췄다 → 분리 필요</li>
+        <li><code>ThreadStart</code> / <code>ThreadStop</code> 같은 Thread 개념 사용 (과제로 출제 예정)</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 흔한 오해: 멀티스레드 = 빨라진다? ❌ <span class="tag imp">중요</span><span class="pgbadge">개념 주의</span></h3>
+      <p>강사가 "학생들이 가장 많이 착각한다"고 강조한 부분입니다.</p>
+      <table class="cmp">
+        <tr><th></th><th>싱글 스레드</th><th>멀티 스레드</th></tr>
+        <tr><td>동시 처리</td><td>불가 (한 번에 1명)</td><td class="t">가능 (여러 명 동시)</td></tr>
+        <tr><td>개별 속도</td><td class="t">더 빠름 (파워 독점)</td><td class="u">느려짐 (파워 분할)</td></tr>
+        <tr><td>처리 파워</td><td>1 전부 사용</td><td>1을 N등분 (스레드 3개 → 각 1/3)</td></tr>
+      </table>
+      <p class="callout"><b>멀티스레드는 "빨라지는 것"이 아니라 "동시에 수행"할 수 있게 하는 것.</b> 프로세싱 파워를 셰어링(sharing)하는 개념이라, 각자의 속도는 오히려 느려진다. 파이썬 교재 맨 마지막 부분에 Multi-Thread Web Server 예제가 있으니 참고.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 4 : UDP 개요 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>UDP 개요 · 특징 <span class="pg">제3장-1 p.12~13</span></h2>
+      <p>UDP는 장식 없는 "뼈만 있는(bare bones)" best-effort 프로토콜. 손실을 책임지지 않는 대신 간단하고 빠르다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> UDP = 베어본(bare bones), best-effort <span class="tag imp">중요</span><span class="pgbadge">p.12</span></h3>
+      <p>UDP는 IP 패킷에 별다른 장식이 없는, <b>뼈(bone)만 있는</b> 전송 프로토콜입니다. "뼈에 살이 없는" 상태.</p>
+      <ul>
+        <li><b>Best-effort</b>: 최선을 다해 보내지만, 손실이 나면 어쩔 수 없다 (책임지지 않음)</li>
+        <li><b>비연결형</b>: 핸드셰이크 과정이 없음 — 미리 서버와 컨택하지 않음</li>
+        <li>각 UDP 세그먼트는 <b>독립적</b>으로 다루어짐 — 패킷 간 연관관계가 거의 없다</li>
+        <li>순서가 다르게 도착해도 상관없는 경우에 적합</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>⚡ UDP를 쓰는 이유 <span class="pgbadge">p.12</span></h3>
+      <div class="vgrid">
+        <div class="v"><span class="seg">연결 설정 없음</span><span class="note">핸드셰이크가 없어 지연(delay)이 추가되지 않음</span></div>
+        <div class="v"><span class="seg">간편성</span><span class="note">송·수신 간 연결 상태 관리가 필요 없음</span></div>
+        <div class="v"><span class="seg">작은 헤더</span><span class="note">세그먼트 헤더가 작음 (8바이트)</span></div>
+        <div class="v"><span class="seg">혼잡제어 없음</span><span class="note">빠르게 전달될 수 있음, 재전송 안 함</span></div>
+      </div>
+      <p class="callout">TCP는 좋은 것, UDP는 나쁜 것이 아니다. UDP는 <b>심플하기 때문에 간단한 용도에서는 오히려 최적</b>. 요즘은 "빠른 전달" 장점이 더 부각되고 있다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> UDP가 적합한 경우 <span class="tag imp">중요</span><span class="pgbadge">p.13</span></h3>
+      <ul>
+        <li><b>스트리밍 멀티미디어</b>: 음성·비디오 — 조금 깨져도 금방 지나가므로 괜찮음</li>
+        <li><b>실시간성 중시</b>: 인터넷 전화(VoIP), 실시간 방송, 실시간 게임</li>
+        <li><b>DNS</b>: 한 번 쿼리 → 한 번 응답으로 끝나는 전형적 케이스</li>
+        <li><b>SNMP</b>: 네트워크 관리(라우터 상태·성능 모니터링) 프로토콜</li>
+      </ul>
+      <p class="callout">실시간 게임에서 네트워크가 자꾸 끊기면? → <b>얼른 UDP로 바꿔야</b> 한다. 캐릭터가 조금 손실돼도 다음 화면에 바뀌므로, <b>손실보다 빨리 오는 것(실시간성)</b>이 더 중요하다. 반대로 손실이 치명적인 서비스에는 UDP를 쓰면 안 된다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 UDP 상에서 신뢰성이 필요하면 <span class="tag sup">부연설명</span></h3>
+      <p>UDP 자체는 손실을 책임지지 않지만, 신뢰성이 필요하면 <b>응용계층(application layer)에 에러 복구 기능을 추가</b>하면 됩니다. (다음 탭의 HTTP/3 QUIC이 바로 이 아이디어입니다.)</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 5 : UDP 세그먼트 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>UDP 세그먼트 · 헤더 <span class="pg">제3장-1 p.13</span></h2>
+      <p>UDP 헤더는 단 8바이트. 한 라인 = 32비트 = 4바이트. 소스포트·데스트포트·길이·체크섬 4개 필드만 있다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> UDP 헤더 = 8바이트 (한 라인 32비트 × 2줄) <span class="tag imp">중요</span><span class="pgbadge">p.13</span></h3>
+      <div class="pkt">
+        <div class="bits"><span>← 16 bit →</span><span>← 16 bit →</span></div>
+        <div class="prow">
+          <div class="fld h"><div class="fn">Source Port</div><div class="fb">16 bit (2 byte)</div></div>
+          <div class="fld h"><div class="fn">Dest Port</div><div class="fb">16 bit (2 byte)</div></div>
+        </div>
+        <div class="prow">
+          <div class="fld h"><div class="fn">Length</div><div class="fb">16 bit (2 byte)</div></div>
+          <div class="fld h"><div class="fn">Checksum</div><div class="fb">16 bit (2 byte)</div></div>
+        </div>
+        <div class="prow">
+          <div class="fld data"><div class="fn">Application Data (message)</div><div class="fb">가변 길이</div></div>
+        </div>
+      </div>
+      <ul>
+        <li>한 라인 = <b>32비트 = 4바이트</b>. 소스포트+데스트포트가 한 줄, 길이+체크섬이 한 줄 → 헤더 총 <b>8바이트</b></li>
+        <li>참고: TCP 헤더는 <b>20바이트</b> — 복잡한 기능(재전송 등)이 많아 헤더가 길다. UDP는 그런 기능이 없어 8바이트로 짧다</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 포트 번호 범위: 2<sup>16</sup> = 65,536 <span class="tag imp">중요</span><span class="pgbadge">p.13</span></h3>
+      <p>포트 번호는 16비트로 표현되므로:</p>
+      <div class="kcard">
+        <div class="kk">PORT RANGE</div>
+        <div class="kv">2^16 = 65,536 → 0 ~ 65,535 (하나 적게)</div>
+      </div>
+      <ul>
+        <li><b>0~1023</b>: well-known 포트 (시스템 사용) → 사용자가 쓰면 안 됨</li>
+        <li>나머지 범위를 사용자가 사용</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> Length 필드 = "헤더 포함" 길이 <span class="tag imp">중요</span><span class="pgbadge">p.13</span></h3>
+      <p>Length는 <b>헤더까지 포함한(including header)</b> 전체 바이트 길이입니다.</p>
+      <div class="flow">
+        <div class="step"><div class="big">헤더 8 byte</div><div class="lbl">고정</div></div>
+        <div class="arrow">+</div>
+        <div class="step"><div class="big">데이터 100 byte</div><div class="lbl">예시</div></div>
+        <div class="arrow">=</div>
+        <div class="step"><div class="big">Length = 108</div><div class="lbl">헤더 포함 총 길이</div></div>
+      </div>
+      <p class="callout">데이터가 100바이트, 헤더가 8바이트면 Length = <b>108바이트</b>. 데이터만이 아니라 헤더를 포함해 길이를 정한다는 점에 주의.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 6 : 체크섬 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>체크섬 (Checksum) <span class="pg">제3장-1 p.14~15</span></h2>
+      <p>전송된 세그먼트에서 에러를 검출하는 것이 목표. 16비트 워드를 모두 더하고 1의 보수를 취하는 방식.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 송신부: 더하고 → 1의 보수 <span class="tag imp">중요</span><span class="pgbadge">p.14</span></h3>
+      <p>Goal: 전송된 세그먼트에서 <b>에러 검출</b>.</p>
+      <div class="flow">
+        <div class="step"><div class="big">16bit 워드</div><div class="lbl">모두 더하기</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">캐리 처리</div><div class="lbl">최상위 캐리를<br>결과에 더함(wraparound)</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="big">1의 보수</div><div class="lbl">= 체크섬</div></div>
+      </div>
+      <ul>
+        <li>세그먼트 안의 모든 <b>16비트 워드를 합산</b></li>
+        <li>최상위 비트에서 <b>캐리(carry)</b>가 나오면 그 캐리를 결과에 다시 더한다 (wraparound)</li>
+        <li>최종 합의 <b>1의 보수(1's complement)</b>를 취한 값이 체크섬 → 체크섬 필드에 삽입해 전송</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🧮 Internet Checksum 예제 (16비트 2개 덧셈) <span class="pgbadge">p.15</span></h3>
+      <p>두 16비트 수를 더할 때 최상위 비트의 캐리를 결과에 다시 더하는(wraparound) 예:</p>
+      <pre><span class="c"># 두 개의 16-bit 수를 더하는 예 (실제로는 모든 16bit 워드를 더함)</span>
+   <span class="num">1110 0110 0110 0110</span>
+ + <span class="num">1101 0101 0101 0101</span>
+ ───────────────────────
+   1 1011 1011 1011 1011   <span class="r">← 최상위에서 캐리 1 발생</span>
+
+<span class="c"># wraparound: 캐리 1 을 결과에 다시 더한다</span>
+   1011 1011 1011 1011
+ +                   1
+ ───────────────────────
+   <span class="g">1011 1011 1011 1100</span>   <span class="c"># sum</span>
+
+<span class="c"># 1의 보수(비트 반전) → checksum</span>
+   <span class="g">0100 0100 0100 0011</span>   <span class="c"># = checksum</span></pre>
+      <p class="callout">실제로는 나머지 16비트 워드까지 모두 이런 식으로 더하며, 캐리가 나올 때마다 wraparound 해서 계속 합산합니다. (하드웨어로 순식간에 처리)</p>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 수신부: 전부 더해 "모두 1"이면 정상 <span class="tag imp">중요</span><span class="pgbadge">p.14</span></h3>
+      <p>수신부에서는 <b>체크섬 필드를 포함</b>해 모든 16비트 워드를 더합니다.</p>
+      <table class="cmp">
+        <tr><th>결과</th><th>의미</th></tr>
+        <tr><td class="t">1111 1111 1111 1111 (모두 1)</td><td>에러 발생 안 함 (정상 도착)</td></tr>
+        <tr><td class="u">하나라도 0 이 있으면</td><td>에러 발생 → 패킷 폐기(버림)</td></tr>
+      </table>
+      <ul>
+        <li>에러가 검출되면 UDP는 <b>재전송하지 않고 패킷을 버린다</b> — 위로 올리면 더 문제가 커지므로</li>
+        <li>"내 책임이 아니니까" 버려버리는 것 — UDP는 손실에 책임지지 않는 프로토콜</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 체크섬은 완벽하지 않다 <span class="tag imp">중요</span><span class="pgbadge">p.14</span></h3>
+      <p>"모두 1"이 나와도 <b>에러가 없다고 100% 보장하지는 못합니다.</b></p>
+      <ul>
+        <li>경우에 따라 같은 자리에서 에러가 상쇄되면, 모두 1인데도 실제론 에러가 있을 수 있다</li>
+        <li>대략 <b>99% 가까이 디텍트</b>하는, 간단한 에러 검출 방법일 뿐</li>
+        <li>크리티컬한(완벽한 신뢰성이 필요한) 통신에는 체크섬만으로 부족 → <b>TCP를 써야 한다</b></li>
+      </ul>
+      <p class="callout">UDP는 "에러가 발생했는지 어느 정도 아는" 간단한 수단으로 체크섬을 쓴다. 완벽하게 잡으려면 훨씬 복잡한 방법이 필요하다.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 7 : HTTP/3 ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>HTTP/3 (QUIC) — UDP 위의 HTTP <span class="pg">제3장-1 연계 · 지난 강의 복습</span></h2>
+      <p>UDP 트래픽이 늘어나는 흐름 속에서, 웹 로딩 속도를 높이기 위해 HTTP를 UDP 위에 올린 것이 HTTP/3(QUIC).</p>
+    </div>
+
+    <div class="card">
+      <h3>📈 UDP 트래픽이 늘어나는 이유 <span class="pgbadge">추세</span></h3>
+      <ul>
+        <li>실시간 트래픽, 실시간 방송, 인터넷 전화 등이 늘면서 <b>UDP 트래픽이 점점 증가</b></li>
+        <li>TCP는 신뢰적 통신을 위해 조심조심 보내므로 상대적으로 전송률이 낮아지는 경향</li>
+        <li>사람들이 지연(delay)에 민감해지면서 "빠른 전달"의 가치가 커짐</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> HTTP/3 = HTTP over UDP (QUIC) <span class="tag imp">중요</span><span class="pgbadge">연계 개념</span></h3>
+      <p>HTTP/3.0은 <b>UDP 위에 HTTP를 올린(over UDP)</b> 구조이며, 그 핵심 프로토콜이 <b>QUIC</b>입니다.</p>
+      <div class="flow">
+        <div class="step"><div class="big">HTTP/3</div><div class="lbl">응용</div></div>
+        <div class="arrow">↓</div>
+        <div class="step"><div class="big">QUIC</div><div class="lbl">에러 복구 추가</div></div>
+        <div class="arrow">↓</div>
+        <div class="step"><div class="big">UDP</div><div class="lbl">빠른 전송</div></div>
+      </div>
+      <ul>
+        <li><b>문제</b>: UDP는 손실이 발생할 수 있다 → HTTP 패킷이 중간에 사라질 수 있음</li>
+        <li><b>해결</b>: UDP 위(응용계층)에 <b>에러 복구 기능</b>(TCP의 신뢰성 기능 일부)을 추가로 넣어준다</li>
+        <li>즉 "UDP로 빠르게 + 위에서 에러 복구"를 결합한 것</li>
+      </ul>
+      <p class="callout">2019년 구글이 웹 로딩 속도 개선을 위해 내놓은 것. UDP 트래픽 증가에 맞춰 속도를 높이면서도 손실 문제를 해결하려는 방법이다.</p>
+    </div>
+  </section>
+
+  <!-- ===== TAB 8 : Wireshark ===== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Wireshark — DNS/UDP 패킷 분석 <span class="pg">제3장-1 p.13 헤더 확인 (실습)</span></h2>
+      <p>와이어샤크로 UDP 패킷을 캡처해, 8바이트 헤더(소스·데스트 포트, 길이, 체크섬)와 DNS 질의·응답 구조를 직접 확인하는 데모.</p>
+    </div>
+
+    <div class="card">
+      <h3>🔍 웹사이트 하나 = DNS 쿼리 폭증 <span class="pgbadge">관찰</span></h3>
+      <ul>
+        <li>웹사이트 하나만 열어도 <b>DNS 쿼리가 엄청나게</b> 발생</li>
+        <li>페이지 안에 참조된 객체(HREF의 이름들)마다 <b>이름→IP 변환(DNS 쿼리)</b>이 필요하기 때문</li>
+        <li>DNS·DHCP 등은 전형적인 UDP 사용 사례</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><span class="star">★</span> 실제 DNS 패킷의 UDP 헤더 (8바이트) <span class="tag imp">중요</span><span class="pgbadge">p.13 확인</span></h3>
+      <p>bing.com을 쿼리한 UDP 패킷 예시. 헤더가 정확히 <b>8바이트(1~8)</b>임을 센다.</p>
+      <table class="cmp">
+        <tr><th>필드</th><th>16진수</th><th>10진수 해석</th></tr>
+        <tr><td>Source Port</td><td>FC A7</td><td><b>64679</b> (내 컴퓨터 포트)</td></tr>
+        <tr><td>Dest Port</td><td>00 35</td><td><b>53</b> (DNS well-known 포트)</td></tr>
+        <tr><td>Length</td><td>00 26</td><td><b>38 byte</b> (헤더 8 + 데이터 30)</td></tr>
+        <tr><td>Checksum</td><td>(계산 필요)</td><td>16진수 전부 더해 1의 보수</td></tr>
+      </table>
+      <ul>
+        <li>웹서버는 80번이지만 <b>DNS 서버는 53번</b> 포트</li>
+        <li>Length 38 = 헤더 8바이트 + DNS 데이터 30바이트 → "헤더 포함 길이" 확인</li>
+        <li>데이터 30바이트 중 12바이트는 DNS 관련 내용(트랜잭션 번호 등), 나머지는 질의/응답 내용</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>📨 DNS 질의 → 응답 구조 <span class="pgbadge">Answer</span></h3>
+      <ul>
+        <li><b>질의(Query)</b>: "www.bing.com의 IP 주소를 알려달라"고 DNS 서버에 요청</li>
+        <li><b>응답(Response)</b>: Answer 섹션에 IP 주소들이 들어옴</li>
+        <li>한 이름에 <b>IP 주소가 여러 개</b>일 수 있다 (예: naver.com) → 부하 분산(load distribution)</li>
+        <li>예시 패킷에서는 <b>Answer가 9개</b> — 9개 서버 주소를 알려주고, 유저는 그중 하나로 접속</li>
+      </ul>
+      <p class="callout">여러분 컴퓨터에서 직접 DNS 쿼리를 날려 보면, 쿼리에 대한 응답이 오는 과정을 명확히 볼 수 있다. 체크섬은 집에서 16진수를 더해 1의 보수로 직접 계산해 확인해 볼 것.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>💡 다음 시간 예고 <span class="tag sup">부연설명</span></h3>
+      <p>UDP는 <b>8바이트 헤더가 전부</b>라 더 이상 다룰 것이 거의 없습니다. 다음 시간부터는 <b>TCP</b>를 본격적으로 다룹니다.</p>
+    </div>
+  </section>
+
+  <footer>
+    컴퓨터네트워크 · 9주차1 「역다중화 · 멀티스레드 서버 · UDP」 · 강의자료: 제3장-1 p.5~15, 제2장-3 p.12~14<br>
+    MacWhisper 스크립트 기반 재구성 · ★ amber = 중요/시험강조, 💡 blue = 부연설명
+  </footer>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    const i = +t.dataset.i;
+    tabs.forEach(x=>x.classList.remove('active'));
+    panels.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    panels[i].classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+</script>
+</body>
+</html>
