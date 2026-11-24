@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Blockchain Basics</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);--border-stronger:rgba(31,30,29,.42);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;--fill-accent:#378ADD;--on-accent:#ffffff;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;--fill-warning:#EF9F27;--on-warning:#412402;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --svg-gray-f:#F1EFE8;--svg-gray-s:#5F5E5A;--svg-gray-t:#444441;
+  --svg-amber-f:#FAEEDA;--svg-amber-s:#854F0B;--svg-amber-t:#633806;
+  --svg-teal-f:#E1F5EE;--svg-teal-s:#0F6E56;--svg-teal-t:#085041;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);--border-stronger:rgba(255,255,255,.42);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;--fill-accent:#378ADD;--on-accent:#ffffff;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;--fill-warning:#EF9F27;--on-warning:#412402;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+    --svg-gray-f:#444441;--svg-gray-s:#B4B2A9;--svg-gray-t:#F1EFE8;
+    --svg-amber-f:#633806;--svg-amber-s:#FAC775;--svg-amber-t:#FAEEDA;
+    --svg-teal-f:#085041;--svg-teal-s:#9FE1CB;--svg-teal-t:#E1F5EE;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:880px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none}
+.back:hover{color:var(--text-accent)}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.title .i{font-size:22px;color:var(--text-secondary)}
+.sm{font-size:12px;color:var(--text-secondary)}
+.src{font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.6}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text-secondary);margin-top:6px;flex-wrap:wrap}
+.legend .i{font-size:14px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+.tab{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tab:hover{background:var(--surface-1)}
+.tab.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent);font-weight:500}
+button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+button:hover{background:var(--surface-1)}
+.sec{margin-bottom:28px}
+.sh{font-size:18px;font-weight:500;margin:6px 0 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:12px}
+.c{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.65;min-width:0}
+.c.w{grid-column:1/-1}
+.c.imp{background:var(--bg-warning);border-color:var(--border-warning)}
+.c.ext{background:var(--bg-accent);border-color:var(--border-accent)}
+.ct{font-weight:500;font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.imp .ct{color:var(--text-warning)}
+.ext .ct{color:var(--text-accent)}
+.pg{font-size:11px;font-weight:400;padding:1px 8px;border-radius:999px;border:0.5px solid var(--border-strong);color:var(--text-secondary);margin-left:auto;white-space:nowrap}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.nd{padding:5px 10px;border-radius:8px;background:var(--surface-1);border:0.5px solid var(--border);font-size:13px}
+.nd.k{background:var(--bg-danger);color:var(--text-danger);border-color:var(--border-danger)}
+.nd.p{background:var(--bg-success);color:var(--text-success);border-color:var(--border-success)}
+.ar{color:var(--text-muted);font-size:14px}
+pre{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:12px;font-family:var(--font-mono);font-size:12.5px;line-height:1.55;overflow-x:auto;margin:8px 0 0;white-space:pre;color:var(--text-primary)}
+.mono{font-family:var(--font-mono);font-size:12.5px;word-break:break-all}
+ul.l,ol.l{margin:4px 0;padding-left:20px}
+.hx{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:4px;margin:8px 0}
+.hx div{font-family:var(--font-mono);font-size:12px;background:var(--surface-1);border-radius:6px;padding:4px;text-align:center}
+.mt{background:var(--surface-1);border-radius:8px;padding:10px 12px}
+.imp .mt,.ext .mt{background:var(--surface-2);color:var(--text-primary)}
+.mt b{display:block;font-size:20px;font-weight:500}
+.blk{border:0.5px solid var(--border-strong);border-radius:8px;padding:8px 10px;font-size:12px;min-width:120px;background:var(--surface-1)}
+.blk.bad{border-color:var(--border-danger);background:var(--bg-danger)}
+.chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:13px;border:0.5px solid var(--border-strong);margin:2px}
+.chip.sp{text-decoration:line-through;color:var(--text-danger);border-color:var(--border-danger)}
+.chip.nw{background:var(--bg-success);color:var(--text-success);border-color:var(--border-success)}
+svg.dg text{font-family:var(--font-sans)}
+svg.dg .th{font-size:14px;font-weight:500}
+svg.dg .ts{font-size:12px;fill:var(--text-secondary)}
+svg.dg .arr{stroke:var(--text-muted);stroke-width:1.5;fill:none}
+.c-gray rect{fill:var(--svg-gray-f);stroke:var(--svg-gray-s)}.c-gray text{fill:var(--svg-gray-t)}
+.c-amber rect{fill:var(--svg-amber-f);stroke:var(--svg-amber-s)}.c-amber text{fill:var(--svg-amber-t)}
+.c-teal rect{fill:var(--svg-teal-f);stroke:var(--svg-teal-s)}.c-teal text{fill:var(--svg-teal-t)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-info-circle" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z"/><path d="M15 9h.01"/></symbol>
+  <symbol id="i-arrows-exchange" viewBox="0 0 24 24"><path d="M7 10h14l-4 -4"/><path d="M17 14h-14l4 4"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/><path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/></symbol>
+  <symbol id="i-file-code" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M10 13l-1 2l1 2"/><path d="M14 13l1 2l-1 2"/></symbol>
+  <symbol id="i-currency-bitcoin" viewBox="0 0 24 24"><path d="M6 6h8a3 3 0 0 1 0 6a3 3 0 0 1 0 6h-8"/><path d="M8 6l0 12"/><path d="M8 12l6 0"/><path d="M9 3l0 3"/><path d="M13 3l0 3"/><path d="M9 18l0 3"/><path d="M13 18l0 3"/></symbol>
+</svg>
+<div class="page">
+<a class="back" href="../index.html">← 목차로</a>
+<div class="title"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg><h1>Blockchain Basics</h1></div>
+<div class="sm">블록체인 기초 – Ethereum &amp; Bitcoin · ICN 블록체인 칼리지 (이론 + 실습)</div>
+<div class="src">강의자료: <span class="mono" style="font-size:11px">1 Blockchain1-50.pdf</span> p.1–50 → <span class="mono" style="font-size:11px">1 Blockchain50-108.pdf</span> p.50–107 (p.108 Q&amp;A 제외) · 슬라이드에 없는 발언(Status 채팅앱 등)은 "슬라이드 외"로 표기</div>
+<div class="legend"><span><svg class="i" style="color:var(--text-warning)" aria-hidden="true"><use href="#i-star"/></svg> amber = 강의에서 강조</span><span><svg class="i" style="color:var(--text-accent)" aria-hidden="true"><use href="#i-info-circle"/></svg> blue = [부연설명] (강의 외 내용)</span></div>
+<div class="tabs" id="tabs">
+<button class="tab on" data-t="s1">1 개요·지갑</button>
+<button class="tab" data-t="s2">2 주소·키</button>
+<button class="tab" data-t="s3">3 거래·서명</button>
+<button class="tab" data-t="s4">4 블록·확정</button>
+<button class="tab" data-t="s5">5 스마트 계약</button>
+<button class="tab" data-t="s6">6 비트코인</button>
+</div>
+
+<div class="sec" id="s1">
+<div class="sh"><svg class="i" aria-hidden="true"><use href="#i-wallet"/></svg>개요와 전자지갑 <span class="pg">p.1–11, 74</span></div>
+<div class="g">
+<div class="c w"><div class="ct">강의 구성 <span class="pg">p.2</span></div>
+<div class="g" style="gap:8px">
+<div class="mt"><span class="sm">Chapter 1 · 이론/실습</span><div style="font-weight:500">블록체인 기초 이해</div><div class="sm">메타마스크 지갑 · Ether 송금 / 기본 개념·원리</div></div>
+<div class="mt"><span class="sm">Chapter 2 · 이론/실습</span><div style="font-weight:500">스마트 계약 이해</div><div class="sm">블록체인 서비스 체험</div></div>
+<div class="mt"><span class="sm">Chapter 3</span><div style="font-weight:500">비트코인</div><div class="sm">전자지갑 · BTC 송금 실습</div></div>
+</div></div>
+<div class="c"><div class="ct">블록체인 = 개념, 플랫폼 = 구현체 <span class="pg">슬라이드 외 · p.56</span></div>
+<div class="fl"><span class="nd">비트코인<br><span class="sm">최초 (2009)</span></span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">이더리움<br><span class="sm">가장 많이 사용</span></span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">솔라나 등<br><span class="sm">대부분 이더리움 모사</span></span></div>
+비트코인 vs 이더리움의 가장 큰 차이 = 스마트 컨트랙트 가능 여부.</div>
+<div class="c"><div class="ct">전자지갑 (Digital Wallet) <span class="pg">p.4–5</span></div>
+<ul class="l"><li>기존 금융·신용카드 앱 = 원화 결제</li><li>블록체인 지갑 앱 = 가상화폐 결제, 블록체인 서비스 이용에 반드시 필요</li><li>종류: MetaMask(가장 많이 사용), Coinbase Wallet 등</li><li>지갑을 설치하면 그 안에 주소(Address)가 생성됨</li></ul></div>
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>메타마스크는 반드시 설치 <span class="pg">p.5–8</span></div>
+<div class="fl"><span class="nd">Chrome 확장 프로그램</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">MetaMask 검색·추가</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">비밀번호 설정</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">기본 계정 생성</span></div>
+PC·모바일 버전 중 실습은 PC 버전. 설치하지 않으면 수업을 따라올 수 없다고 강조.</div>
+<div class="c"><div class="ct">네트워크 선택: 메인넷 vs 테스트넷 <span class="pg">p.9, 74</span></div>
+<div class="g" style="gap:8px">
+<div class="mt"><div style="font-weight:500">Ethereum Mainnet</div><div class="sm">진짜 돈 · 거래소에서 원화/달러로 교환 가능 → 주의</div></div>
+<div class="mt"><div style="font-weight:500">Sepolia (테스트넷)</div><div class="sm">이더리움을 본뜬 실습용 · 가짜 ETH 무료</div></div>
+</div><div class="sm" style="margin-top:6px">"테스트 네트워크 보기"를 켜야 Sepolia가 보임.</div></div>
+<div class="c"><div class="ct">Sepolia Faucet 실습 <span class="pg">p.10–11</span></div>
+<ul class="l"><li>"세폴리아 퍼셋" 검색 → Google Cloud Web3 Faucet</li><li>내 주소 붙여넣기 → <b style="font-weight:500">0.05 ETH</b> 요청</li><li>구글 로그인 상태여야 받을 수 있음</li></ul></div>
+<div class="c"><div class="ct">Status 앱 <span class="pg">슬라이드 외</span></div>블록체인 기반 채팅 앱(status.app). 실습용 공지·지갑 주소 공유 채팅방으로 사용. Create profile → 비밀번호 입력.</div>
+<div class="c ext"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] 테스트넷</div>테스트넷은 메인넷과 같은 규칙(합의·수수료·스마트 계약)으로 동작하지만 코인에 시장 가치가 없어서, 개발·학습용으로 실제 돈 없이 같은 흐름을 재현할 수 있습니다.</div>
+</div></div>
+
+<div class="sec" id="s2">
+<div class="sh"><svg class="i" aria-hidden="true"><use href="#i-key"/></svg>지갑 주소 · 개인키 · 공개키 <span class="pg">p.12–36</span></div>
+<div class="g">
+<div class="c"><div class="ct">지갑 주소 = 은행 계좌번호 <span class="pg">p.12</span></div>
+<div class="mono" style="margin:4px 0 8px">0xD34061e5be6660151782f66c472C17066eE5D074</div>
+<ul class="l"><li><span class="mono">0x</span> + 40자리 16진수 (0–9, A–F만 등장)</li><li>사람마다 모두 달라야 함 (중복 = 큰 문제)</li></ul></div>
+<div class="c"><div class="ct">계좌를 무한히 만들 수 있다 <span class="pg">p.13</span></div>은행은 1인 1계좌 제한이 있지만 지갑에선 "계정 추가"로 주소를 10개, 100개도 생성 가능. 거래마다 골라 쓸 수 있음.<br><span class="sm">Q. 80억 인구가 수천억 개를 만들어도 중복되지 않을까?</span></div>
+<div class="c w"><div class="ct">4비트 → 16진수 1자리 <span class="pg">p.14–15</span></div>
+<div class="hx"><div>0000→0</div><div>0001→1</div><div>0010→2</div><div>0011→3</div><div>0100→4</div><div>0101→5</div><div>0110→6</div><div>0111→7</div><div>1000→8</div><div>1001→9</div><div>1010→A</div><div>1011→B</div><div>1100→C</div><div>1101→D</div><div>1110→E</div><div>1111→F</div></div>
+<div class="fl"><span class="nd">160 bits (20 bytes)</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">160 ÷ 4 = 40</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">40자리 16진수 주소</span><span class="pg">p.16</span></div></div>
+<div class="c w"><div class="ct">주소가 겹칠 일은 사실상 없다 <span class="pg">p.17</span></div>
+<div class="g" style="gap:8px"><div class="mt"><span class="sm">가능한 주소 수 2<sup>160</sup></span><b>≈ 1.46 × 10<sup>48</sup></b></div><div class="mt"><span class="sm">지구 전체 모래알 수</span><b>≈ 10<sup>21</sup></b></div></div></div>
+<div class="c"><div class="ct">개인키 확인 <span class="pg">p.19–21</span></div>계정 세부정보 → 개인키 보기 → 설치 시 비밀번호 입력 → 길게 눌러 표시.
+<div class="g" style="gap:8px;margin-top:8px"><div class="mt"><span class="sm">개인키</span><div>32 bytes · 256 bits</div><div class="sm">64자리</div></div><div class="mt"><span class="sm">지갑 주소</span><div>20 bytes · 160 bits</div><div class="sm">40자리</div></div></div></div>
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>개인키 노출 = 신용카드를 넘겨준 것 <span class="pg">p.20–24</span></div>
+<ul class="l"><li>계정 삭제 후 "계정 가져오기 → 개인키"로 붙여넣으면 똑같은 주소의 계좌가 그대로 복구됨</li><li>즉 개인키만 있으면 누구나 내 계좌로 거래 가능</li><li>개인키를 잃어버리면 절대 복구 불가 (비트코인 분실 사례)</li></ul></div>
+<div class="c w"><div class="ct">개인키 → 공개키 → 지갑 주소 <span class="pg">p.26–27, 34</span></div>
+<div class="fl"><span class="nd k">개인키 (비밀키)</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">공개키 생성 시스템</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd p">공개키 (Public)</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">지갑 주소 생성 시스템</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">40자리 주소</span></div>
+<span class="sm">개인키는 나만 숨기는 비밀번호, 공개키는 남에게 공개되는 키. 철수가 영희에게 1 ETH를 보내면 철수의 공개키가 영희에게 함께 전달됨 (p.28).</span></div>
+<div class="c w"><div class="ct">왜 공개키로 개인키를 못 찾나: 일방향 다항식 비유 <span class="pg">p.29–33</span></div>
+<div class="mono" style="margin:4px 0 8px">12·x<sup>48</sup> + 0.1·x<sup>201</sup> + 110·x<sup>321</sup> + … + 11·x<sup>910</sup> = y</div>
+<div class="g" style="gap:8px"><div class="mt"><div style="font-weight:500">x → y : 쉬움</div><div class="sm">x = 1,010,201이면 계산기로 y 계산</div></div><div class="mt"><div style="font-weight:500">y → x : 매우 어려움</div><div class="sm">y = 9,134,121에서 x 역추적 불가</div></div></div>
+<div class="fl" style="margin-top:10px"><span class="nd">1단계: 랜덤 x 선택 = 개인키 (64자리)</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">2단계: 계산된 y = 공개키 (128자리)</span></div>
+해커가 수식과 공개키를 모두 알아도 x는 모름. 유일한 방법은 브루트포스(x를 하나씩 대입)인데 이론상 수십억 년.</div>
+<div class="c"><div class="ct">주소 = 공개키의 끝 40자리 <span class="pg">p.35</span></div>공개키(128자리 16진수)의 마지막 40자리를 지갑 주소로 사용. 실제로는 한 번 해싱을 거친 뒤 떼어내지만, "끝 40자리"로 이해해도 무리 없음.</div>
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>정리: 개인키만 지키면 안전 <span class="pg">p.36</span></div>
+<ol class="l"><li>지갑 주소로 공개키를 알아내기 어렵다</li><li>공개키로 개인키를 역추적할 수 없다</li></ol>→ 주소·공개키가 노출돼도 개인키만 안전하게 보관하면 계좌가 털리지 않음.</div>
+<div class="c w"><div class="ct">수업 중 Q&amp;A <span class="pg">슬라이드 외</span></div>
+<ul class="l"><li>Q. 삭제 후 복구한 계좌는 이전과 완전히 같은가? → 같다. 개인키가 같으면 정해진 시스템을 거쳐 같은 공개키·같은 주소가 나오고, 블록체인에 남은 과거 기록도 그대로 불러옴 (seed가 같으면 결과가 같음).</li><li>Q. 계정을 여러 개 만드는 원리? → 지갑이 매번 다른 개인키를 랜덤하게 생성.</li><li>개인키 분실 시 복구 불가 → 최근엔 개인키 보관·복구 기능을 내세우는 지갑도 등장.</li></ul></div>
+<div class="c ext w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] 실제 이더리움의 키 생성</div>
+<ul class="l"><li>강의의 "복잡한 다항식"은 비유이고, 실제로는 타원곡선 <span class="mono">secp256k1</span> 위의 스칼라 곱 <span class="mono">Q = k·G</span>(k = 개인키)를 씁니다. Q에서 k를 구하는 문제가 타원곡선 이산로그 문제(ECDLP)입니다.</li><li>공개키 64바이트 = 16진수 128자리 → <span class="mono">Keccak-256(공개키)</span>의 마지막 20바이트가 주소입니다. 강의에서 말한 "해싱 후 끝 40자리"가 바로 이것.</li><li>메타마스크의 "계정 추가"는 엄밀히는 완전 무작위가 아니라, 설치 때 받은 시드 구문(BIP-39)에서 BIP-32/44 경로로 결정적으로 파생됩니다. 그래서 시드 구문 하나로 모든 계정을 복구할 수 있습니다.</li></ul></div>
+</div></div>
+
+<div class="sec" id="s3">
+<div class="sh"><svg class="i" aria-hidden="true"><use href="#i-arrows-exchange"/></svg>거래 · 수수료 · 디지털 서명 <span class="pg">p.37–55</span></div>
+<div class="g">
+<div class="c w"><div class="ct">송금 절차 (인천 블록체인 → D웹 블록체인) <span class="pg">p.37–39, 42</span></div>
+<div class="fl"><span class="nd">수신 주소 복사</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">송신 계좌 "보내기"</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">주소 붙여넣기</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">금액 0.03 입력</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">Confirm</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">보류 중</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd p">컨펌됨</span></div>
+은행 이체보다 훨씬 느림 → 이유는 4번 탭(블록).</div>
+<div class="c"><div class="ct">잔액 변화 <span class="pg">p.41</span></div>
+<div class="g" style="gap:8px"><div class="mt"><span class="sm">송신자</span><div>− (0.03 + 수수료)</div></div><div class="mt"><span class="sm">수신자</span><div>+ 0.03</div></div></div></div>
+<div class="c"><div class="ct">네트워크 수수료 <span class="pg">p.40, 56</span></div>
+<ul class="l"><li>블록체인 거래엔 항상 수수료 (공짜 없음)</li><li>이유: 기업 서버가 아니라 개인들이 P2P로 서버를 운영 → 참여 동기(인센티브) 제공</li><li>높게 내면 빨리 처리, 너무 낮으면 처리 안 될 수 있음 ("고급"에서 직접 지정)</li><li>솔라나·클레이튼 등은 낮은 수수료를 강조</li></ul></div>
+<div class="c w"><div class="ct">익스플로러 Etherscan <span class="pg">p.44–47</span></div>
+<span class="mono">sepolia.etherscan.io</span> — 모든 거래 내역을 볼 수 있는 탐색기
+<div class="g" style="gap:8px;margin-top:8px"><div class="mt"><div style="font-weight:500">거래 ID (Transaction Hash) 검색</div><div class="sm">거래 명세서: 송신 주소(D3406…), 수신 주소(BC024…), 금액, 수수료, 블록 번호(8831698)</div></div><div class="mt"><div style="font-weight:500">지갑 주소 검색</div><div class="sm">그 주소의 과거~현재 모든 거래 내역 = 통장 내역</div></div></div>
+<div style="margin-top:8px">→ 모든 거래가 투명하게 공개 = 블록체인 서비스의 <b style="font-weight:500">투명성</b>.</div></div>
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>블록체인에서 "거래"의 범위 <span class="pg">p.48</span></div>송금뿐 아니라 스마트 계약 호출 등 <b style="font-weight:500">블록체인 상태를 변경하는 모든 사용자 행위</b>가 거래로 처리됨. 강의에서 "중요하지만 어려워서 슬라이드에서 뺐다"며 스마트 계약 파트에서 다시 다룸.</div>
+<div class="c"><div class="ct">거래 서명 = 계약서 서명 <span class="pg">p.48–49</span></div>일상에서 계약서에 서명하듯, 블록체인 거래도 Confirm을 누르는 순간 송신자가 거래 명세서(송신 주소·수신 주소·금액)에 디지털 서명을 넣음.</div>
+<div class="c w"><div class="ct">디지털 서명 시스템 <span class="pg">p.50–52</span></div>
+<div class="sm" style="margin-bottom:2px">서명 (송신자)</div>
+<div class="fl"><span class="nd">거래 명세서</span><span class="ar">+</span><span class="nd k">송신자 개인키</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">디지털 서명 시스템</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">알 수 없는 값 = 서명 → 명세서 하단에 포함</span></div>
+<div class="sm" style="margin:6px 0 2px">검증 (누구나)</div>
+<div class="fl"><span class="nd">서명</span><span class="ar">+</span><span class="nd p">송신자 공개키</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">디지털 서명 시스템</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">원래 거래 명세서 → 위변조 여부 확인</span></div></div>
+<div class="c w"><div class="ct">서명 값 직접 확인: v, r, s <span class="pg">p.53–54</span></div>Etherscan UI에는 최근 서명이 안 보이지만, 블록체인에 저장된 원본 데이터를 조회하면 <span class="mono">v</span>, <span class="mono">r</span>, <span class="mono">s</span> 필드가 서명입니다.
+<pre>curl -X POST https://eth-sepolia.api.onfinality.io/public \
+  -H "Content-Type: application/json" \
+  -d '{
+        "jsonrpc": "2.0",
+        "method": "eth_getTransactionByHash",
+        "params": [
+          "0x533ca54912a7619af75d644057649ba6135c59159347261c3b3f10c611c93a4e"
+        ],
+        "id": 1
+      }'</pre></div>
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>서명의 두 가지 효과 <span class="pg">p.51–52, 55</span></div>
+<div class="g" style="gap:8px"><div class="mt"><div style="font-weight:500">① 위변조 방지</div><div class="sm">공개키로 서명을 검증해 명세서가 바뀌었는지 확인</div></div><div class="mt"><div style="font-weight:500">② 부인 방지</div><div class="sm">서명은 철수의 개인키로만 만들 수 있으므로, 나중에 "그런 거래 한 적 없다"고 발뺌 불가</div></div></div></div>
+<div class="c ext w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] ECDSA 서명의 실제 동작</div>
+<ul class="l"><li>실제 서명 알고리즘은 secp256k1 ECDSA입니다. 검증은 "명세서를 되찾는" 과정이라기보다, (명세서 해시, 서명, 공개키)를 넣어 유효/무효를 판정하는 과정입니다. 강의 그림은 이를 직관적으로 단순화한 것.</li><li><span class="mono">r, s</span>가 서명 본체이고 <span class="mono">v</span>는 공개키 복원용 식별자입니다. 이더리움은 서명과 메시지만으로 송신자 공개키(→주소)를 복원(<span class="mono">ecrecover</span>)할 수 있어서, 거래에 공개키를 따로 넣지 않아도 송신자를 확인합니다.</li></ul></div>
+</div></div>
+
+<div class="sec" id="s4">
+<div class="sh"><svg class="i" aria-hidden="true"><use href="#i-box"/></svg>블록 · 불변성 · 거래 확정 · 거래소 <span class="pg">p.56–79</span></div>
+<div class="g">
+<div class="c"><div class="ct">블록체인 네트워크 <span class="pg">p.56</span></div>
+<ul class="l"><li>전 세계 누구나 자기 컴퓨터로 참여해 서버 역할 수행 → 자발적 참여자가 운영하는 거대한 네트워크</li><li>퍼블릭 블록체인(이더리움·비트코인·솔라나)은 자체 코인을 발행해 노드에게 인센티브 제공</li><li>프라이빗·컨소시엄 블록체인은 코인을 발행하지 않음</li></ul></div>
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>블록 (Block) <span class="pg">p.57</span></div>"블록이라는 개념이 굉장히 중요" — 거래는 그냥 저장되지 않고 항상 <b style="font-weight:500">블록에 담겨서</b> 각 노드에 저장됨. 예: 7월 20일 거래들 → 블록 1개, 7월 21일 거래들 → 다음 블록.</div>
+<div class="c w"><div class="ct">불변성 (Immutability): 스냅샷 일련번호로 연결 <span class="pg">p.58–65</span></div>
+<div class="fl" id="chain"></div>
+<div class="fl"><button id="tamper">7/20 블록의 거래 1건 삭제하기</button><button id="restore">되돌리기</button></div>
+<div id="cmsg" class="sm">각 블록을 스냅샷 시스템에 넣어 만든 일련번호를 다음 블록에 붙여둡니다.</div></div>
+<div class="c"><div class="ct">삭제가 사실상 불가능한 이유 <span class="pg">p.64–66</span></div>
+<ul class="l"><li>거래 하나를 지우면 그 블록의 일련번호가 바뀌어 다음 블록과 불일치 → 바로 탐지</li><li>숨기려면 뒤따르는 모든 블록의 데이터를 전부 변경해야 함</li><li>게다가 모든 노드가 같은 블록을 저장 → 네트워크의 모든 컴퓨터를 해킹해야 함</li></ul>→ 이미 실행된 거래의 삭제·위변조·수정 불가.</div>
+<div class="c"><div class="ct">블록체인 거래는 왜 느릴까 <span class="pg">p.67</span></div>은행 이체·카드 승인은 즉시 끝나지만, 블록체인 거래는 <b style="font-weight:500">블록 안에 담겨야만</b> 실행·완료됨. 블록에 패키징되는 시점 = 내 잔액이 바뀌는 시점.</div>
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>거래 확정 (Finality) <span class="pg">p.68–69</span></div>
+확정된 거래만 영구 기록·수정 불가. 확정되지 않은 거래는 취소될 수 있음. (철수 → 영희 0.1 ETH)
+<div class="g" style="gap:8px;margin-top:8px"><div class="mt"><span class="sm">거래 전</span><div>철수 0.1259 · 영희 0.1995</div></div><div class="mt"><span class="sm">약 1분 후 (블록 포함)</span><div>철수 0.0259 · 영희 0.2995</div></div><div class="mt" style="border:0.5px solid var(--border-danger)"><span class="sm" style="color:var(--text-danger)">5–10분 후 (드물게)</span><div>철수 0.1259 · 영희 0.1995</div><div class="sm">거래 이전 상태로 되돌아감</div></div></div></div>
+<div class="c w"><div class="ct">Why? 블록 분기와 고아 블록 <span class="pg">p.70–72</span></div>
+<svg class="dg" width="100%" viewBox="0 0 680 170" role="img"><title>블록 분기</title><desc>하나의 블록 뒤에 두 블록이 이어지고 다른 쪽 체인이 더 길어지면 내 거래 블록이 고아 블록이 된다</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<g class="c-gray"><rect x="40" y="60" width="96" height="36" rx="4" stroke-width="0.5"/><text class="th" x="88" y="78" text-anchor="middle" dominant-baseline="central">블록 N</text></g>
+<g class="c-gray"><rect x="160" y="60" width="96" height="36" rx="4" stroke-width="0.5"/><text class="th" x="208" y="78" text-anchor="middle" dominant-baseline="central">블록 N+1</text></g>
+<g class="c-amber"><rect x="280" y="20" width="96" height="36" rx="4" stroke-width="0.5"/><text class="th" x="328" y="38" text-anchor="middle" dominant-baseline="central">내 거래 블록</text></g>
+<g class="c-teal"><rect x="280" y="100" width="96" height="36" rx="4" stroke-width="0.5"/><text class="th" x="328" y="118" text-anchor="middle" dominant-baseline="central">다른 블록</text></g>
+<g class="c-teal"><rect x="400" y="100" width="96" height="36" rx="4" stroke-width="0.5"/><text class="th" x="448" y="118" text-anchor="middle" dominant-baseline="central">+1</text></g>
+<g class="c-teal"><rect x="520" y="100" width="96" height="36" rx="4" stroke-width="0.5"/><text class="th" x="568" y="118" text-anchor="middle" dominant-baseline="central">+2</text></g>
+<line x1="136" y1="78" x2="158" y2="78" class="arr" marker-end="url(#arrow)"/>
+<path d="M256 72 L268 72 L268 38 L278 38" class="arr" marker-end="url(#arrow)"/>
+<path d="M256 84 L268 84 L268 118 L278 118" class="arr" marker-end="url(#arrow)"/>
+<line x1="376" y1="118" x2="398" y2="118" class="arr" marker-end="url(#arrow)"/>
+<line x1="496" y1="118" x2="518" y2="118" class="arr" marker-end="url(#arrow)"/>
+<text class="ts" x="392" y="42">고아 블록 → 안의 거래 모두 취소</text>
+<text class="ts" x="448" y="158" text-anchor="middle">다른 쪽 체인이 계속 이어짐</text>
+</svg>
+<span class="sm">하나의 블록에 두 개의 블록이 이어지는 분기가 간혹 발생. 다른 쪽에 블록이 계속 이어지면 내 거래가 든 블록이 취소되어 잔액이 원래대로 돌아감. 원인은 고급 과정 내용.</span></div>
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>Block Confirmations <span class="pg">p.47, 73</span></div>
+Etherscan의 블록 컨펌메이션 = 내 거래가 든 블록 뒤에 이어진 블록 수 ("굉장히 중요"). 실습 거래는 34, 슬라이드 캡처는 296.
+<div class="fl" style="margin-top:6px"><span class="nd" style="background:var(--surface-2)">내 거래 블록</span><span class="nd">+1</span><span class="nd">+2</span><span class="nd">+3</span><span class="nd">+4</span><span class="nd">+5</span><span class="nd p">+6 → 확정</span></div>
+많이 이어질수록 확정적. 강의 설명: 이더리움·비트코인에서 보통 <b style="font-weight:500">6개 블록</b>이 이어지면 절대 취소되지 않고 영구 기록.</div>
+<div class="c ext w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] 6 컨펌과 이더리움의 확정성</div>"6 컨펌"은 작업증명(PoW) 비트코인에서 유래한 확률적 확정 관례입니다. 이더리움은 2022년 The Merge 이후 지분증명(PoS)으로 바뀌어, Casper FFG에 의해 약 2 에폭(약 12.8분)이 지나면 "finalized" 상태가 되는 경제적 확정성을 씁니다. Etherscan의 컨펌 수는 여전히 "뒤에 쌓인 블록 수"를 보여줍니다.</div>
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>코인 거래소: 반드시 내 지갑으로 출금 <span class="pg">p.75–79</span></div>
+<div class="fl"><span class="nd">은행 계좌 (K뱅크, KB국민 등)</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">거래소 (업비트, 빗썸, 코인원)</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">원화로 코인 구매</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd p">출금 → 내 지갑 주소(메인넷)</span></div>
+<ul class="l"><li>거래소에서 산 코인은 거래소 자체 DB에 기록만 된 것 = 거래소에 맡겨둔 상태</li><li>거래소 파산 시 돌려받지 못할 위험 (실제 파산 사례)</li><li>출금 버튼으로 내 지갑에 옮겨야 완전히 내 돈. 예시 시세 1 ETH = 5,123,000 KRW (p.79)</li></ul></div>
+<div class="c ext w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] CEX와 자기 수탁</div>업비트·빗썸 같은 곳을 중앙화 거래소(CEX)라고 하고, 개인키를 거래소가 관리합니다. 내 지갑으로 출금해 개인키를 직접 가지는 방식을 자기 수탁(self-custody)이라 하며, 흔히 "Not your keys, not your coins"라는 말로 요약됩니다.</div>
+</div></div>
+
+<div class="sec" id="s5">
+<div class="sh"><svg class="i" aria-hidden="true"><use href="#i-file-code"/></svg>스마트 계약 (Smart Contract) <span class="pg">p.80–90</span></div>
+<div class="g">
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>"가장 중요한 이야기" — 스마트 계약의 등장 <span class="pg">p.80</span></div>
+<div class="fl"><span class="nd">비트코인 (2009)<br><span class="sm">송금(이체) 전용</span></span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">이더리움 (2015–16)<br><span class="sm">스마트 계약 제시</span></span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd p">블록체인 = 하나의 컴퓨터</span></div>
+컴퓨터 공학의 획기적 사건. 이후 스테이블 코인, 토큰, NFT, DID, DApp(탈중앙 서비스) 등 대부분의 블록체인 서비스가 스마트 계약 기반으로 만들어짐.</div>
+<div class="c"><div class="ct">일상의 계약 <span class="pg">p.81</span></div>
+<ul class="l"><li>부동산·토지·중고차 거래</li><li>중개인을 신뢰한다는 가정 하에 당사자들이 계약서 작성·서명</li><li>사람이 읽는 문장으로 작성</li><li>법적 구속력 → 불이행 시 처벌</li></ul></div>
+<div class="c"><div class="ct">스마트 계약 <span class="pg">p.82–83</span></div>
+<ul class="l"><li>개발자가 프로그래밍 언어로 작성한 계약서 = 소스코드 조각</li><li>블록체인에 배포 → 조건 만족 시 자동 실행 (중개인 불필요)</li><li>중개업을 대체한다는 우려도 있었으나, 법적 구속력이 없어 아직 대체하지 못함</li><li>과거엔 작성에 며칠 걸렸지만 이제 LLM으로 약 5분</li></ul></div>
+<div class="c w"><div class="ct">예시: BTS 갈라 콘서트 <span class="pg">p.82</span></div>
+<div class="fl"><span class="nd">입장료 100만 원 납부</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd">조건: 관람객 ≥ 1,000명</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd p">자동으로 각자 20% 환불</span></div>
+<span class="sm">주최 측(하이브)이 조건을 코드로 작성해 배포해 두면, 조건이 충족되는 순간 계약서가 스스로 실행됨.</span></div>
+<div class="c w"><div class="ct">스마트 계약의 3요소 <span class="pg">p.86</span></div>
+<div class="g" style="gap:8px"><div class="mt"><div style="font-weight:500">1. 상태 저장공간</div><div class="sm">예: 클릭 카운트 값</div></div><div class="mt"><div style="font-weight:500">2. 계약 실행 조건</div><div class="sm">예: 카운트가 10이 되면</div></div><div class="mt"><div style="font-weight:500">3. 디지털 자산 송금</div><div class="sm">계약 안에 ETH를 담보(에스크로)로 넣어두고 조건에 따라 이체</div></div></div></div>
+<div class="c w"><div class="ct">실습 1: 눈치 게임 <span class="pg">p.84–88</span></div>
+<div class="mono sm" style="margin-bottom:6px">컨트랙트 주소 0x9f34845742c53DAf8711165082BD25348Be3b43a</div>
+<ul class="l"><li>10번째로 클릭한 주소에 0.01 ETH 지급 (몇 번째인지는 안 보임)</li><li>한 주소당 1회만 참여, 배포한 지갑(관리자)만 카운트 초기화 가능</li><li>버튼 클릭 = 스마트 계약과의 상호작용 = <b style="font-weight:500">거래</b> → 메타마스크 수수료 발생</li><li>Etherscan에 컨트랙트 주소 검색 → 누가 상호작용했는지 전부 보임, <span class="mono">Internal Transactions</span> 탭에서 컨트랙트 → 당첨자 0.01 ETH 이체 확인</li></ul>
+<div class="fl" style="margin-top:8px"><button id="nbtn">다른 계정으로 클릭</button><span class="nd" id="ncnt">카운트 0 / 10</span><span class="sm" id="nmsg"></span></div></div>
+<div class="c w"><div class="ct">실습 2: 블록체인 투표 <span class="pg">p.89–90</span></div>
+<div class="mono sm" style="margin-bottom:6px">컨트랙트 주소 0xB0ee3AB5EB8040B9A92C85E0216b42246395eC51</div>
+<ul class="l"><li>배경: 프로듀스101 순위 조작, 협회장 온라인 투표 조작 → "투표는 블록체인으로"</li><li>관리자 지갑만 투표 시작/종료, 한 계좌당 한 명에게 1표</li><li>후보: 박지성 · 손흥민 · 김연아 · 류현진(인천 출신이라 추가) → 결과 류현진 2표 우승</li><li>Etherscan 거래 상세 "더 보기"에서 이 주소가 3번에 투표했음까지 확인, Contract 탭에서 계약서 코드를 보면 3번 = 류현진</li><li>업로드된 계약은 삭제·위변조 불가 → 결과가 조작되지 않았음을 증명</li></ul></div>
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>블록체인 서비스의 트레이드오프 <span class="pg">슬라이드 외 (실습 중 반복 강조)</span></div>
+<div class="g" style="gap:8px"><div class="mt"><div style="font-weight:500;color:var(--text-danger)">단점</div><div class="sm">거래 처리에 시간이 걸려 느림 (투표 수 반영 지연)</div></div><div class="mt"><div style="font-weight:500;color:var(--text-success)">장점</div><div class="sm">투명성 · 불변성(삭제 불가) · 무결성</div></div></div>
+→ 속도가 중요한 서비스라면 굳이 블록체인을 쓸 필요 없음. 투명성·불변성이 중요할 때 쓰는 것이 바람직.</div>
+<div class="c ext w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] 눈치 게임을 Solidity로 쓰면 (강의 원본 코드 아님, 단순화한 예시)</div>
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract NunchiGame {
+    address public owner;
+    uint256 public count;                          // 1. 상태 저장공간
+    mapping(address =&gt; bool) public clicked;
+
+    constructor() payable {
+        owner = msg.sender;                        // 배포한 지갑 = 관리자
+    }
+
+    receive() external payable {}                  // 상금(ETH) 예치
+
+    function click() external {
+        require(!clicked[msg.sender], "already clicked");
+        clicked[msg.sender] = true;
+        count += 1;
+
+        if (count == 10) {                         // 2. 실행 조건
+            payable(msg.sender).transfer(0.01 ether);  // 3. 자산 송금
+        }
+    }
+
+    function reset() external {
+        require(msg.sender == owner, "only owner");
+        count = 0;
+    }
+}</pre>
+<div class="sm" style="margin-top:6px">컨트랙트가 다른 주소로 ETH를 보내는 것이 Etherscan의 Internal Transaction으로 표시됩니다. 투표 컨트랙트의 후보 배열도 0부터 세면 박지성 0, 손흥민 1, 김연아 2, 류현진 3이 되어 강의의 "3번 = 류현진"과 맞습니다.</div></div>
+</div></div>
+
+<div class="sec" id="s6">
+<div class="sh"><svg class="i" aria-hidden="true"><use href="#i-currency-bitcoin"/></svg>비트코인 <span class="pg">p.91–107</span></div>
+<div class="g">
+<div class="c w"><div class="ct">비트코인의 성격 <span class="pg">p.91</span></div>스마트 계약 같은 고급 개념이 없음. 디지털 자산을 주고받는 것만이 목적 → 비트코인 기반 블록체인 서비스는 (사실상) 없음.</div>
+<div class="c"><div class="ct">이더리움: Account 모델 <span class="pg">p.92</span></div>주소별 거래 내역을 시간순으로 보고 입출금을 맞추면 총 잔액이 나옴 = 은행 통장 내역과 같음.
+<div class="mt" style="margin-top:8px;font-size:12px;line-height:1.7"><span class="mono" style="font-size:12px">2021-03-01 −0.312 → 3.123<br>2021-08-11 +0.121 → 3.244<br>2022-04-04 +0.012 → 3.256<br>2023-05-06 −0.212 → 3.044</span></div></div>
+<div class="c"><div class="ct">비트코인: UTXO 모델 <span class="pg">p.94</span></div>현금(수표)을 지갑에 넣고 다니며 결제하는 것과 비슷.<br><b style="font-weight:500">UTXO</b> = <b style="font-weight:500">U</b>nspent <b style="font-weight:500">T</b>ransaction <b style="font-weight:500">O</b>utput (아직 쓰지 않은 거래 출력, Transaction = TX)</div>
+<div class="c w"><div class="ct">UTXO 송금 시뮬레이션: 철수 → 영희 3,500원 <span class="pg">p.94–96</span></div>
+<div class="sm">철수 지갑</div><div id="uw"></div>
+<div class="sm" style="margin-top:6px">영희 지갑</div><div id="uy"></div>
+<div class="fl"><button id="ubtn">3,500원 송금 실행</button><button id="ureset">초기화</button></div>
+<div id="umsg" class="sm">사용한 적 없는 수표(Unspent) 4장: 100 · 1,000 · 1,000 · 2,000</div></div>
+<div class="c"><div class="ct">잔액 = 쓰지 않은 수표의 합 <span class="pg">p.97</span></div>
+<div class="fl"><span class="chip">500</span><span class="ar">+</span><span class="chip">2,000</span><span class="ar">+</span><span class="chip">10,000</span><span class="ar">=</span><span class="nd p">12,500원</span></div>
+사용된 수표는 영원히 삭제, 거스름돈은 새 수표로 생성.</div>
+<div class="c"><div class="ct">비트코인 지갑 Electrum <span class="pg">p.98–102</span></div>메타마스크는 이더리움 전용 → 비트코인은 별도 지갑(electrum.org) 필요. 설치가 더 까다롭고 컴퓨터 친숙도가 요구됨. 테스트넷 실행:
+<pre>cd /Applications/Electrum.app/Contents/MacOS/
+./run_electrum --testnet</pre>
+<div class="sm" style="margin-top:6px">Receive → On-chain에서 주소 확인 → Faucet(bitcoinfaucet.uo1.net)에서 테스트 BTC 요청</div></div>
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>시드(복구 문구)는 반드시 보관 <span class="pg">p.98–101</span></div>설치 중 나오는 시드 = 메타마스크의 개인키와 비슷. 모르면 지갑 삭제·컴퓨터 교체 후 복구 불가. 2010년 초반에 산 비트코인이 든 하드디스크를 버린 뒤, 가격 폭등 후 쓰레기장을 통째로 사려 한 사례.</div>
+<div class="c"><div class="ct">비트코인의 확정과 익스플로러 <span class="pg">p.103–105</span></div>
+<ul class="l"><li>이더리움보다 훨씬 느림: 약 10분 이상 지나야 확정</li><li>1 confirmed, 2 confirmed … 확정 전 거래는 롤백 가능</li><li>익스플로러 <span class="mono">blockstream.info/testnet</span> (tBTC의 t = 테스트)</li><li>송금 시 사용한 UTXO가 소비되고 새 UTXO 2개(수신·거스름돈) 생성</li></ul></div>
+<div class="c imp w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>"비트코인에서 가장 중요한 부분": 주소가 계속 바뀐다 <span class="pg">p.106–107</span></div>
+<div class="fl"><span class="nd mono">…qvr…</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd mono">…qsj…</span><svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg><span class="nd mono">…q8m…</span><span class="sm">거래할 때마다 지갑이 자동으로 새 주소 사용</span></div>
+<div class="g" style="gap:8px"><div class="mt"><div style="font-weight:500">국가·수사기관 입장 (단점)</div><div class="sm">한 지갑의 주소들 사이 연관성을 찾기 어려워 추적 곤란 → 어둠의 경로 거래에 악용</div></div><div class="mt"><div style="font-weight:500">개인 입장 (장점)</div><div class="sm">중앙정부 감시에서 자유로운 거래라는 탄생 목적 → 사용자 프라이버시 향상</div></div></div></div>
+<div class="c ext w"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info-circle"/></svg>[부연설명] 비트코인 주소 교체와 가명성</div>
+<ul class="l"><li>Electrum 같은 HD 지갑은 하나의 시드에서 수많은 주소를 파생하고, 거스름돈도 새 주소(change address)로 받습니다. 그래서 시드 하나로 모든 주소를 복구할 수 있습니다.</li><li>다만 모든 거래가 공개 원장에 남기 때문에 체인 분석(예: 여러 입력을 함께 쓰면 같은 소유자로 추정)으로 상당 부분 연결될 수 있어, 비트코인은 "익명"보다는 "가명성"에 가깝다고 평가됩니다.</li></ul></div>
+</div></div>
+</div>
+
+<script>
+(function(){
+var tabs=document.querySelectorAll('.tab'),secs=document.querySelectorAll('.sec');
+function show(id){secs.forEach(function(s){s.style.display=s.id===id?'block':'none'});tabs.forEach(function(t){t.classList.toggle('on',t.dataset.t===id)})}
+tabs.forEach(function(t){t.addEventListener('click',function(){show(t.dataset.t);window.scrollTo({top:0})})});
+show('s1');
+var RA='<svg class="i ar" aria-hidden="true"><use href="#i-arrow-right"/></svg>';
+var B=[{d:'7/18',h:'9756453543',p:'6565342323',n:3},{d:'7/19',h:'456423424',p:'9756453543',n:4},{d:'7/20',h:'1293842710294',p:'456423424',n:3},{d:'7/21',h:'8675635354',p:'1293842710294',n:2}];
+var tampered=false;
+function draw(){var c=document.getElementById('chain');var html='';B.forEach(function(b,i){var h=b.h,n=b.n,bad=false;if(tampered&&i===2){h='2941242nmad';n=2}if(tampered&&i===3)bad=true;
+html+='<div class="blk'+(bad?' bad':'')+'"><div style="font-weight:500;font-size:13px">'+b.d+' 블록</div><div>거래 '+n+'건</div><div class="sm">이전 번호: <span class="mono" style="font-size:11px">'+b.p+'</span></div><div class="sm">스냅샷: <span class="mono" style="font-size:11px'+(tampered&&i===2?';color:var(--text-danger)':'')+'">'+h+'</span></div></div>';
+if(i<B.length-1)html+=RA});c.innerHTML=html;
+document.getElementById('cmsg').textContent=tampered?'7/20 블록의 스냅샷이 2941242nmad로 바뀌었지만 7/21 블록은 1293842710294를 갖고 있어 불일치 → 조작 탐지. 숨기려면 이후 모든 블록과 모든 노드를 고쳐야 함 (p.63–66).':'각 블록을 스냅샷 시스템에 넣어 만든 일련번호를 다음 블록에 붙여둡니다.'}
+draw();
+document.getElementById('tamper').onclick=function(){tampered=true;draw()};
+document.getElementById('restore').onclick=function(){tampered=false;draw()};
+var cnt=0;document.getElementById('nbtn').onclick=function(){if(cnt>=10){cnt=0}cnt++;document.getElementById('ncnt').textContent='카운트 '+cnt+' / 10';document.getElementById('nmsg').textContent=cnt===10?'축하합니다! 10번째 클릭 주소로 0.01 ETH 지급 (다시 누르면 관리자 리셋)':'거래 생성됨 (수수료 지불)'};
+var sent=false;
+function chips(a){return a.map(function(x){return '<span class="chip'+(x.s?' sp':'')+(x.n?' nw':'')+'">'+x.v.toLocaleString()+'원</span>'}).join('')}
+function ud(){var w,y,m;if(!sent){w=[{v:100},{v:1000},{v:1000},{v:2000}];y=[];m='사용한 적 없는 수표(Unspent) 4장: 100 · 1,000 · 1,000 · 2,000'}else{w=[{v:100},{v:1000,s:1},{v:1000,s:1},{v:2000,s:1},{v:500,n:1}];y=[{v:3500,n:1}];m='1,000+1,000+2,000 = 4,000원 사용 → 영희에게 3,500원 수표, 철수에게 거스름돈 500원 수표 생성. 철수 UTXO 2개(100, 500), 영희 UTXO 1개(3,500).'}
+document.getElementById('uw').innerHTML=chips(w);document.getElementById('uy').innerHTML=y.length?chips(y):'<span class="sm">(없음)</span>';document.getElementById('umsg').textContent=m}
+ud();
+document.getElementById('ubtn').onclick=function(){sent=true;ud()};
+document.getElementById('ureset').onclick=function(){sent=false;ud()};
+})();
+</script>
+</body>
+</html>
