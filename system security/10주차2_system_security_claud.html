@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Buffer Overflow Exploit — 10주차2</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel-2:#1e222d; --border:#2a2f3c;
+    --text:#e8eaf0; --muted:#9aa3b2; --faint:#6b7280;
+    --accent:#6ea8fe; --accent-2:#3b82f6;
+    --amber:#f59e0b; --amber-bg:#2a2112; --amber-border:#5a4213;
+    --blue:#38bdf8; --blue-bg:#0e2230; --blue-border:#164a63;
+    --green:#34d399; --red:#f87171; --purple:#a78bfa;
+    --code-bg:#0b0d13; --code-border:#242a36;
+    --radius:14px; --radius-sm:9px;
+    --mono:"SF Mono",SFMono-Regular,ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;
+    -webkit-font-smoothing:antialiased;padding:24px 16px 80px}
+  .wrap{max-width:960px;margin:0 auto}
+
+  /* Header */
+  .hero{background:linear-gradient(145deg,#1a1f2e,#141824);border:1px solid var(--border);
+    border-radius:var(--radius);padding:26px 26px 22px;margin-bottom:18px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-40%;right:-10%;width:320px;height:320px;
+    background:radial-gradient(circle,rgba(110,168,254,.14),transparent 70%);pointer-events:none}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--muted)}
+  .chip.week{background:rgba(110,168,254,.12);border-color:rgba(110,168,254,.35);color:var(--accent)}
+  .chip.ch{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.35);color:var(--purple)}
+  h1.title{font-size:27px;font-weight:800;letter-spacing:-.4px;line-height:1.2}
+  .subtitle{color:var(--muted);font-size:14px;margin-top:6px}
+  .src-note{font-size:12px;color:var(--faint);margin:16px 2px 8px;letter-spacing:.1px}
+  .src-note b{color:var(--muted);font-weight:600}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius);padding:7px;margin-bottom:20px;position:sticky;top:10px;z-index:20;
+    backdrop-filter:blur(8px)}
+  .tab{flex:1 1 auto;min-width:92px;font-family:var(--sans);font-size:13px;font-weight:600;
+    color:var(--muted);background:transparent;border:none;border-radius:var(--radius-sm);
+    padding:9px 10px;cursor:pointer;transition:.18s;white-space:nowrap;text-align:center}
+  .tab:hover{color:var(--text);background:var(--panel-2)}
+  .tab.active{color:#fff;background:linear-gradient(135deg,var(--accent-2),#2563eb);
+    box-shadow:0 2px 10px rgba(59,130,246,.35)}
+  .tab .tn{display:inline-block;opacity:.7;font-variant-numeric:tabular-nums;margin-right:3px}
+
+  /* Panel */
+  .panel{display:none;animation:fade .3s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+  .sec-head h2{font-size:20px;font-weight:800;letter-spacing:-.3px}
+  .pg{font-size:11.5px;color:var(--faint);font-weight:600;background:var(--panel);
+    border:1px solid var(--border);padding:2px 8px;border-radius:6px}
+  .sec-lead{color:var(--muted);font-size:14px;margin:8px 0 18px}
+
+  /* Cards */
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:13px}
+  .card h3{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .card p{font-size:14px;color:#d4d8e2;margin-bottom:8px}
+  .card p:last-child{margin-bottom:0}
+  .card ul{margin:6px 0 4px;padding-left:4px;list-style:none}
+  .card li{font-size:14px;color:#d4d8e2;padding-left:20px;position:relative;margin-bottom:6px}
+  .card li::before{content:"";position:absolute;left:4px;top:9px;width:6px;height:6px;
+    border-radius:2px;background:var(--accent);opacity:.8}
+  .card li:last-child{margin-bottom:0}
+  b.hl{color:#fff;font-weight:700}
+  code.ic{font-family:var(--mono);font-size:12.5px;background:var(--code-bg);
+    border:1px solid var(--code-border);padding:1px 6px;border-radius:5px;color:#8fd0ff}
+
+  /* amber / blue cards */
+  .amber{background:var(--amber-bg);border-color:var(--amber-border)}
+  .amber h3{color:#fcd34d}
+  .amber .tag{color:#fbbf24}
+  .blue{background:var(--blue-bg);border-color:var(--blue-border)}
+  .blue h3{color:#7dd3fc}
+  .blue .tag{color:#38bdf8}
+  .tag{font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:5px;margin-bottom:7px}
+  .star{color:var(--amber)}
+  .exam{display:inline-block;font-size:10.5px;font-weight:800;color:#1a1205;background:var(--amber);
+    padding:1px 7px;border-radius:5px;margin-left:6px;vertical-align:middle;letter-spacing:.2px}
+
+  /* code block */
+  pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:var(--radius-sm);
+    padding:14px 16px;overflow-x:auto;margin:10px 0}
+  pre code{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:#d6deec;white-space:pre}
+  .cmt{color:#5f6b7e}.kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}
+  .num{color:#f78c6c}.reg{color:#ffcb6b}.op{color:#89ddff}
+
+  /* flow / grid visuals */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0}
+  .flow .node{flex:1 1 0;min-width:120px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:12px 10px;text-align:center}
+  .flow .node .t{font-size:13px;font-weight:700;color:#fff}
+  .flow .node .d{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .flow .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);
+    font-size:20px;padding:0 6px;flex:0 0 auto}
+  @media(max-width:640px){.flow{flex-direction:column}.flow .arr{transform:rotate(90deg);padding:4px 0}}
+
+  /* memory stack diagram */
+  .memfig{margin:16px 0}
+  .memfig .cap{font-size:12px;color:var(--faint);text-align:center;margin-bottom:8px}
+  .stack{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;
+    max-width:460px;margin:0 auto;background:var(--panel-2)}
+  .row{display:flex;align-items:center;border-bottom:1px dashed var(--border);font-size:13px}
+  .row:last-child{border-bottom:none}
+  .row .lbl{flex:1;padding:11px 14px;font-weight:600}
+  .row .meta{flex:0 0 auto;padding:11px 14px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .row.buf{background:rgba(52,211,153,.08)}.row.buf .lbl{color:var(--green)}
+  .row.ebp{background:rgba(167,139,250,.10)}.row.ebp .lbl{color:var(--purple)}
+  .row.ret{background:rgba(248,113,113,.11)}.row.ret .lbl{color:var(--red)}
+  .row.nop{background:rgba(245,158,11,.10)}.row.nop .lbl{color:var(--amber)}
+  .row.arg .lbl{color:var(--muted)}
+  .addr-side{display:flex;justify-content:space-between;max-width:460px;margin:6px auto 0;
+    font-size:11px;color:var(--faint);font-family:var(--mono)}
+  .ovf-arrow{text-align:center;color:var(--red);font-size:12px;font-weight:700;margin:8px 0}
+
+  /* 2-col grid */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .mini{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px}
+  .mini h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .mini p,.mini li{font-size:13px;color:#cdd3de}
+  .mini ul{list-style:none;padding:0}
+  .mini li{padding-left:16px;position:relative;margin-bottom:5px}
+  .mini li::before{content:"›";position:absolute;left:2px;color:var(--accent);font-weight:700}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--muted);margin:2px 3px 2px 0}
+  .num-badge{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--accent-2);
+    color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+  .calc{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+    background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:14px;margin:12px 0;font-family:var(--mono);font-size:14px}
+  .calc .op2{color:var(--accent);font-weight:700}
+  .calc .res{color:var(--amber);font-weight:800;font-size:16px}
+  .footer{text-align:center;color:var(--faint);font-size:12px;margin-top:30px}
+  .divider{height:1px;background:var(--border);margin:22px 0 18px;border:none}
+  .keyrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px}
+  .keyrow .badge.on{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.4);color:var(--green)}
+  .keyrow .badge.off{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.4);color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="chip-row">
+      <span class="chip week">10주차 2차시</span>
+      <span class="chip ch">Ch 7</span>
+      <span class="chip">시스템보안</span>
+    </div>
+    <h1 class="title">Buffer Overflow Exploit — badfile 구축</h1>
+    <div class="subtitle">폭탄(badfile) 만들기: offset 거리 계산 · 리턴 어드레스 결정 · NOP sled · 셸코드 배치 → Set-UID root 셸</div>
+  </div>
+
+  <div class="src-note">
+    📄 강의자료: <b>ch7_bof_v1.pdf</b> · 스크립트 범위 <b>p.16 ~ p.30</b>
+    (셸코드 세부는 Ch6 <b>p.25 ~ p.29</b> 복습, 방어기법 정리는 <b>p.31 ~ p.46</b>) · 각 카드에 세부 페이지 표기
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-p="s1"><span class="tn">1</span>복습·목표</button>
+    <button class="tab" data-p="s2"><span class="tn">2</span>두 과제</button>
+    <button class="tab" data-p="s3"><span class="tn">3</span>Task A·offset</button>
+    <button class="tab" data-p="s4"><span class="tn">4</span>Task B·NOP</button>
+    <button class="tab" data-p="s5"><span class="tn">5</span>badfile 구조</button>
+    <button class="tab" data-p="s6"><span class="tn">6</span>셸코드</button>
+    <button class="tab" data-p="s7"><span class="tn">7</span>공격 실행</button>
+    <button class="tab" data-p="s8"><span class="tn">8</span>방어기법</button>
+  </div>
+
+  <!-- ============ S1 ============ -->
+  <section class="panel active" id="s1">
+    <div class="sec-head"><h2>1. 복습 — strcpy 오버플로우와 목표</h2><span class="pg">p.16</span></div>
+    <p class="sec-lead">지난 차시 복습: 취약 프로그램 안에서 strcpy 복사가 일어나고, 목적지 버퍼를 넘겨 복사시켜 리턴 어드레스를 덮는다. 이번 차시의 목표는 그 "폭탄(badfile)"을 실제로 구축하는 것.</p>
+
+    <div class="card">
+      <h3>🔁 지금까지의 흐름</h3>
+      <div class="flow">
+        <div class="node"><div class="t">strcpy 복사</div><div class="d">src → dest buffer</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">버퍼 초과</div><div class="d">100 byte 넘게 복사</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">리턴 어드레스 침범</div><div class="d">오버라이트</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">우리 코드로 점프</div><div class="d">제어 흐름 탈취</div></div>
+      </div>
+      <p>목적지 버퍼로 복사하는데, 그 경계를 <b class="hl">넘겨서(overwrite)</b> 복사시키는 것이 핵심. 최종 목적은 리턴 어드레스를 덮어써 <b class="hl">우리가 원하는 코드로 리턴(점프)</b>시키는 것이다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 이번 차시의 과제 <span class="exam">시험 포인트</span></span>
+      <h3>"폭탄(badfile)"을 제조해야 한다</h3>
+      <p>공격의 최종 산출물은 취약 프로그램이 읽어 들일 <b class="hl">badfile</b>(폭탄)이다. 성공적인 badfile을 만들려면 <b class="hl">두 개의 테스트(과제)</b>를 통과해야 한다 — 그것이 이번 차시의 전부다.</p>
+    </div>
+
+    <div class="card">
+      <h3>📏 버퍼는 크기가 정해져 있고, badfile은 정해져 있지 않다</h3>
+      <div class="grid2">
+        <div class="mini">
+          <h4>목적지 버퍼 (dest)</h4>
+          <p style="font-size:20px;font-weight:800;color:var(--red)">리밋 100 byte</p>
+          <p>복사가 들어갈 그릇 — 크기 고정</p>
+        </div>
+        <div class="mini">
+          <h4>badfile (src)</h4>
+          <p style="font-size:20px;font-weight:800;color:var(--green)">리밋 없음</p>
+          <p>우리가 만든다 → 100보다 <b>훨씬 크게</b></p>
+        </div>
+      </div>
+      <p>badfile의 길이는 정해지지 않았지만, 버퍼(100)를 넘어 리턴 어드레스까지 닿아야 하므로 <b class="hl">반드시 100보다 커야</b> 한다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S2 ============ -->
+  <section class="panel" id="s2">
+    <div class="sec-head"><h2>2. 성공적인 badfile을 위한 두 과제</h2><span class="pg">p.16 ~ 17</span></div>
+    <p class="sec-lead">"어디에 쓸지"(위치)와 "무엇을 쓸지"(값) — 이 두 가지를 알아내면 badfile을 완성할 수 있다.</p>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · Task A / Task B <span class="exam">시험 포인트</span></span>
+      <h3>두 개의 테스트(Task)</h3>
+      <div class="grid2">
+        <div class="mini">
+          <h4>🅰 Task A — offset(거리)</h4>
+          <ul>
+            <li>버퍼 시작점부터 <b>리턴 어드레스가 놓인 위치</b>까지의 거리</li>
+            <li>= 리턴 어드레스를 <b>어디에</b> 써야 하는지(위치)</li>
+            <li>gdb로 측정</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h4>🅱 Task B — 머신코드 시작 주소</h4>
+          <ul>
+            <li>리턴 어드레스에 <b>써 넣을 값</b></li>
+            <li>= 실행시킬 셸코드(머신코드)의 <b>시작 주소</b></li>
+            <li>그 자리로 점프하게 만든다</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:10px">정리하면 — <b class="hl">Task A는 offset distance 찾기</b>, <b class="hl">Task B는 machine code 시작 address 찾기</b>.</p>
+    </div>
+
+    <div class="card">
+      <h3>🧩 두 과제가 합쳐지면</h3>
+      <div class="flow">
+        <div class="node"><div class="t">Task A</div><div class="d">위치(offset)=112</div></div>
+        <div class="arr">+</div>
+        <div class="node"><div class="t">Task B</div><div class="d">값(셸코드 주소)</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">badfile 완성</div><div class="d">offset 지점에 주소 기입</div></div>
+      </div>
+      <p>Task A로 "리턴 어드레스 자리"를 알아내고, Task B로 "거기에 넣을 주소값"을 알아내 그 자리에 써 넣으면 폭탄이 완성된다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S3 ============ -->
+  <section class="panel" id="s3">
+    <div class="sec-head"><h2>3. Task A — gdb로 offset 구하기</h2><span class="pg">p.17 ~ 20 (추정)</span></div>
+    <p class="sec-lead">취약 프로그램을 디버깅 가능하게 컴파일하고, gdb로 EBP와 버퍼 주소를 찍어 그 거리를 잰다.</p>
+
+    <div class="card">
+      <h3>🛠 실습용 컴파일 옵션 (CDVM 기준)</h3>
+      <p>기본 방어가 켜져 있으면 실습 프로그램이 원리대로 동작하지 않는다. 그래서 여러 옵션으로 방어를 비활성화하고 디버그 정보를 넣어 컴파일한다.</p>
+      <pre><code><span class="fn">gcc</span> <span class="op">-m32</span> <span class="op">-z execstack</span> <span class="op">-fno-stack-protector</span> <span class="op">-g</span> -o stack stack.c</code></pre>
+      <ul>
+        <li><code class="ic">-m32</code> — 32비트 기준 컴파일 (레지스터·주소 체계를 32비트로)</li>
+        <li><code class="ic">-z execstack</code> — 스택 영역의 코드를 <b>실행 가능</b >하게</li>
+        <li><code class="ic">-fno-stack-protector</code> — 스택 보호(카나리) <b>끔</b></li>
+        <li><code class="ic">-g</code> — <b>디버그 정보 포함</b> → gdb로 분석 가능</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 왜 gdb인가 <span class="exam">시험 포인트</span></span>
+      <h3>gdb로 메모리 주소값을 알아낸다</h3>
+      <p>가장 쉽고 빠른 디버거가 <code class="ic">gdb</code>다. 프로그램이 멈췄으면 하는 지점에 멈춰, 그 순간 <b class="hl">레지스터 값과 변수의 주소</b>를 찍어볼 수 있기 때문에 offset 계산에 꼭 필요하다. (VS Code·Eclipse 등의 GUI 디버거도 내부적으로 같은 원리.)</p>
+    </div>
+
+    <div class="card">
+      <h3>🔍 gdb 실습 순서</h3>
+      <div class="flow">
+        <div class="node"><div class="t">touch badfile</div><div class="d">빈 파일 생성</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">break</div><div class="d">함수에 중단점</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">run</div><div class="d">중단점에서 멈춤</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">print</div><div class="d">EBP·buffer 주소</div></div>
+      </div>
+      <pre><code><span class="cmt"># 먼저 빈 badfile을 만들어 둔다 (프로그램이 파일을 열어야 하므로)</span>
+<span class="fn">touch</span> badfile
+
+<span class="cmt"># gdb 실행 후</span>
+<span class="fn">gdb</span> stack
+(gdb) <span class="kw">break</span> foo        <span class="cmt"># 취약 함수에 중단점</span>
+(gdb) <span class="kw">run</span>             <span class="cmt"># 중단점에서 멈춤</span>
+(gdb) <span class="kw">print</span> $ebp       <span class="cmt"># 현재 EBP 레지스터 값(주소)</span>
+(gdb) <span class="kw">print</span> &buffer    <span class="cmt"># 지역 배열 buffer의 시작 주소</span></code></pre>
+      <p>함수가 호출된 직후에 멈추고, <code class="ic">p $ebp</code>로 EBP 값을, 그 다음 <code class="ic">p &buffer</code>로 버퍼의 시작 주소를 찍는다. 그리고 두 값을 뺀다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 계산 <span class="exam">시험 포인트</span></span>
+      <h3>offset = (EBP − buffer) + 4 = 112</h3>
+      <p>EBP가 buffer보다 <b>높은 주소</b>이므로 큰 값에서 작은 값을 뺀다. 강의에서는 그 거리가 <b class="hl">108 바이트</b>로 나왔다.</p>
+      <div class="calc">
+        <span>EBP</span><span class="op2">−</span><span>buffer</span><span class="op2">=</span><span class="res">108</span><span class="op2">(+4)</span><span class="op2">→</span><span class="res">112</span>
+      </div>
+      <ul>
+        <li><b class="hl">왜 108인가?</b> 버퍼는 100인데, 그림에 생략된 다른 값들(정렬·기타 지역 데이터)이 <b>8바이트</b> 더 끼어 있어 108.</li>
+        <li><b class="hl">왜 +4인가?</b> 진짜 목적지는 EBP가 아니라 그 <b>바로 위의 리턴 어드레스</b>. 사이에 Saved EBP(4바이트)가 있으므로 4를 더해 <b>112</b>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>📐 위치 관계로 보는 108과 +4</h3>
+      <div class="memfig">
+        <div class="cap">높은 주소 ↑ · buffer에서 시작해 위로 침범</div>
+        <div class="stack">
+          <div class="row ret"><span class="lbl">Return Address ← 진짜 목적지</span><span class="meta">+112</span></div>
+          <div class="row ebp"><span class="lbl">Saved EBP (4 byte)</span><span class="meta">+108</span></div>
+          <div class="row buf"><span class="lbl">buffer … 생략값 포함</span><span class="meta">0 ~ 108</span></div>
+        </div>
+        <div class="addr-side"><span>buffer 시작(0)</span><span>EBP까지 108 · RA까지 112</span></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>EBP / 리턴 어드레스가 4바이트인 이유</h3>
+      <p>32비트(<code class="ic">-m32</code>) 환경에서는 레지스터와 주소가 모두 <b class="hl">4바이트</b>다. 그래서 Saved EBP도 4바이트, 리턴 어드레스도 4바이트 — "한 칸 = 4바이트" 단위로 그림을 그리면 offset 계산이 쉬워진다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S4 ============ -->
+  <section class="panel" id="s4">
+    <div class="sec-head"><h2>4. Task B — 리턴 어드레스 값과 NOP sled</h2><span class="pg">p.20 ~ 24 (추정)</span></div>
+    <p class="sec-lead">리턴 어드레스에 넣을 "주소값"을 정해야 한다. 정확히 맞히기 어렵기 때문에 NOP로 넓은 과녁을 만든다.</p>
+
+    <div class="card">
+      <h3>🅱 어떤 값을 넣을까</h3>
+      <p>리턴 어드레스 자리(offset 112)에 <b class="hl">셸코드(머신코드)의 시작 주소</b>를 넣어야 그 자리로 점프한다. 그 값을 알기 위해 ASLR을 끈 상태에서 스택 주소를 확인한다 — 끄면 몇 번을 실행해도 메모리 위치가 똑같이 찍힌다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 문제 <span class="exam">시험 포인트</span></span>
+      <h3>상대 거리(112)는 고정, 절대 주소는 흔들린다</h3>
+      <p>버퍼~리턴 어드레스까지의 <b class="hl">상대적 거리 112바이트는 항상 같다.</b> 하지만 시작 지점의 <b class="hl">절대 번지수</b>는 실행마다 달라질 수 있다 (예: 190번지 → 다음 실행엔 220번지). 그래서 "정확히 이 주소"라고 한 점을 찍기 어렵다.</p>
+    </div>
+
+    <div class="card">
+      <h3>🛝 해결책 — NOP sled로 채우기</h3>
+      <p><code class="ic">0x90</code>은 <b class="hl">NOP(No Operation)</b> — "아무것도 하지 않고 다음으로 넘어가라"는 <b>1바이트</b> 명령이다. 리턴 어드레스 이후를 NOP으로 길게 깔아 두면, 점프가 그 넓은 구간 <b class="hl">어디에 떨어지든</b> NOP들을 타고 미끄러져 내려와 끝의 셸코드에 도달한다.</p>
+      <div class="flow">
+        <div class="node"><div class="t">리턴 주소</div><div class="d">언저리를 가리킴</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">NOP sled 착지</div><div class="d">0x90 0x90 …</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">미끄럼</div><div class="d">계속 next로</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">셸코드 실행</div><div class="d">끝에서 도달</div></div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>왜 "대략 맞혀도" 되는가</h3>
+      <p>ASLR이 켜져 있어도 스택은 가상 메모리 <b class="hl">상단 영역</b>에 배치되는 구조라, 완전 무작위가 아니라 "어느 정도 상단의 범위" 안에서만 움직인다. 그래서 정확한 한 점 대신 그 <b>언저리</b>를 가리키게 하고 NOP sled로 오차를 흡수하면, 넓은 과녁 어딘가에 떨어뜨릴 수 있다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S5 ============ -->
+  <section class="panel" id="s5">
+    <div class="sec-head"><h2>5. badfile 구조와 exploit.py</h2><span class="pg">p.22 ~ 26 (추정)</span></div>
+    <p class="sec-lead">지금까지 알아낸 offset·주소·NOP·셸코드를 하나의 거대한 1차원 바이트 배열로 조립한다. 이를 만드는 것이 파이썬 코드.</p>
+
+    <div class="card">
+      <h3>🧱 badfile 레이아웃</h3>
+      <div class="memfig">
+        <div class="cap">전체 크기는 임의로 잡는다 (예: 300 byte) · 90도 세워 본 모습</div>
+        <div class="stack">
+          <div class="row nop"><span class="lbl">[0 ~ 111] 채우기 (주로 NOP/쓰레기)</span><span class="meta">offset 112</span></div>
+          <div class="row ret"><span class="lbl">[112 ~ 115] 덮어쓸 리턴 어드레스</span><span class="meta">4 byte</span></div>
+          <div class="row nop"><span class="lbl">[116 ~ …] NOP sled (0x90 ···)</span><span class="meta">0x90</span></div>
+          <div class="row buf"><span class="lbl">[… ~ 끝] 셸코드 (맨 끝에 배치)</span><span class="meta">shellcode</span></div>
+        </div>
+      </div>
+      <p>offset(112)까지는 사실 안 쓰이는 영역이라 쓰레기 값이어도 되지만, 보통 전부 NOP으로 채운다. 112번째부터 4바이트로 리턴 어드레스를 덮고, 그 뒤 NOP sled, 맨 끝에 셸코드를 둔다.</p>
+    </div>
+
+    <div class="card">
+      <h3>🐍 exploit.py — badfile을 만드는 파이썬 코드 (구조)</h3>
+      <pre><code><span class="cmt">#!/usr/bin/python3</span>
+<span class="cmt"># exploit.py — badfile(폭탄)을 생성하는 코드 (개념 골격)</span>
+
+shellcode = (
+  <span class="str">b"\x90\x90 ... "</span>   <span class="cmt"># 셸을 띄우는 머신코드 (널바이트 없이, 엔디안 주의)</span>
+)
+
+content = <span class="kw">bytearray</span>(<span class="num">0x90</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">300</span>))   <span class="cmt"># 전체 300바이트를 NOP(0x90)으로</span>
+
+<span class="cmt"># 셸코드는 맨 끝에 배치</span>
+start = <span class="num">300</span> - <span class="fn">len</span>(shellcode)
+content[start:] = shellcode
+
+<span class="cmt"># offset 112 지점에 리턴 어드레스(= NOP sled 언저리 주소) 4바이트 기입</span>
+ret = <span class="num">0xffffd000</span>          <span class="cmt"># ← Task B로 구한 언저리 주소 (널바이트 X)</span>
+offset = <span class="num">112</span>
+content[offset:offset+<span class="num">4</span>] = (ret).to_bytes(<span class="num">4</span>, <span class="str">'little'</span>)  <span class="cmt"># 리틀 엔디안</span>
+
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">'badfile'</span>, <span class="str">'wb'</span>) <span class="kw">as</span> f:
+    f.write(content)</code></pre>
+      <p>이 코드를 실행하면 위 레이아웃대로 <code class="ic">badfile</code>이 생성된다. (<code class="ic">ret</code> 값과 셸코드 바이트는 실제 실습 환경에서 gdb로 구한 값으로 채운다.)</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 반복 강조 <span class="exam">시험 포인트</span></span>
+      <h3>리턴 어드레스 4바이트 안에 널바이트(0x00)가 있으면 안 된다</h3>
+      <p>strcpy는 <code class="ic">0x00</code>을 만나면 복사를 <b class="hl">멈춘다.</b> 리턴 어드레스 4바이트 중 한 바이트라도 <code class="ic">0x00</code>이면 거기서 끊겨 공격이 실패한다.</p>
+      <ul>
+        <li>그래서 "언저리" 주소를 고를 때도 <b class="hl">널바이트가 들어가지 않는 값</b>으로 정해야 한다.</li>
+        <li>예: 10진수 110 같은 값을 16진수로 변환해 더해 리턴 어드레스를 만들 때, 결과에 <code class="ic">0x00</code>이 끼지 않도록 한다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ S6 ============ -->
+  <section class="panel" id="s6">
+    <div class="sec-head"><h2>6. 셸코드 상세</h2><span class="pg">p.25 ~ 29 (Ch6 복습)</span></div>
+    <p class="sec-lead">리턴 어드레스가 가리킬 "심어둔 코드" = 셸코드. 셸을 띄우는 아주 컴팩트한 머신코드다.</p>
+
+    <div class="card">
+      <h3>🐚 C 문자 배열에 담긴 머신코드</h3>
+      <p>셸코드는 C에서 <b class="hl">상수화된 캐릭터 1차원 배열</b>로 표현된다. 각 <code class="ic">\x..</code>가 1바이트이고, 이것들이 순서대로 이어져 하나의 코드 조각이 된다.</p>
+      <pre><code><span class="cmt">// 셸코드 = 1바이트 단위 머신코드의 나열 (개념)</span>
+<span class="kw">char</span> shellcode[] =
+    <span class="str">"\x31\xc0"</span>     <span class="cmt">// 예: xor eax, eax  → 레지스터를 0으로(코드엔 0x00 없음)</span>
+    <span class="str">"\x50"</span>         <span class="cmt">// push ...</span>
+    <span class="str">"..."</span>;        <span class="cmt">// /bin/sh 실행 execve 까지</span></code></pre>
+      <p><code class="ic">\x</code> 하나하나가 1바이트이며, 쭉 연결되어 1차원 배열에 순서대로 담긴다.</p>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 셸코드의 두 제약 <span class="exam">시험 포인트</span></span>
+      <h3>① 널바이트 없음 &nbsp; ② 엔디안 순서</h3>
+      <div class="grid2">
+        <div class="mini">
+          <h4>① 널바이트(0x00) 금지</h4>
+          <ul>
+            <li>중간에 <code class="ic">0x00</code>(제노)이 있으면 strcpy가 끊김</li>
+            <li><code class="ic">mov eax,0</code> 대신 <code class="ic">xor eax,eax</code>로 0을 만들어 코드에 0을 없앰</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h4>② 엔디안(바이트 순서)</h4>
+          <ul>
+            <li>레지스터 값을 바이트 단위로 저장할 때 순서가 중요</li>
+            <li>리틀/빅 엔디안에 맞춰 바이트를 배치해야 올바로 수행됨</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>셸을 띄우는 것이 "첫 번째 목적"</h3>
+      <p>일단 셸(shell)을 획득하면 그 위에서 거의 모든 후속 작업이 가능하다. 그래서 공격의 1차 목표는 <b class="hl">셸을 따는 것</b>이고, 셸코드는 <code class="ic">execve("/bin/sh", …)</code>를 호출하는 최소한의 머신코드로 만들어진다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S7 ============ -->
+  <section class="panel" id="s7">
+    <div class="sec-head"><h2>7. 공격 실행 — root 셸 획득</h2><span class="pg">p.27 ~ 30 (추정)</span></div>
+    <p class="sec-lead">컴파일·setuid·NOP 준비가 끝나면, exploit.py로 badfile을 만들고 취약 프로그램을 실행한다.</p>
+
+    <div class="card">
+      <h3>▶️ 실행 순서</h3>
+      <div class="flow">
+        <div class="node"><div class="t">① 컴파일+setuid</div><div class="d">stack → root 4755</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">② exploit.py</div><div class="d">badfile 생성</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">③ ./stack 실행</div><div class="d">badfile 읽어 오버플로우</div></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">④ root 셸</div><div class="d">셸코드 실행</div></div>
+      </div>
+      <pre><code><span class="cmt"># ① 방어 끄고 컴파일 + setuid root</span>
+<span class="fn">gcc</span> -m32 -z execstack -fno-stack-protector -o stack stack.c
+<span class="fn">sudo</span> chown root stack && <span class="fn">sudo</span> chmod <span class="num">4755</span> stack
+
+<span class="cmt"># ② 폭탄 생성</span>
+<span class="fn">python3</span> exploit.py        <span class="cmt"># → badfile 생성</span>
+
+<span class="cmt"># ③ 취약 프로그램 실행 → ④ 루트 셸</span>
+<span class="fn">./stack</span>
+# <span class="cmt">(성공 시) root 권한의 셸 프롬프트 획득</span></code></pre>
+    </div>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 왜 root가 되는가 <span class="exam">시험 포인트</span></span>
+      <h3>Set-UID root + 셸코드 = 권한 상승</h3>
+      <p>취약 프로그램이 <b class="hl">Set-UID root</b>로 설정돼 있으므로, 오버플로우로 셸코드가 실행되는 순간 <b class="hl">root 권한이 유지된 채</b> 셸이 뜬다. 프로그램이 끝나기 전에 루트 권한으로 셸코드가 끼워지기 때문에, 결과적으로 <b class="hl">루트 셸(Privilege Escalation)</b>을 얻는다.</p>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>셸을 bash가 아닌 다른 셸로</h3>
+      <p>기본 셸(dash/bash)에는 Set-UID 프로세스에서 권한을 떨어뜨리는 방어가 있어, 실습에서는 <code class="ic">/bin/sh</code>를 방어 없는 셸(zsh)로 링크하거나 셸코드에 <code class="ic">setuid(0)</code>를 넣어 우회한다. (지난 차시 p.31~46 참고)</p>
+    </div>
+  </section>
+
+  <!-- ============ S8 ============ -->
+  <section class="panel" id="s8">
+    <div class="sec-head"><h2>8. 방어기법 정리</h2><span class="pg">p.31 ~ 46</span></div>
+    <p class="sec-lead">공격을 뒤집으면 방어가 보인다. OS 차원(ASLR·NX)과 컴파일러 차원(StackGuard)으로 나뉜다.</p>
+
+    <div class="card amber">
+      <span class="tag"><span class="star">★</span> 핵심 · 3대 방어 <span class="exam">시험 포인트</span></span>
+      <h3>ASLR · NX bit · StackGuard</h3>
+      <div class="keyrow">
+        <span class="badge on">① ASLR — OS</span>
+        <span class="badge on">② NX bit — OS</span>
+        <span class="badge on">③ StackGuard — 컴파일러</span>
+      </div>
+      <p style="margin-top:8px">앞의 실습에서 이 방어들을 <b>일부러 꺼서</b> 공격을 성립시켰다. 하나라도 켜지면 이 방식의 공격은 막힌다.</p>
+    </div>
+
+    <div class="card">
+      <h3>① ASLR (Address Space Layout Randomization) <span class="badge">OS 차원</span></h3>
+      <p>스택·힙·텍스트 등 세그먼트의 시작 주소를 실행할 때마다 <b class="hl">무작위로 배치</b>한다. 공격자가 한 번 알아낸 절대 주소를 다음 실행에 쓸 수 없게 되어, 리턴 어드레스 값을 맞히기 어려워진다 — NOP sled로도 완전히 흡수하기 힘들어진다.</p>
+    </div>
+
+    <div class="card">
+      <h3>② Non-executable Stack (NX bit) <span class="badge">OS 차원</span></h3>
+      <p>스택 영역에 "실행 금지" 표시(<b class="hl">NX 비트</b>)를 건다. 정상 프로그램이라면 코드는 <b>텍스트(코드) 세그먼트</b>에 있어야 하는데, 오버플로우로 EIP가 <b class="hl">스택 영역</b>을 가리켜 거기 바이트를 실행하려 하면 → OS가 "코드가 있을 수 없는 영역"이라며 거부해 프로그램이 죽는다.</p>
+      <div class="memfig">
+        <div class="cap">EIP의 시선이 끌려간 곳</div>
+        <div class="stack">
+          <div class="row nop"><span class="lbl">스택 영역 — 셸코드 (NX면 실행 거부)</span><span class="meta">상단</span></div>
+          <div class="row arg"><span class="lbl">힙 영역</span><span class="meta">중간</span></div>
+          <div class="row buf"><span class="lbl">텍스트(코드) 세그먼트 — 원래 실행 위치</span><span class="meta">하단</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>③ StackGuard / 스택 카나리 <span class="badge">컴파일러 차원</span></h3>
+      <p>버퍼와 리턴 어드레스 사이에 <b class="hl">카나리(canary)</b>라는 감시 값을 심고, 함수 리턴 전에 변조됐는지 검사한다. 오버플로우로 리턴 어드레스까지 덮으려면 반드시 카나리를 지나쳐 덮게 되므로 검사에서 걸려 중단된다. (<code class="ic">-fno-stack-protector</code>로 끈 것이 이것.)</p>
+    </div>
+
+    <div class="card blue">
+      <span class="tag">ℹ 부연설명</span>
+      <h3>공격 성립 조건을 하나씩 무너뜨리는 방어</h3>
+      <p>이 공격은 ①주소 예측 가능(ASLR로 차단) ②스택에서 코드 실행 가능(NX로 차단) ③리턴 어드레스까지 무사히 덮기(StackGuard로 탐지) — 세 조건이 모두 맞아야 성립한다. 현대 리눅스는 셋 다 기본 활성화라, 이 고전적 스택 오버플로우는 그대로는 통하지 않는다.</p>
+    </div>
+  </section>
+
+  <hr class="divider">
+  <div class="footer">
+    시스템보안 · 10주차2 · Ch 7 Buffer Overflow Exploit (badfile 구축)<br>
+    강의자료 ch7_bof_v1.pdf 기반 재구성 · 강의 스크립트 내용에 한함
+  </div>
+
+</div>
+
+<script>
+  const tabs=document.querySelectorAll('.tab');
+  const panels=document.querySelectorAll('.panel');
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    panels.forEach(p=>p.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.p).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+</script>
+</body>
+</html>
