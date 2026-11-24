@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>컴퓨터네트워크 11주차 2차시 — TCP 혼잡제어 (AIMD · Slow Start · Refinement)</title>
+<style>
+:root{
+  --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff; --surface-3:#f0eee7;
+  --text-primary:#1f1e1d; --text-secondary:#56544f; --text-muted:#8a877f;
+  --border:rgba(31,30,29,.12); --border-strong:rgba(31,30,29,.24);
+  --accent:#185FA5; --accent-soft:#E6F1FB; --accent-line:#4a8dcf;
+  --amber:#9a6a00; --amber-bg:#fdf5e3; --amber-border:#e8c766; --amber-accent:#c98a00;
+  --blue:#1f5fa8; --blue-bg:#eaf2fb; --blue-border:#9cc2e8;
+  --rose:#b03a52; --rose-bg:#fcebee; --rose-border:#e8a6b3;
+  --green:#2f7d52; --green-bg:#e8f5ec; --green-border:#9fd2b2;
+  --mono:'SF Mono','Menlo','Consolas','Noto Sans KR',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1a1918; --surface-1:#222120; --surface-2:#2a2927; --surface-3:#323230;
+    --text-primary:#ece9e1; --text-secondary:#b4b2a9; --text-muted:#86847c;
+    --border:rgba(255,255,255,.11); --border-strong:rgba(255,255,255,.22);
+    --accent:#85B7EB; --accent-soft:#0c2b4d; --accent-line:#3f7cb8;
+    --amber:#f0c66b; --amber-bg:#352a12; --amber-border:#6b5520; --amber-accent:#f0c66b;
+    --blue:#8fbdf0; --blue-bg:#122942; --blue-border:#2d4e74;
+    --rose:#eca3b2; --rose-bg:#3a1f26; --rose-border:#6e3c47;
+    --green:#8fd2a8; --green-bg:#15301f; --green-border:#2f5e40;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--sans);line-height:1.68;font-size:15px;-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:1.6rem 1.1rem 4rem}
+
+/* header */
+.src{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin:0 0 6px;letter-spacing:.01em}
+header h1{font-size:23px;font-weight:650;margin:0 0 6px;line-height:1.3;letter-spacing:-.01em}
+header .desc{font-size:13.5px;color:var(--text-secondary);margin:0 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary)}
+.chip.k{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+
+/* tabs */
+.tabs{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:4px;margin:18px 0 22px;padding:6px;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(8px)}
+.tab{flex:1 1 auto;min-width:fit-content;border:0;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:12.8px;font-weight:550;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:.14s;display:flex;align-items:center;gap:6px;justify-content:center}
+.tab:hover{background:var(--surface-3);color:var(--text-primary)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(24,95,165,.3)}
+.tab .tnum{font-family:var(--mono);font-size:11px;opacity:.65}
+.tab.active .tnum{opacity:.85}
+
+/* panels */
+.panel{display:none;animation:fade .25s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-start;gap:12px;margin:0 0 16px}
+.phead .pn{flex:none;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--mono);font-size:15px}
+.phead h2{font-size:18.5px;margin:2px 0 2px;font-weight:650;line-height:1.3}
+.phead .pg{font-size:11.5px;color:var(--text-muted);font-family:var(--mono)}
+
+/* cards */
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
+.card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px}
+.card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
+.card ul{margin:6px 0 10px;padding-left:2px;list-style:none}
+.card ul li{position:relative;padding-left:20px;margin:7px 0}
+.card ul li::before{content:"";position:absolute;left:4px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--accent-line)}
+.card ul li:last-child{margin-bottom:0}
+b,strong{color:var(--text-primary);font-weight:650}
+.ic{flex:none;width:18px;height:18px}
+
+/* important (amber) */
+.card.imp{background:var(--amber-bg);border-color:var(--amber-border)}
+.card.imp h3{color:var(--amber)}
+.card.imp ul li::before{background:var(--amber-accent)}
+.star{flex:none;width:17px;height:17px;color:var(--amber-accent)}
+.badge-exam{font-size:10.5px;font-weight:700;font-family:var(--mono);color:#fff;background:var(--amber-accent);padding:2px 7px;border-radius:6px;margin-left:auto;letter-spacing:.03em}
+
+/* note (blue) */
+.card.note{background:var(--blue-bg);border-color:var(--blue-border)}
+.card.note h3{color:var(--blue)}
+.card.note ul li::before{background:var(--blue)}
+.note-tag{font-size:10.5px;font-weight:700;font-family:var(--mono);color:var(--blue);border:1px solid var(--blue-border);padding:1px 7px;border-radius:6px;margin-left:auto}
+
+/* helpers */
+.lead{font-size:15.5px;color:var(--text-primary);margin:0 0 12px}
+.muted{color:var(--text-secondary)}
+.tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:1px 7px;border-radius:6px;background:var(--surface-3);border:1px solid var(--border);color:var(--text-secondary);white-space:nowrap}
+.tag.cong{color:var(--rose);background:var(--rose-bg);border-color:var(--rose-border)}
+.tag.rcv{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.tag.ack{color:var(--green);background:var(--green-bg);border-color:var(--green-border)}
+.tag.to{color:var(--amber);background:var(--amber-bg);border-color:var(--amber-border)}
+
+/* grid of mini-cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 2px}
+.mini{background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:13px 14px}
+.mini .mt{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin-bottom:4px}
+.mini .mv{font-size:14.5px;font-weight:600}
+.mini .ms{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+
+/* step flow */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:8px 0 2px}
+.flow .fstep{flex:1 1 130px;background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:12px 13px}
+.flow .fstep .fn{font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.flow .fstep .fx{font-size:13.5px;font-weight:600}
+.flow .fstep .fd{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+.flow .arr{display:flex;align-items:center;color:var(--text-muted);font-size:18px}
+
+/* formula box */
+.formula{background:var(--surface-1);border:1px dashed var(--border-strong);border-radius:12px;padding:16px 18px;margin:10px 0;text-align:center;font-family:var(--mono);font-size:14px;overflow-x:auto}
+.formula .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px}
+.formula .frac .num{border-bottom:1.5px solid var(--text-secondary);padding:0 8px 2px}
+.formula .frac .den{padding:2px 8px 0}
+.formula .res{color:var(--accent);font-weight:700}
+.formula .step{display:block;margin:4px 0;color:var(--text-secondary);font-size:13px}
+
+/* SVG diagram frame */
+.diag{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0 4px;overflow-x:auto}
+.diag svg{display:block;width:100%;height:auto;min-width:480px}
+.cap{font-size:12px;color:var(--text-muted);text-align:center;margin-top:6px}
+text{font-family:var(--sans)}
+
+/* compare 2-col */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 2px}
+.cmp .col{border-radius:12px;padding:14px 15px;border:1px solid}
+.cmp .col.sev{background:var(--rose-bg);border-color:var(--rose-border)}
+.cmp .col.mild{background:var(--green-bg);border-color:var(--green-border)}
+.cmp .col h4{margin:0 0 8px;font-size:13.5px;display:flex;align-items:center;gap:6px}
+.cmp .col.sev h4{color:var(--rose)}
+.cmp .col.mild h4{color:var(--green)}
+.cmp .col ul{margin:0;padding-left:2px;list-style:none}
+.cmp .col li{position:relative;padding-left:16px;margin:6px 0;font-size:13px}
+.cmp .col li::before{content:"";position:absolute;left:3px;top:8px;width:5px;height:5px;border-radius:50%}
+.cmp .col.sev li::before{background:var(--rose)}
+.cmp .col.mild li::before{background:var(--green)}
+@media(max-width:560px){.cmp{grid-template-columns:1fr}}
+
+.footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);text-align:center}
+@media(max-width:560px){
+  .wrap{padding:1.2rem .8rem 3rem}
+  header h1{font-size:20px}
+  .tab{font-size:12px;padding:7px 8px}
+  .card{padding:15px 15px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="src">강의자료 : 제3장-4 (Chap 3. Transport Layer 4) · p.2 ~ p.10</p>
+  <h1>TCP 혼잡제어 — AIMD · Slow Start · Refinement</h1>
+  <p class="desc">컴퓨터네트워크 &nbsp;|&nbsp; 11주차 2차시</p>
+  <div class="chips">
+    <span class="chip k">혼잡제어</span>
+    <span class="chip">CongWin</span>
+    <span class="chip">AIMD</span>
+    <span class="chip">Slow Start</span>
+    <span class="chip">Timeout / 3 dup ACK</span>
+    <span class="chip">rate = CongWin/RTT</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-i="0"><span class="tnum">01</span>혼잡제어란</button>
+  <button class="tab" data-i="1"><span class="tnum">02</span>혼잡 탐지</button>
+  <button class="tab" data-i="2"><span class="tnum">03</span>AIMD</button>
+  <button class="tab" data-i="3"><span class="tnum">04</span>Slow Start</button>
+  <button class="tab" data-i="4"><span class="tnum">05</span>Refinement</button>
+  <button class="tab" data-i="5"><span class="tnum">06</span>요약</button>
+</nav>
+
+<!-- ============ PANEL 0 ============ -->
+<section class="panel active" data-i="0">
+  <div class="phead">
+    <div class="pn">1</div>
+    <div>
+      <h2>흐름제어 복습 &amp; 혼잡제어란 무엇인가</h2>
+      <div class="pg">제3장-4 · p.2 ~ p.3</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>복습 — 흐름제어(Flow Control)와 수신 윈도우</h3>
+    <p class="lead">지난 시간에 한 <b>흐름제어</b>는 <b>수신자</b>를 보호하는 장치였다. 수신자가 자기 버퍼에 남은 공간을 <b>RcvWindow 값</b>에 실어 되돌려 주면, 송신자는 <b>그 값보다 작게</b> 전송률을 맞춘다.</p>
+    <ul>
+      <li>수신자가 보내는 TCP 세그먼트의 헤더에 <span class="tag rcv">RcvWindow</span> 값(= 받을 수 있는 남은 바이트 수)이 들어 있다.</li>
+      <li>송신자는 이 값보다 많이 보내면 안 된다 → 수신 버퍼가 넘치지 않게 제어.</li>
+    </ul>
+    <p class="muted">흐름제어는 “<b>상대(수신자)가 감당 못 하는 문제</b>”를 막는 것. 클라이언트↔트랜스포트 계층 사이의 전달은 아무 문제없이 이루어진다.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>오늘의 목표 — 혼잡 윈도우(CongWin)를 결정하는 것<span class="badge-exam">핵심</span></h3>
+    <p>흐름제어가 <b>수신자</b> 때문이라면, <b>혼잡제어</b>는 <b>중간 노드(라우터)가 혼잡</b>할 때 생기는 문제다. 집에 갈 때 <b>사거리(=라우터)</b>가 막히는 상황이라고 생각하면 된다.</p>
+    <ul>
+      <li>중간 라우터가 혼잡해 트래픽이 몰리면 → 송신자가 <b>보내는 윈도우 크기를 줄여야</b> 한다.</li>
+      <li>이때 결정해야 하는 값이 <b>혼잡 윈도우 = CongWin</b>. 오늘 수업의 미션은 “이 CongWin을 어떻게 결정하느냐”이다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>슬라이딩 윈도우 = 두 윈도우 중 더 작은 값</h3>
+    <p>실제 전송에 쓰이는 <b>슬라이딩 윈도우 크기</b>는 <b>RcvWindow</b>와 <b>CongWin</b> 중 <b>작은 쪽</b>으로 정해진다. (둘 다보다 작아야 하므로 당연히 최솟값)</p>
+    <div class="formula">
+      LastByteSent − LastByteAcked &nbsp;≤&nbsp; <span class="res">min { CongWin , RcvWindow }</span>
+    </div>
+    <ul>
+      <li><b>LastByteSent − LastByteAcked</b> = ACK를 아직 못 받고 날아가고 있는 바이트 수 (in-flight).</li>
+      <li>오늘은 설명을 위해 <b>RcvWindow는 아주 크다</b>고 가정 → 슬라이딩 윈도우는 사실상 <b>CongWin에서 결정</b>된다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>전송률은 CongWin으로부터 나온다</h3>
+    <p>CongWin 값이 정해지면, 한 RTT 구간에 보낼 수 있는 양이 정해지고, 그것을 RTT로 나누면 <b>최종 전송률(rate)</b>이 된다.</p>
+    <div class="formula">
+      rate =
+      <span class="frac"><span class="num">CongWin</span><span class="den">RTT</span></span>
+      <span class="res">Bytes/sec</span>
+    </div>
+    <p class="muted">즉 “CongWin을 얼마로 할 것이냐”가 곧 “전송률을 얼마로 할 것이냐”다. 그래서 오늘 내내 CongWin 구하는 법을 다룬다.</p>
+  </div>
+
+  <div class="card note">
+    <h3>CongWin의 단위 — 개수(N)로도, 바이트로도<span class="note-tag">부연설명</span></h3>
+    <p>CongWin은 두 가지로 표현할 수 있고, 강의자료 뒤쪽에서 둘이 번갈아 나오니 미리 정리해 둔다.</p>
+    <ul>
+      <li><b>개수(N):</b> “ACK 안 받고 연속으로 보낼 수 있는 세그먼트 개수”. 예) CongWin = 4 → 4개까지 선전송.</li>
+      <li><b>바이트:</b> 개수 × <b>MSS</b> 로 환산. <span class="tag">바이트 = N × MSS</span></li>
+    </ul>
+    <p class="muted"><b>MSS (Maximum Segment Size)</b> = TCP 세그먼트 하나에 실을 수 있는 최대 데이터 크기. 이더넷 기준 보통 <b>1460 bytes</b>. (헤더의 짐칸에 올릴 수 있는 최대 크기)</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 1 ============ -->
+<section class="panel" data-i="1">
+  <div class="phead">
+    <div class="pn">2</div>
+    <div>
+      <h2>혼잡을 어떻게 알아내는가 — 직접은 불가, 간접으로</h2>
+      <div class="pg">제3장-4 · p.4</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>문제 — 중간 라우터의 혼잡을 송신자가 알 방법이 없다</h3>
+    <p>CongWin을 줄이려면 먼저 “<b>중간 노드가 혼잡하다</b>”는 걸 송신자가 알아야 한다. 그런데 이걸 <b>직접 알려줄 방법이 없다.</b></p>
+    <ul>
+      <li><b>네트워크(IP) 계층으로?</b> → IP 헤더 어디에도 혼잡을 알려줄 칸이 없다. 헤더를 바꾸려면 <b>전 세계 인터넷을 다 바꿔야</b> 하므로 불가능.</li>
+      <li><b>전송(Transport) 계층으로?</b> → 전송 계층은 <b>같은 전송 계층끼리</b> 통신한다. 중간 라우터(네트워크 계층)가 전송 계층에 끼어드는 건 <b>계층 규칙 위반</b>.</li>
+    </ul>
+    <p>비유: 집에 가는데 <b>몇 번째 사거리가 막히는지</b> 출발 전에 미리 알 수 있는가? → <b>알 수 없다.</b> 인터넷도 마찬가지.</p>
+  </div>
+
+  <div class="card note">
+    <h3>왜 “계층 위반”이 문제인가<span class="note-tag">부연설명</span></h3>
+    <p>계층화(layering) 모델의 기본 전제는 “<b>같은 계층끼리만 통신</b>한다”는 것이다. 이 전제 덕분에 각 계층을 독립적으로 수정·교체할 수 있다. 중간 라우터가 종단의 전송 계층에 직접 신호를 주기 시작하면 이 전제가 깨져, 설계 전체를 바꿔야 한다. 그래서 TCP는 이 방법을 쓰지 않는다.</p>
+    <p class="muted">(참고: 실제 인터넷에는 ECN 같은 네트워크 보조 혼잡 알림 방식도 있지만, 기본 TCP 혼잡제어는 아래의 “간접 추측” 방식을 쓴다.)</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>해법 — 손실 이벤트로 간접 추측<span class="badge-exam">핵심</span></h3>
+    <p>직접 알 수 없으니 <b>간접적으로 추측</b>한다. 데이터를 보냈는데 중간이 혼잡하면 패킷이 큐에서 버려지고, 그 결과가 송신자에게 나타난다.</p>
+    <div class="flow">
+      <div class="fstep"><div class="fn">보냄</div><div class="fx">데이터 전송</div><div class="fd">정상이면 ACK가 돌아옴</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">혼잡 발생</div><div class="fx">패킷 손실</div><div class="fd">중간 큐에서 삭제됨</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">증상</div><div class="fx">ACK 안 옴 / 늦음</div><div class="fd">= 손실 이벤트</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">결론</div><div class="fx">전송률 줄임</div><div class="fd">CongWin 축소</div></div>
+    </div>
+    <p style="margin-top:10px"><b>손실 이벤트 = timeout 또는 3 duplicate ACK.</b> 이게 발생하면 “가는 길에 문제가 생겼구나”라고 간접적으로 판단하고 CongWin을 줄인다.</p>
+  </div>
+
+  <div class="card">
+    <h3>전송률 제어 3가지 방법 — 오늘 이것만 알면 된다</h3>
+    <p>혼잡제어는 아래 <b>세 가지</b>만 이해하면 끝난다. (강의자료 p.4)</p>
+    <div class="grid">
+      <div class="mini"><div class="mt">① AIMD</div><div class="mv">가산 증가 · 승산 감소</div><div class="ms">문제 없으면 조금씩↑, 문제 생기면 절반↓</div></div>
+      <div class="mini"><div class="mt">② Slow Start</div><div class="mv">느린 시작</div><div class="ms">초반엔 지수함수적으로 빠르게↑</div></div>
+      <div class="mini"><div class="mt">③ Refinement</div><div class="mv">Timeout 후 보수적 처리</div><div class="ms">timeout과 3 dup ACK를 구분</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANEL 2 ============ -->
+<section class="panel" data-i="2">
+  <div class="phead">
+    <div class="pn">3</div>
+    <div>
+      <h2>① AIMD — Additive Increase / Multiplicative Decrease</h2>
+      <div class="pg">제3장-4 · p.5</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>AIMD의 두 규칙<span class="badge-exam">핵심</span></h3>
+    <div class="grid">
+      <div class="mini" style="border-color:var(--green-border)">
+        <div class="mt">Additive Increase (가산 증가)</div>
+        <div class="mv" style="color:var(--green)">문제 없으면 +1 MSS / RTT</div>
+        <div class="ms">매 RTT마다 CongWin을 1 MSS씩 <b>선형(순차)</b> 증가</div>
+      </div>
+      <div class="mini" style="border-color:var(--rose-border)">
+        <div class="mt">Multiplicative Decrease (승산 감소)</div>
+        <div class="mv" style="color:var(--rose)">문제 생기면 ÷2</div>
+        <div class="ms">손실 이벤트 후 CongWin을 <b>절반</b>으로 감소</div>
+      </div>
+    </div>
+    <p style="margin-top:10px"><b>“Multiplicative(승산)”</b> = 1/2, 1/4 식으로 곱해서 줄인다는 뜻. 여기서는 손실마다 <b>2분의 1</b>로 줄인다.</p>
+  </div>
+
+  <div class="card">
+    <h3>왜 이렇게 하나 — 올바른 전송률을 모르기 때문</h3>
+    <p>송신자는 목적지까지 가는 수십 개 링크의 상태를 <b>직접 알 수 없다.</b> 링크 속도도 모르고, 그 속도마저 시간에 따라 계속 변한다. 그러니 “얼마로 보내야 최적인지”를 미리 알 수 없다.</p>
+    <ul>
+      <li>그래서 <b>조금씩 올려 보다가(순차 증가)</b>, 문제가 생기면 <b>확 줄이는(절반)</b> 방식으로 최적값을 더듬어 찾는다.</li>
+      <li>절반으로 줄이는 건 <b>빠르게</b> 해야 한다 — 혼잡 완화 효과가 나타나는 데 시간이 걸리므로 확실히 줄여 둬야 한다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>톱니(sawtooth) 모양으로 최적 전송률을 추적</h3>
+    <p>순차 증가 → 손실 → 절반 → 다시 순차 증가 → 손실 → 절반 … 이 반복되며 전송률이 오르락내리락한다. 그 <b>평균값 부근이 최적 전송률</b>이 된다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 640 230" role="img" aria-label="AIMD 톱니 모양 전송률 그래프">
+        <!-- axes -->
+        <line x1="48" y1="20" x2="48" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="48" y1="196" x2="616" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <text x="20" y="30" font-size="11" fill="var(--text-muted)">CongWin</text>
+        <text x="596" y="214" font-size="11" fill="var(--text-muted)">time (RTT)</text>
+        <!-- sawtooth: rise linearly, drop to half -->
+        <polyline fill="none" stroke="var(--accent)" stroke-width="2.4"
+          points="48,180 128,96 128,138 208,70 208,133 288,60 288,130 368,58 368,129 448,56 448,128 528,55 528,127 592,92"/>
+        <!-- halving markers -->
+        <g fill="var(--rose)">
+          <circle cx="128" cy="96" r="3.5"/><circle cx="208" cy="70" r="3.5"/>
+          <circle cx="288" cy="60" r="3.5"/><circle cx="368" cy="58" r="3.5"/>
+          <circle cx="448" cy="56" r="3.5"/><circle cx="528" cy="55" r="3.5"/>
+        </g>
+        <text x="138" y="92" font-size="10" fill="var(--rose)">손실 → ½</text>
+        <!-- average line -->
+        <line x1="48" y1="100" x2="616" y2="100" stroke="var(--green)" stroke-width="1.4" stroke-dasharray="6 4"/>
+        <text x="520" y="114" font-size="10.5" fill="var(--green)">평균 ≈ 최적 전송률</text>
+        <!-- slope-1 label -->
+        <text x="150" y="150" font-size="10.5" fill="var(--accent)">순차(기울기 1) 증가</text>
+      </svg>
+      <div class="cap">문제가 없으면 매 RTT마다 선형 증가, 손실이 생기면 절반으로 뚝. 이 반복(AIMD)이 TCP 전송률의 기본 리듬.</div>
+    </div>
+    <p class="muted">그래서 TCP의 전송률은 <b>고정되어 있지 않다.</b> AIMD에 따라 계속 오르락내리락하며 최적점을 좇는다.</p>
+  </div>
+
+  <div class="card note">
+    <h3>왜 하필 “절반”인가<span class="note-tag">부연설명</span></h3>
+    <p>왜 1/3도 1/4도 아닌 1/2로 줄일까? 강의에서는 “나중에 <b>시뮬레이션</b>해 보면 절반이 가장 최적이더라”라고 설명했다. (공평성·안정성 분석은 다음 시간에 더 다룸 — 강의자료 p.11~12 Fairness)</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 3 ============ -->
+<section class="panel" data-i="3">
+  <div class="phead">
+    <div class="pn">4</div>
+    <div>
+      <h2>② Slow Start — 초반엔 지수함수적으로</h2>
+      <div class="pg">제3장-4 · p.6 ~ p.7</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>왜 Slow Start가 필요한가</h3>
+    <p class="lead">연결 설정 직후 <b>CongWin = 1 MSS</b>에서 시작한다. 그런데 AIMD의 순차 증가(매 RTT +1 MSS)만 쓰면, 실제 가능한 고속 대역폭을 <b>따라잡는 데 시간이 너무 오래</b> 걸린다.</p>
+    <ul>
+      <li>실제 가능한 대역폭 ≫ MSS/RTT (초기 전송률). 1 Gbps를 쓸 수 있는데 1 MSS씩만 올리면 한참 걸린다.</li>
+      <li>그래서 초반에는 <b>지수함수적으로 빠르게</b> 전송률을 끌어올린다. 이것이 Slow Start.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>매 RTT마다 2배 — 두 가지 표현은 같은 말<span class="badge-exam">핵심</span></h3>
+    <p>Slow Start의 동작은 두 가지로 설명되는데, <b>완전히 같은 이야기</b>다.</p>
+    <div class="cmp">
+      <div class="col mild">
+        <h4>표현 ① — 개념</h4>
+        <ul>
+          <li>첫 손실 이벤트 전까지</li>
+          <li><b>매 RTT마다 CongWin을 2배</b>로</li>
+          <li>double CongWin every RTT</li>
+        </ul>
+      </div>
+      <div class="col mild">
+        <h4>표현 ② — 구현</h4>
+        <ul>
+          <li><b>ACK를 받을 때마다</b></li>
+          <li>CongWin을 <b>+1 MSS</b>씩</li>
+          <li>구현 측면에서 기술한 것</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:10px" class="muted">“ACK마다 +1”을 하면 자연히 한 RTT가 지날 때마다 개수가 2배가 된다. 아래로 확인:</p>
+    <div class="diag">
+      <svg viewBox="0 0 560 180" role="img" aria-label="Slow Start 지수 증가 1 2 4 8">
+        <line x1="40" y1="20" x2="40" y2="150" stroke="var(--border-strong)"/>
+        <line x1="40" y1="150" x2="540" y2="150" stroke="var(--border-strong)"/>
+        <!-- bars doubling -->
+        <g>
+          <rect x="70" y="138" width="38" height="12" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="89" y="132" text-anchor="middle" font-size="12" font-weight="650" fill="var(--accent)">1</text>
+          <text x="89" y="166" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">RTT 1</text>
+
+          <rect x="150" y="126" width="38" height="24" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="169" y="120" text-anchor="middle" font-size="12" font-weight="650" fill="var(--accent)">2</text>
+          <text x="169" y="166" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">RTT 2</text>
+
+          <rect x="230" y="102" width="38" height="48" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="249" y="96" text-anchor="middle" font-size="12" font-weight="650" fill="var(--accent)">4</text>
+          <text x="249" y="166" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">RTT 3</text>
+
+          <rect x="310" y="54" width="38" height="96" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="329" y="48" text-anchor="middle" font-size="12" font-weight="650" fill="var(--accent)">8</text>
+          <text x="329" y="166" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">RTT 4</text>
+
+          <rect x="390" y="30" width="38" height="120" rx="3" fill="var(--accent)" stroke="var(--accent)" opacity="0.55"/>
+          <text x="409" y="24" text-anchor="middle" font-size="12" font-weight="650" fill="var(--accent)">16</text>
+          <text x="409" y="166" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">RTT 5</text>
+        </g>
+        <text x="470" y="80" font-size="11.5" fill="var(--text-secondary)">1→2→4→8→16</text>
+        <text x="470" y="98" font-size="11" fill="var(--text-muted)">지수(2ⁿ) 증가</text>
+      </svg>
+      <div class="cap">1 → 2 → 4 → 8 → 16 … 지수함수적으로 빠르게 실제 대역폭을 따라잡는다.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>초기 전송률 계산 예제</h3>
+    <p>강의자료 p.6 예제. <b>MSS = 500 bytes, RTT = 200 ms</b>일 때 초기 전송률(1 MSS/RTT)은?</p>
+    <div class="formula">
+      rate =
+      <span class="frac"><span class="num">1 MSS</span><span class="den">RTT</span></span>
+      =
+      <span class="frac"><span class="num">500 byte × 8</span><span class="den">0.2 s</span></span>
+      =
+      <span class="frac"><span class="num">4,000 bit</span><span class="den">0.2 s</span></span>
+      = <span class="res">20,000 bps = 20 kbps</span>
+    </div>
+    <ul>
+      <li>MSS가 <b>1460 bytes</b>(이더넷 기본)라면: 1460×8 / 0.2 ≈ <b>약 60 kbps</b>.</li>
+      <li>선형 증가만 하면 60k → 120k → 180k … 로 <b>너무 느리다.</b> 그래서 지수 증가(Slow Start)가 필요하다.</li>
+    </ul>
+    <p class="muted">초기엔 Slow Start로 빠르게 끌어올리고, 어느 선부터는 AIMD로 넘어가 절반↔순차를 오가며 최적 전송률을 찾는다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 4 ============ -->
+<section class="panel" data-i="4">
+  <div class="phead">
+    <div class="pn">5</div>
+    <div>
+      <h2>③ Refinement — Timeout vs 3 중복 ACK</h2>
+      <div class="pg">제3장-4 · p.8</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>손실을 감지하는 두 가지 이벤트</h3>
+    <p class="lead">CongWin을 절반으로 줄이게 만드는 <b>손실 이벤트</b>에는 두 종류가 있다. 이 둘을 <b>똑같이 취급하면 성능을 깎아먹는다</b> — 그래서 구분해서 처리하는 것이 세 번째 수정사항(Refinement).</p>
+    <div class="cmp">
+      <div class="col sev">
+        <h4>Timeout (심각 ✕)</h4>
+        <ul>
+          <li>보낸 뒤 <b>ACK가 전혀 안 온다</b></li>
+          <li>반대쪽에서 <b>아무 반응이 없음</b> = 매우 심각</li>
+          <li>→ 길이 거의 끊긴 상황</li>
+        </ul>
+      </div>
+      <div class="col mild">
+        <h4>3 duplicate ACK (덜 심각)</h4>
+        <ul>
+          <li><b>같은 ACK가 3번</b> 중복으로 옴</li>
+          <li>데이터는 오긴 오는데 <b>일부만 손실</b></li>
+          <li>→ 네트워크가 아직 살아 있음</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:10px"><b>어느 쪽이 더 심각한가? → Timeout.</b> 아무것도 안 온다는 건 길이 막혔다는 뜻이고, 3 dup ACK는 뭔가는 오고 있다는 뜻이다.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>이벤트별 처리 방법<span class="badge-exam">핵심</span></h3>
+    <p><b>Timeout (심각)</b> — 절반으로 줄이는 건 의미 없다. 바닥까지 내린다.</p>
+    <ul>
+      <li>CongWin을 <b>1 MSS</b>(제일 밑바닥)로 떨어뜨린다.</li>
+      <li>threshold(ssthresh)를 <b>직전 CongWin의 절반</b>으로 설정.</li>
+      <li>거기서부터 <b>지수함수적(Slow Start)으로</b> 증가 → threshold 도달 후에는 <b>선형</b> 증가.</li>
+    </ul>
+    <p style="margin-top:12px"><b>3 duplicate ACK (덜 심각)</b> — 바닥까지 갈 필요 없다.</p>
+    <ul>
+      <li>CongWin을 <b>절반</b>으로만 감소시키고, threshold도 절반 값으로.</li>
+      <li>이후 <b>선형</b>으로 증가하며 이어간다. (바닥으로 안 내려감)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>두 경우를 그림으로</h3>
+    <div class="diag">
+      <svg viewBox="0 0 640 230" role="img" aria-label="Timeout은 1로, 3 dup ACK는 절반으로">
+        <line x1="48" y1="20" x2="48" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <line x1="48" y1="196" x2="616" y2="196" stroke="var(--border-strong)" stroke-width="1.5"/>
+        <text x="20" y="30" font-size="11" fill="var(--text-muted)">CongWin</text>
+        <text x="596" y="214" font-size="11" fill="var(--text-muted)">time</text>
+        <!-- rise (slow start exp) to a peak -->
+        <path d="M48,190 C70,188 92,150 120,96" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+        <!-- 3 dup ACK halving at x=120 -->
+        <circle cx="120" cy="96" r="4" fill="var(--rose)"/>
+        <text x="128" y="90" font-size="10.5" fill="var(--rose)">3 dup ACK</text>
+        <!-- drop to half (y from 96 to ~146) then linear increase -->
+        <line x1="120" y1="96" x2="120" y2="143" stroke="var(--rose)" stroke-width="2" stroke-dasharray="4 3"/>
+        <line x1="120" y1="143" x2="300" y2="86" stroke="var(--green)" stroke-width="2.4"/>
+        <text x="186" y="130" font-size="10.5" fill="var(--green)">절반 후 선형↑</text>
+        <!-- timeout at x=300 -->
+        <circle cx="300" cy="86" r="4" fill="var(--rose)"/>
+        <text x="300" y="78" font-size="10.5" fill="var(--rose)" text-anchor="middle">Timeout</text>
+        <!-- drop all the way to 1 (bottom) -->
+        <line x1="300" y1="86" x2="300" y2="188" stroke="var(--rose)" stroke-width="2" stroke-dasharray="4 3"/>
+        <!-- threshold line = half of congwin at timeout -->
+        <line x1="300" y1="136" x2="520" y2="136" stroke="var(--amber-accent)" stroke-width="1.3" stroke-dasharray="5 4"/>
+        <text x="522" y="140" font-size="10" fill="var(--amber)">threshold</text>
+        <!-- slow start exp from bottom up to threshold, then linear -->
+        <path d="M300,188 C325,186 345,160 372,136" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+        <text x="312" y="176" font-size="10" fill="var(--accent)">지수(SS)</text>
+        <line x1="372" y1="136" x2="540" y2="92" stroke="var(--green)" stroke-width="2.4"/>
+        <text x="430" y="122" font-size="10.5" fill="var(--green)">선형↑</text>
+      </svg>
+      <div class="cap">3 dup ACK → 절반까지만. Timeout → 1 MSS 바닥까지 내린 뒤 threshold(직전의 절반)까지 지수 증가, 이후 선형.</div>
+    </div>
+  </div>
+
+  <div class="card note">
+    <h3>TCP Tahoe와 TCP Reno<span class="note-tag">부연설명</span></h3>
+    <p>강의자료 p.9의 두 버전 이름. 위에서 배운 처리 방식이 곧 이 둘의 차이다.</p>
+    <ul>
+      <li><b>TCP Tahoe:</b> 손실이면 종류와 무관하게 <b>무조건 CongWin을 1 MSS</b>로 줄이고 Slow Start로 전환.</li>
+      <li><b>TCP Reno:</b> <b>3 중복 ACK</b>일 때는 바닥까지 가지 않고 CongWin을 <b>절반</b>으로만 감소. (timeout은 Tahoe처럼 1로)</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>ssthresh(threshold)의 초깃값<span class="note-tag">부연설명</span></h3>
+    <p>요즘 구현은 처음엔 <b>threshold 제한 없이</b> 지수 증가로 올려 보다가, 손실이 처음 생긴 지점을 <b>기억</b>해 두고, 다음에 그 값을 threshold로 설정해 활용한다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 5 ============ -->
+<section class="panel" data-i="5">
+  <div class="phead">
+    <div class="pn">6</div>
+    <div>
+      <h2>요약 — TCP 혼잡제어 한눈에</h2>
+      <div class="pg">제3장-4 · p.9 ~ p.10</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>CongWin과 Threshold의 관계<span class="badge-exam">핵심</span></h3>
+    <ul>
+      <li><b>CongWin &lt; Threshold</b> → <b>Slow Start</b> 단계, 윈도우를 <b>지수적</b>으로 증가.</li>
+      <li><b>CongWin &gt; Threshold</b> → <b>Congestion Avoidance</b> 단계, <b>선형(기울기 1)</b>으로 증가.</li>
+      <li><b>3 중복 ACK</b> 발생 → Threshold = CongWin/2, CongWin = Threshold(절반)로 설정.</li>
+      <li><b>Timeout</b> 발생 → Threshold = CongWin/2, CongWin = <b>1 MSS</b>로 설정.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>전체 흐름 요약</h3>
+    <div class="flow">
+      <div class="fstep"><div class="fn">1</div><div class="fx">혼잡 = 중간 노드 문제</div><div class="fd">직접 알 수 없음</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">2</div><div class="fx">간접 탐지</div><div class="fd">timeout / 3 dup ACK</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">3</div><div class="fx">AIMD</div><div class="fd">순차↑, 손실 시 ÷2</div></div>
+    </div>
+    <div class="flow" style="margin-top:8px">
+      <div class="fstep"><div class="fn">4</div><div class="fx">Slow Start</div><div class="fd">초반 지수↑ (2배/RTT)</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">5</div><div class="fx">Refinement</div><div class="fd">timeout은 1로, 3ACK는 절반</div></div>
+      <div class="arr">→</div>
+      <div class="fstep"><div class="fn">6</div><div class="fx">최적 전송률 추적</div><div class="fd">톱니 평균 ≈ 최적</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>왜 TCP는 이렇게까지 하나</h3>
+    <p>목적지까지 <b>수십 개의 라우터·링크</b>를 거치는데, 각 링크 속도도 모르고 시간에 따라 변한다. 나 혼자 빠르다고 1 Gbps로 보내도, <b>중간이나 상대 서버가 못 받으면</b> 소용없다.</p>
+    <ul>
+      <li>TCP는 <b>신뢰적 통신</b>을 해야 하므로, 중간 노드까지 고려한 <b>가장 적절한 전송률</b>로 보내야 한다.</li>
+      <li>직접 알 수 없으니 → <b>순차 증가 + 손실 시 절반(AIMD)</b>으로 최적값을 더듬어 찾는다.</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>다음 시간 — TCP 공평성(Fairness)<span class="note-tag">부연설명</span></h3>
+    <p>K개의 TCP 세션이 대역폭 R을 공유할 때 각 세션이 <b>R/K</b>를 공평하게 나눠 갖는지(AIMD가 공평성으로 수렴하는지)를 다룬다. 강의 시간이 다 되어 다음 시간으로 미뤄진 부분. (강의자료 p.11~12)</p>
+  </div>
+</section>
+
+<div class="footer">컴퓨터네트워크 · 11주차 2차시 &nbsp;·&nbsp; 강의자료 제3장-4 (Transport Layer 4) p.2~10 &nbsp;·&nbsp; 강의 녹음 재구성</div>
+</div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tab');
+  var panels=document.querySelectorAll('.panel');
+  function go(i){
+    tabs.forEach(function(t){t.classList.toggle('active',t.dataset.i==i);});
+    panels.forEach(function(p){p.classList.toggle('active',p.dataset.i==i);});
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  tabs.forEach(function(t){t.addEventListener('click',function(){go(t.dataset.i);});});
+})();
+</script>
+</body>
+</html>
