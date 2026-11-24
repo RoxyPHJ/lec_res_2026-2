@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>컴퓨터네트워크 12주차 2차시 — SDN 복습 · 라우터 구조 · 포워딩 · IP 데이터그램 · 단편화</title>
+<style>
+:root{
+  --surface-0:#f4f3ee; --surface-1:#faf9f5; --surface-2:#ffffff; --surface-3:#f0eee7;
+  --text-primary:#1f1e1d; --text-secondary:#56544f; --text-muted:#8a877f;
+  --border:rgba(31,30,29,.12); --border-strong:rgba(31,30,29,.24);
+  --accent:#185FA5; --accent-soft:#E6F1FB; --accent-line:#4a8dcf;
+  --amber:#9a6a00; --amber-bg:#fdf5e3; --amber-border:#e8c766; --amber-accent:#c98a00;
+  --blue:#1f5fa8; --blue-bg:#eaf2fb; --blue-border:#9cc2e8;
+  --rose:#b03a52; --rose-bg:#fcebee; --rose-border:#e8a6b3;
+  --green:#2f7d52; --green-bg:#e8f5ec; --green-border:#9fd2b2;
+  --mono:'SF Mono','Menlo','Consolas','Noto Sans KR',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1a1918; --surface-1:#222120; --surface-2:#2a2927; --surface-3:#323230;
+    --text-primary:#ece9e1; --text-secondary:#b4b2a9; --text-muted:#86847c;
+    --border:rgba(255,255,255,.11); --border-strong:rgba(255,255,255,.22);
+    --accent:#85B7EB; --accent-soft:#0c2b4d; --accent-line:#3f7cb8;
+    --amber:#f0c66b; --amber-bg:#352a12; --amber-border:#6b5520; --amber-accent:#f0c66b;
+    --blue:#8fbdf0; --blue-bg:#122942; --blue-border:#2d4e74;
+    --rose:#eca3b2; --rose-bg:#3a1f26; --rose-border:#6e3c47;
+    --green:#8fd2a8; --green-bg:#15301f; --green-border:#2f5e40;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--sans);line-height:1.68;font-size:15px;-webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:1.6rem 1.1rem 4rem}
+
+.src{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin:0 0 6px;letter-spacing:.01em}
+header h1{font-size:23px;font-weight:650;margin:0 0 6px;line-height:1.3;letter-spacing:-.01em}
+header .desc{font-size:13.5px;color:var(--text-secondary);margin:0 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary)}
+.chip.k{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+
+.tabs{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:4px;margin:18px 0 22px;padding:6px;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(8px)}
+.tab{flex:1 1 auto;min-width:fit-content;border:0;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:12.8px;font-weight:550;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:.14s;display:flex;align-items:center;gap:6px;justify-content:center}
+.tab:hover{background:var(--surface-3);color:var(--text-primary)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(24,95,165,.3)}
+.tab .tnum{font-family:var(--mono);font-size:11px;opacity:.65}
+.tab.active .tnum{opacity:.85}
+
+.panel{display:none;animation:fade .25s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-start;gap:12px;margin:0 0 16px}
+.phead .pn{flex:none;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--mono);font-size:15px}
+.phead h2{font-size:18.5px;margin:2px 0 2px;font-weight:650;line-height:1.3}
+.phead .pg{font-size:11.5px;color:var(--text-muted);font-family:var(--mono)}
+
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
+.card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px}
+.card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
+.card ul{margin:6px 0 10px;padding-left:2px;list-style:none}
+.card ul li{position:relative;padding-left:20px;margin:7px 0}
+.card ul li::before{content:"";position:absolute;left:4px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--accent-line)}
+.card ul li:last-child{margin-bottom:0}
+b,strong{color:var(--text-primary);font-weight:650}
+
+.card.imp{background:var(--amber-bg);border-color:var(--amber-border)}
+.card.imp h3{color:var(--amber)}
+.card.imp ul li::before{background:var(--amber-accent)}
+.star{flex:none;width:17px;height:17px;color:var(--amber-accent)}
+.badge-exam{font-size:10.5px;font-weight:700;font-family:var(--mono);color:#fff;background:var(--amber-accent);padding:2px 7px;border-radius:6px;margin-left:auto;letter-spacing:.03em}
+
+.card.note{background:var(--blue-bg);border-color:var(--blue-border)}
+.card.note h3{color:var(--blue)}
+.card.note ul li::before{background:var(--blue)}
+.note-tag{font-size:10.5px;font-weight:700;font-family:var(--mono);color:var(--blue);border:1px solid var(--blue-border);padding:1px 7px;border-radius:6px;margin-left:auto}
+
+.lead{font-size:15.5px;color:var(--text-primary);margin:0 0 12px}
+.muted{color:var(--text-secondary)}
+.tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:1px 7px;border-radius:6px;background:var(--surface-3);border:1px solid var(--border);color:var(--text-secondary);white-space:nowrap}
+.tag.tcp{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.tag.udp{color:var(--amber);background:var(--amber-bg);border-color:var(--amber-border)}
+.tag.icmp{color:var(--green);background:var(--green-bg);border-color:var(--green-border)}
+.tag.rose{color:var(--rose);background:var(--rose-bg);border-color:var(--rose-border)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 2px}
+.mini{background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:13px 14px}
+.mini .mt{font-size:12px;color:var(--text-muted);font-family:var(--mono);margin-bottom:4px}
+.mini .mv{font-size:14.5px;font-weight:600}
+.mini .ms{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+
+.formula{background:var(--surface-1);border:1px dashed var(--border-strong);border-radius:12px;padding:16px 18px;margin:10px 0;text-align:center;font-family:var(--mono);font-size:14px;overflow-x:auto}
+.formula .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px}
+.formula .frac .num{border-bottom:1.5px solid var(--text-secondary);padding:0 8px 2px}
+.formula .frac .den{padding:2px 8px 0}
+.formula .res{color:var(--accent);font-weight:700}
+.formula .step{display:block;margin:4px 0;color:var(--text-secondary);font-size:13px}
+
+.diag{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0 4px;overflow-x:auto}
+.diag svg{display:block;width:100%;height:auto;min-width:480px}
+.cap{font-size:12px;color:var(--text-muted);text-align:center;margin-top:6px}
+text{font-family:var(--sans)}
+
+/* data table */
+.dtbl{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 4px;overflow:hidden;border-radius:10px}
+.dtbl th,.dtbl td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:middle}
+.dtbl th{background:var(--surface-3);font-weight:620;font-size:12.5px}
+.dtbl td.m,.dtbl th.m{font-family:var(--mono);font-size:12px;letter-spacing:-.02em}
+.dtbl td.c{text-align:center;font-family:var(--mono);font-weight:650}
+.if0{color:var(--accent)}.if1{color:var(--green)}.if2{color:var(--amber)}.if3{color:var(--rose)}
+
+/* bitfield header */
+.bf{display:flex;flex-direction:column;gap:3px;margin:10px 0 4px;font-family:var(--mono);font-size:11.5px}
+.bfrow{display:flex;gap:3px}
+.bfcell{background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:7px 4px;text-align:center;line-height:1.3;display:flex;flex-direction:column;justify-content:center;min-height:46px}
+.bfcell .bn{font-size:10px;color:var(--text-muted)}
+.bfcell.hl{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.bfcell.ip{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.bfcell.frag{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+
+/* fragment blocks */
+.frags{display:flex;flex-direction:column;gap:9px;margin:10px 0 4px}
+.fblock{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.fblock .fh{display:flex;flex-wrap:wrap;gap:0;font-family:var(--mono);font-size:12px}
+.fblock .fh span{flex:1 1 auto;padding:6px 8px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-width:90px}
+.fblock .fh span:last-child{border-right:0}
+.fblock .fh span b{display:block;font-size:10.5px;color:var(--text-muted);font-weight:500}
+.fblock.orig .fh{background:var(--surface-3)}
+.fblock.last{border-color:var(--amber-border)}
+.fbtag{font-size:11px;font-family:var(--mono);color:var(--text-muted);padding:4px 10px 0}
+
+.footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);text-align:center}
+@media(max-width:560px){
+  .wrap{padding:1.2rem .8rem 3rem}
+  header h1{font-size:20px}
+  .tab{font-size:12px;padding:7px 8px}
+  .card{padding:15px 15px}
+  .bf{font-size:10px}
+  .fblock .fh span{min-width:70px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="src">강의자료 : 제4장 (Chap 4. Network Layer · 데이터평면) · p.4 ~ p.13</p>
+  <h1>SDN 복습 · 라우터 구조 · 포워딩 테이블 · IP 데이터그램 · 단편화</h1>
+  <p class="desc">컴퓨터네트워크 &nbsp;|&nbsp; 12주차 2차시</p>
+  <div class="chips">
+    <span class="chip k">SDN 제어평면</span>
+    <span class="chip">라우터 구조</span>
+    <span class="chip">포워딩 테이블</span>
+    <span class="chip">Longest Prefix Match</span>
+    <span class="chip">IP 헤더 20B</span>
+    <span class="chip">TTL</span>
+    <span class="chip">IP 단편화</span>
+    <span class="chip">DoS</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-i="0"><span class="tnum">01</span>SDN 복습</button>
+  <button class="tab" data-i="1"><span class="tnum">02</span>라우터 구조</button>
+  <button class="tab" data-i="2"><span class="tnum">03</span>포워딩 테이블</button>
+  <button class="tab" data-i="3"><span class="tnum">04</span>Prefix Match</button>
+  <button class="tab" data-i="4"><span class="tnum">05</span>네트워크 계층</button>
+  <button class="tab" data-i="5"><span class="tnum">06</span>IP 데이터그램</button>
+  <button class="tab" data-i="6"><span class="tnum">07</span>IP 단편화</button>
+  <button class="tab" data-i="7"><span class="tnum">08</span>단편화 DoS</button>
+</nav>
+
+<!-- ============ PANEL 0 : SDN ============ -->
+<section class="panel active" data-i="0">
+  <div class="phead">
+    <div class="pn">1</div>
+    <div>
+      <h2>SDN 복습 — 제어평면을 어디서 구현할까</h2>
+      <div class="pg">제4장 · p.4, p.6</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>경로 결정(라우팅)을 구현하는 세 가지 방식</h3>
+    <p class="lead">IP 패킷의 경로를 결정하는 기능을 어디에 두느냐의 문제다.</p>
+    <ul>
+      <li><b>라우터에 통합 구현</b> — 각 라우터 안에 라우팅 기능이 들어 있는 전통적 방식.</li>
+      <li><b>분리 + 원격 서버에서 구현</b> — 경로 결정을 별도의 원격 시스템에 몰아넣고, 그 서버가 아래 라우터들에게 명령을 내려 경로를 결정하게 한다. <b>이것이 SDN</b>이다.</li>
+    </ul>
+    <p class="muted">SDN = <b>Software-Defined Networking</b>. 별도 시스템이 전체를 보고, 각 라우터에 포워딩 테이블을 설치·지시한다.</p>
+  </div>
+
+  <div class="card">
+    <h3>SDN을 쓰면 무엇이 좋은가</h3>
+    <p>전체 네트워크 그림을 한눈에 보고, <b>내가 원하는 형태로 트래픽이 흐르도록</b> 조정할 수 있다.</p>
+    <ul>
+      <li>한쪽 링크에 트래픽이 너무 몰리면 → <b>다른 링크로 우회</b>시켜 분산.</li>
+      <li>이동통신망은 단말이 이동하므로 경로에 따라 트래픽이 이쪽에 몰렸다 저쪽에 몰렸다 한다 → 소프트웨어로 유연하게 스위치를 조작할 수 있는 SDN이 특히 유리.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>SDN의 핵심 한 줄<span class="badge-exam">강조</span></h3>
+    <p>“<b>소프트웨어로 경로나 전체 네트워크 구성(configuration)을 바꿀 수 있는 것</b>” — 강의에서 “사실은 (SDN의) 주요 내용이 그거였다”고 강조한 부분.</p>
+  </div>
+
+  <div class="card note">
+    <h3>데이터평면 vs 제어평면<span class="note-tag">부연설명</span></h3>
+    <ul>
+      <li><b>데이터평면(data plane)</b> : 각 라우터의 로컬 기능. 입력 포트의 데이터그램을 어떤 출력 포트로 내보낼지 결정.</li>
+      <li><b>제어평면(control plane)</b> : 네트워크 전체 로직. 출발지 → 목적지까지 어떤 경로로 전달할지 결정.</li>
+      <li>제어평면을 <b>라우터마다 분산</b> 구현 = 기존 방식 / <b>원격 서버 한 곳에 통합</b> 구현 = SDN.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PANEL 1 : Router structure ============ -->
+<section class="panel" data-i="1">
+  <div class="phead">
+    <div class="pn">2</div>
+    <div>
+      <h2>라우터 구조 — 스위치 패브릭의 용량</h2>
+      <div class="pg">제4장 · p.8</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>라우터는 여러 입력 · 여러 출력으로 구성</h3>
+    <p>여러 입력 포트에서 동시에 패킷이 들어오고 여러 출력 포트로 동시에 나간다. 그 사이에서 패킷을 옮겨주는 내부 구조가 <b>스위치 패브릭(switch fabric)</b>이며, 여기에 <b>용량</b>이 있다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 560 230" role="img" aria-label="입력 포트, 스위치 패브릭, 출력 포트 구조">
+        <text x="60" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)">입력 포트</text>
+        <text x="280" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)">스위치 패브릭</text>
+        <text x="500" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)">출력 포트</text>
+        <!-- inputs -->
+        <g>
+          <rect x="18" y="44" width="84" height="30" rx="7" fill="var(--accent-soft)" stroke="var(--border-strong)"/><text x="60" y="64" text-anchor="middle" font-size="12" fill="var(--accent)">in 1</text>
+          <rect x="18" y="86" width="84" height="30" rx="7" fill="var(--accent-soft)" stroke="var(--border-strong)"/><text x="60" y="106" text-anchor="middle" font-size="12" fill="var(--accent)">in 2</text>
+          <rect x="18" y="128" width="84" height="30" rx="7" fill="var(--accent-soft)" stroke="var(--border-strong)"/><text x="60" y="148" text-anchor="middle" font-size="12" fill="var(--accent)">in 3</text>
+          <rect x="18" y="170" width="84" height="30" rx="7" fill="var(--accent-soft)" stroke="var(--border-strong)"/><text x="60" y="190" text-anchor="middle" font-size="12" fill="var(--accent)">in 4</text>
+        </g>
+        <!-- fabric -->
+        <rect x="200" y="54" width="160" height="136" rx="12" fill="var(--surface-2)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="280" y="118" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text-primary)">N × N</text>
+        <text x="280" y="138" text-anchor="middle" font-size="11" fill="var(--text-muted)">switch fabric</text>
+        <!-- outputs -->
+        <g>
+          <rect x="458" y="44" width="84" height="30" rx="7" fill="var(--green-bg)" stroke="var(--border-strong)"/><text x="500" y="64" text-anchor="middle" font-size="12" fill="var(--green)">out 1</text>
+          <rect x="458" y="86" width="84" height="30" rx="7" fill="var(--green-bg)" stroke="var(--border-strong)"/><text x="500" y="106" text-anchor="middle" font-size="12" fill="var(--green)">out 2</text>
+          <rect x="458" y="128" width="84" height="30" rx="7" fill="var(--green-bg)" stroke="var(--border-strong)"/><text x="500" y="148" text-anchor="middle" font-size="12" fill="var(--green)">out 3</text>
+          <rect x="458" y="170" width="84" height="30" rx="7" fill="var(--green-bg)" stroke="var(--border-strong)"/><text x="500" y="190" text-anchor="middle" font-size="12" fill="var(--green)">out 4</text>
+        </g>
+        <!-- links -->
+        <g stroke="var(--border-strong)" stroke-width="1.3" fill="none">
+          <path d="M102 59 L200 90"/><path d="M102 101 L200 108"/><path d="M102 143 L200 136"/><path d="M102 185 L200 154"/>
+          <path d="M360 90 L458 59"/><path d="M360 108 L458 101"/><path d="M360 136 L458 143"/><path d="M360 154 L458 185"/>
+        </g>
+      </svg>
+      <div class="cap">입력 N개 · 출력 N개를 스위치 패브릭이 연결 (그림은 4×4)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>용량은 입력×출력 규모로 커진다</h3>
+    <div class="grid">
+      <div class="mini"><div class="mt">2 × 2</div><div class="mv">가장 간단</div><div class="ms">2개 입력 → 2개 출력</div></div>
+      <div class="mini"><div class="mt">4 × 4</div><div class="mv">소형</div><div class="ms">4개 동시 입력/출력</div></div>
+      <div class="mini"><div class="mt">16 × 16</div><div class="mv">중형</div><div class="ms">16개 동시 입력/출력</div></div>
+    </div>
+    <p style="margin-top:12px">규모가 커질수록 <b>패브릭의 스위칭 용량과 가격이 함께 올라가</b> 대형 라우터가 된다.</p>
+    <ul>
+      <li>가장 간단한 2×2 정도는 <b>리눅스 시스템에 랜카드(NIC)를 꽂아</b> 직접 라우터로 만들 수 있다. 리눅스가 패킷을 받아 포워딩하도록 간단히 구현 가능.</li>
+      <li>들어오는 양이 많아지면 패브릭의 스위칭 용량도 그만큼 커져야 한다.</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>라우터의 2가지 기능<span class="note-tag">부연설명</span></h3>
+    <ul>
+      <li><b>① 라우팅 알고리즘/프로토콜 실행</b> — RIP, OSPF, BGP (제어평면).</li>
+      <li><b>② 데이터그램 포워딩</b> — 입력 링크에서 출력 링크로 패킷을 옮김 (데이터평면).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PANEL 2 : Forwarding table ============ -->
+<section class="panel" data-i="2">
+  <div class="phead">
+    <div class="pn">3</div>
+    <div>
+      <h2>포워딩 테이블 — 목적지 주소 → 출력 포트</h2>
+      <div class="pg">제4장 · p.9</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>포워딩 테이블이 하는 일</h3>
+    <p>들어온 패킷의 <b>목적지 IP 주소(32비트)</b>를 보고, 어떤 <b>출력 포트(인터페이스)</b>로 내보낼지 결정한다.</p>
+    <ul>
+      <li>극단적으로 단순하면 <b>내부 / 외부</b>만 구분하면 된다.</li>
+      <li>조금 복잡하면 여러 출력 포트 중 어디로 나갈지를 <b>주소 레인지(range)</b>로 정해 준다.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>목적지 주소 레인지 테이블 (p.9 예)</h3>
+    <p class="muted">32비트 목적지 주소를 범위로 나누고, 각 범위에 출력 인터페이스를 지정한다.</p>
+    <table class="dtbl">
+      <thead><tr><th class="m">Destination Address Range</th><th class="c">Interface</th></tr></thead>
+      <tbody>
+        <tr><td class="m">11001000 00010111 00010<b>000</b> 00000000<br>&nbsp;&nbsp;~ 11001000 00010111 00010<b>111</b> 11111111</td><td class="c if0">0</td></tr>
+        <tr><td class="m">11001000 00010111 00011<b>000</b> 00000000<br>&nbsp;&nbsp;~ 11001000 00010111 00011<b>000</b> 11111111</td><td class="c if1">1</td></tr>
+        <tr><td class="m">11001000 00010111 00011<b>001</b> 00000000<br>&nbsp;&nbsp;~ 11001000 00010111 00011<b>111</b> 11111111</td><td class="c if2">2</td></tr>
+        <tr><td class="m">otherwise (그 외 모든 주소)</td><td class="c if3">3</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px">예시는 <b>인터페이스 4개짜리 라우터</b>로, <b>3번 포트는 외부로 나가는 포트</b>다. 안쪽 0·1·2는 내부 서브넷 연결, 3번은 나머지 전부를 바깥으로 보낸다.</p>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>DB가 필요 없다 — 파일 하나면 된다<span class="badge-exam">강조</span></h3>
+    <p>포워딩 테이블은 거창한 데이터베이스가 필요 없다. <b>간단한 테이블 파일 하나</b>만 만들어 두면, 라우팅(포워딩)이 그 파일에 의해 자동으로 이루어진다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 3 : Longest Prefix Match ============ -->
+<section class="panel" data-i="3">
+  <div class="phead">
+    <div class="pn">4</div>
+    <div>
+      <h2>Longest Prefix Matching</h2>
+      <div class="pg">제4장 · p.10</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>앞의 공통 prefix만 적는다</h3>
+    <p>주소 범위를 매번 다 쓰지 않고, <b>앞쪽에서 공통으로 일치하는 prefix 부분까지만</b> 적어 테이블을 만든다.</p>
+    <table class="dtbl">
+      <thead><tr><th class="m">Prefix Match</th><th class="c">Interface</th></tr></thead>
+      <tbody>
+        <tr><td class="m">11001000 00010111 00010</td><td class="c if0">0</td></tr>
+        <tr><td class="m">11001000 00010111 00011000</td><td class="c if1">1</td></tr>
+        <tr><td class="m">11001000 00010111 00011</td><td class="c if2">2</td></tr>
+        <tr><td class="m">otherwise</td><td class="c if3">3</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>규칙 — 가장 길게 일치하는 쪽으로<span class="badge-exam">핵심</span></h3>
+    <p>목적지 주소가 여러 prefix에 걸리면, <b>가장 길게(longest) 매칭되는 인터페이스로 내보낸다.</b></p>
+  </div>
+
+  <div class="card">
+    <h3>예제로 확인 (p.10)</h3>
+    <div class="grid">
+      <div class="mini">
+        <div class="mt">예 1 · DA</div>
+        <div class="mv" style="font-family:var(--mono);font-size:12.5px">11001000 00010111<br>00010110 10100001</div>
+        <div class="ms"><b>00010</b>까지만 일치 → <b class="if0">인터페이스 0</b></div>
+      </div>
+      <div class="mini">
+        <div class="mt">예 2 · DA</div>
+        <div class="mv" style="font-family:var(--mono);font-size:12.5px">11001000 00010111<br>00011000 10101010</div>
+        <div class="ms"><b>00011</b>(→2)과 <b>00011000</b>(→1) 둘 다 걸리지만, 더 긴 <b>00011000</b> 승 → <b class="if1">인터페이스 1</b></div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:12px">예 2가 핵심: <b>00011</b>(2번)에도 걸리고 <b>00011000</b>(1번)에도 걸리지만, 더 길게 일치하는 <b>1번</b>으로 보낸다.</p>
+  </div>
+
+  <div class="card note">
+    <h3>정리 — 포워딩 테이블은 가벼운 시스템<span class="note-tag">부연설명</span></h3>
+    <p>목적지 주소를 prefix와 비교해 가장 긴 매칭의 포트로 내보내면 끝이다. 그래서 라우터는 <b>복잡한 DB 없이 작은 테이블 파일 하나</b>로 포워딩을 자동 수행하는, 아주 간단한 시스템이 된다.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 4 : Internet network layer ============ -->
+<section class="panel" data-i="4">
+  <div class="phead">
+    <div class="pn">5</div>
+    <div>
+      <h2>인터넷 네트워크 계층의 구성요소</h2>
+      <div class="pg">제4장 · p.11</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>네트워크 계층 = IP + ICMP + 라우팅 프로토콜</h3>
+    <div class="grid">
+      <div class="mini"><div class="mt">① IP protocol</div><div class="mv">주소·포맷·핸들링</div><div class="ms">addressing 규약, 데이터그램 포맷, 패킷 핸들링 규약. 데이터를 주고받기 위해 존재.</div></div>
+      <div class="mini"><div class="mt">② ICMP protocol</div><div class="mv">에러·신호</div><div class="ms">error reporting, 라우터 signaling. ping이 대표 — 서버가 살았는지 죽었는지 확인.</div></div>
+      <div class="mini"><div class="mt">③ Routing protocols</div><div class="mv">경로 선택</div><div class="ms">path selection — RIP, OSPF, BGP. 포워딩 테이블을 채운다.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>ICMP는 PING 같은 것</h3>
+    <p><span class="tag icmp">ICMP</span> 상대 호스트/서버가 <b>살아 있는지 죽었는지</b> 확인하려고 신호를 보내는, 간단한 <b>에러 리포팅 · 라우터 신호</b>용 프로토콜. 사용자가 ping을 쓸 때 동작하는 것이 바로 이것이다.</p>
+  </div>
+
+  <div class="card">
+    <h3>라우팅 프로토콜 — 노드끼리 경로 정보를 주고받는다</h3>
+    <p>라우팅 알고리즘은 한 노드에만 있는 게 아니라 <b>여러 노드에 분산되어 한 덩어리처럼</b> 동작한다(또는 SDN처럼 원격 서버에 통합).</p>
+    <ul>
+      <li>내 링크에 문제가 생기면 → 인접 라우터에게 “내 쪽 링크에 트래픽이 많이 몰리니 <b>나한테 보내지 말라</b>”는 라우팅 정보를 보내야 한다.</li>
+      <li>이때 필요한 것이 <b>라우팅 프로토콜</b> — 대표적으로 <span class="tag">RIP</span> <span class="tag">OSPF</span> <span class="tag">BGP</span>.</li>
+      <li>라우팅 프로토콜 상세는 <b>마지막 시간(다음 주)</b>에 다룬다.</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>사례 — 라우팅 프로토콜(BGP) 악용<span class="badge-exam">사례</span></h3>
+    <p>강의에서 언급한 예: <b>BGP 프로토콜의 취약점을 이용</b>해 누군가 경로를 바꿔버려, 메시지가 카카오 서버로 못 가고 엉뚱한 경로로 간 사건. 결과적으로 한동안 메시지 전달이 안 되는 <b>서비스 장애</b>가 발생했다고 소개됨.</p>
+    <p class="muted">→ 라우팅 프로토콜을 악용하면 트래픽 경로 자체를 틀어버릴 수 있다는 점을 보여주는 예. (자세한 내용은 마지막 시간에 다시)</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 5 : IP datagram ============ -->
+<section class="panel" data-i="5">
+  <div class="phead">
+    <div class="pn">6</div>
+    <div>
+      <h2>IP 데이터그램 헤더 포맷</h2>
+      <div class="pg">제4장 · p.12</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>헤더 크기 — 외우기 쉽다<span class="badge-exam">암기</span></h3>
+    <div class="grid">
+      <div class="mini"><div class="mt">IP 헤더</div><div class="mv" style="color:var(--accent)">20 Byte</div><div class="ms">옵션 제외 시</div></div>
+      <div class="mini"><div class="mt">TCP 헤더</div><div class="mv" style="color:var(--accent)">20 Byte</div><div class="ms">IP와 동일</div></div>
+      <div class="mini"><div class="mt">UDP 헤더</div><div class="mv" style="color:var(--amber)">8 Byte</div><div class="ms">훨씬 작음</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>헤더 필드 배치 (32비트 × 5 word = 20B)</h3>
+    <div class="bf">
+      <div class="bfrow">
+        <div class="bfcell" style="flex:1">ver<span class="bn">4b</span></div>
+        <div class="bfcell" style="flex:1">head.len<span class="bn">4b</span></div>
+        <div class="bfcell" style="flex:2">ToS<span class="bn">8b</span></div>
+        <div class="bfcell hl" style="flex:4">Total Length<span class="bn">16b · 데이터그램 전체 길이</span></div>
+      </div>
+      <div class="bfrow">
+        <div class="bfcell frag" style="flex:4">16-bit Identifier<span class="bn">분할 식별 ID</span></div>
+        <div class="bfcell frag" style="flex:1.5">Flag<span class="bn">3b</span></div>
+        <div class="bfcell frag" style="flex:3.5">Fragment Offset<span class="bn">13b</span></div>
+      </div>
+      <div class="bfrow">
+        <div class="bfcell hl" style="flex:2">TTL<span class="bn">8b</span></div>
+        <div class="bfcell" style="flex:2">Protocol<span class="bn">8b · 상위계층</span></div>
+        <div class="bfcell" style="flex:4">Header Checksum<span class="bn">16b</span></div>
+      </div>
+      <div class="bfrow"><div class="bfcell ip" style="flex:1">Source IP Address<span class="bn">32b</span></div></div>
+      <div class="bfrow"><div class="bfcell ip" style="flex:1">Destination IP Address<span class="bn">32b</span></div></div>
+      <div class="bfrow"><div class="bfcell" style="flex:1;opacity:.7">Options (if any) — 보통 생략<span class="bn">가변</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>주요 필드 정리</h3>
+    <ul>
+      <li><b>ver (4비트)</b> : IP 버전. 4면 <span class="tag">0100</span>.</li>
+      <li><b>head.len</b> : 헤더 길이(4바이트 단위). 값 5 → 5×4 = <b>20바이트</b>.</li>
+      <li><b>Total Length (16비트)</b> : 헤더를 포함한 데이터그램 전체 길이(바이트).</li>
+      <li><b>16-bit Identifier</b> : 분할 시 같은 원본 패킷임을 식별하는 ID.</li>
+      <li><b>Flag (3비트)</b> : unused · <b>분할금지(DF)</b> · <b>추가단편화(MF)</b>.</li>
+      <li><b>Fragment Offset</b> : 분할·재조립 위치.</li>
+      <li><b>TTL</b> : 남은 홉 수(아래 카드).</li>
+      <li><b>Header Checksum</b> : 헤더 에러 검출(헤더 값 합산 → 보수).</li>
+      <li><b>Source / Destination IP</b> : 각 <b>32비트</b> (8비트씩 4개, 0~255).</li>
+    </ul>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>TTL (Time To Live) — 좀비 패킷 방지<span class="badge-exam">중요</span></h3>
+    <p>목적지를 못 찾은 패킷이 인터넷을 유령처럼 무한 루프로 떠도는 것을 막기 위한 필드.</p>
+    <ul>
+      <li><b>라우터를 한 번 지날 때마다 1씩 감소</b> → <b>0이 되면 강제로 폐기</b>한다.</li>
+      <li>목적지까지 정해진 홉 수 안에 도달하지 못하면 사라진다 → 무한정 떠돌지 않음.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Protocol 번호 — 페이로드가 무엇인지</h3>
+    <p>상위 계층(페이로드)에 어떤 프로토콜이 실려 있는지를 번호로 표시한다.</p>
+    <div class="grid">
+      <div class="mini"><div class="mt">1</div><div class="mv"><span class="tag icmp">ICMP</span></div></div>
+      <div class="mini"><div class="mt">2</div><div class="mv">IGMP</div></div>
+      <div class="mini"><div class="mt">6</div><div class="mv"><span class="tag tcp">TCP</span></div></div>
+      <div class="mini"><div class="mt">17</div><div class="mv"><span class="tag udp">UDP</span></div></div>
+      <div class="mini"><div class="mt">41</div><div class="mv">IPv6</div></div>
+      <div class="mini"><div class="mt">89</div><div class="mv">OSPF</div></div>
+    </div>
+    <p class="muted" style="margin-top:10px">예: Protocol = 6이면 페이로드에 TCP 세그먼트가, 89면 OSPF(라우팅 제어정보)가 실려 있다는 뜻.</p>
+  </div>
+
+  <div class="card">
+    <h3>Source IP로 발신지 추적</h3>
+    <p>IP 데이터그램에는 <b>출발지 IP 주소가 항상 들어 있어</b> 어디서 날아왔는지 확인할 수 있다 (단, NAT를 거치면 주소가 변환되어 정확한 발신자를 못 찾을 수 있다).</p>
+    <p class="muted">예: 공격 패킷의 source IP로 “인천대학교에서 공격했다” 정도까지는 명확히 알 수 있다(건물 안 누구인지는 별도 추적 필요).</p>
+  </div>
+
+  <div class="card note">
+    <h3>Wireshark 실측 예<span class="note-tag">부연설명</span></h3>
+    <p>강의 중 HTTP 요청을 실제로 캡처해 본 값:</p>
+    <ul>
+      <li><b>Version</b> = 4, <b>Header Length</b> = 5 (×4 = 20바이트).</li>
+      <li><b>Total Length</b> = 895바이트 (= IP 데이터그램 전체 크기).</li>
+      <li><b>Flags</b> : Don’t Fragment 설정, 아직 분할되지 않은 패킷.</li>
+      <li><b>TTL</b> = 128 — 목적지까지 보통 20~30홉이면 충분하니 여유 있게 설정됨.</li>
+      <li>IP 895B − IP헤더 20B − TCP헤더 20B = 실제 HTTP 요청 메시지 부분.</li>
+    </ul>
+    <p class="muted">주소 필드는 Wireshark에서 16진수로 표시(0~ff), 10진수로는 0~255. 예: 10진수 80 → 16진수 50, 79 → 4F, 247 → F7.</p>
+  </div>
+</section>
+
+<!-- ============ PANEL 6 : Fragmentation ============ -->
+<section class="panel" data-i="6">
+  <div class="phead">
+    <div class="pn">7</div>
+    <div>
+      <h2>IP 단편화 · 재조립</h2>
+      <div class="pg">제4장 · p.13</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>왜 분할하는가 — MTU가 링크마다 다르다</h3>
+    <p><b>MTU (Maximum Transmission Unit)</b> = 링크 계층에서 한 번에 보낼 수 있는 <b>최대 데이터 크기</b>. 어떤 링크 계층을 쓰느냐에 따라 값이 다르다.</p>
+    <ul>
+      <li>가장 흔한 <b>이더넷(Ethernet)의 MTU = 1500바이트</b>. (트럭 짐칸에 1500바이트까지만 실을 수 있는 셈)</li>
+      <li>경로 중간에 MTU가 더 작은 링크를 만나면, 큰 IP 데이터그램을 <b>조각(fragment)으로 나눠</b> 보내야 한다.</li>
+    </ul>
+    <p class="muted">비유: 도로 사정이 좋은 구간은 한꺼번에 많이 싣고, 좁은 구간에서는 짧게 쪼개 전송.</p>
+  </div>
+
+  <div class="card">
+    <h3>예제 : 4000바이트 데이터그램, MTU = 1500 (p.13)</h3>
+    <p class="muted">헤더 20바이트를 뺀 <b>데이터 1480바이트씩</b> 나눈다. (1500 = 헤더 20 + 데이터 1480)</p>
+    <div class="frags">
+      <div class="fblock orig">
+        <div class="fbtag">원본 데이터그램</div>
+        <div class="fh">
+          <span>ID<b>= x</b></span><span>offset<b>= 0</b></span><span>fragflag<b>= 0</b></span><span>length<b>= 4000</b></span>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fbtag">조각 ①</div>
+        <div class="fh">
+          <span>ID<b>= x</b></span><span>offset<b>= 0</b></span><span>fragflag<b>= 1</b></span><span>length<b>= 1500</b></span>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fbtag">조각 ②</div>
+        <div class="fh">
+          <span>ID<b>= x</b></span><span>offset<b>= 185</b></span><span>fragflag<b>= 1</b></span><span>length<b>= 1500</b></span>
+        </div>
+      </div>
+      <div class="fblock last">
+        <div class="fbtag">조각 ③ (마지막)</div>
+        <div class="fh">
+          <span>ID<b>= x</b></span><span>offset<b>= 370</b></span><span>fragflag<b>= 0</b></span><span>length<b>= 1040</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>offset 계산 — 8바이트 단위<span class="badge-exam">시험</span></h3>
+    <p><b>offset = (앞선 데이터 바이트 수) ÷ 8</b>. (13비트밖에 없어서 바이트를 그대로 못 담기에 8바이트 단위로 약속)</p>
+    <div class="formula">
+      조각② offset =
+      <span class="frac"><span class="num">1480</span><span class="den">8</span></span>
+      = <span class="res">185</span>
+      <span class="step">조각③ offset = 2960 ÷ 8 = <b>370</b></span>
+    </div>
+    <ul>
+      <li><b>ID</b> : 세 조각 모두 동일(= x) → 재조립 시 같은 원본임을 식별.</li>
+      <li><b>fragflag(MF)</b> : <b>1, 1, 0</b> — 마지막 조각만 0 (뒤에 더 올 게 없다는 뜻).</li>
+      <li><b>length</b> : 1500, 1500, <b>1040</b> (마지막 = 데이터 1020 + 헤더 20).</li>
+    </ul>
+  </div>
+
+  <div class="card note">
+    <h3>마지막 조각 길이 계산<span class="note-tag">부연설명</span></h3>
+    <div class="formula">
+      전체 데이터 = 4000 − 20(헤더) = <b>3980</b>
+      <span class="step">남은 데이터 = 3980 − 1480 − 1480 = <b>1020</b></span>
+      <span class="step">조각③ length = 1020 + 20(헤더) = <span class="res">1040</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANEL 7 : Fragmentation DoS ============ -->
+<section class="panel" data-i="7">
+  <div class="phead">
+    <div class="pn">8</div>
+    <div>
+      <h2>IP 단편화를 이용한 DoS 공격</h2>
+      <div class="pg">제4장 · p.13 (단편화에 의한 DoS)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>손오공 분신술 — 하나가 여러 개로</h3>
+    <p>패킷 하나가 들어와 여러 조각으로 <b>분할되어 날아간다</b>. 하나 보냈는데 여러 개로 늘어나는 모습이, 털을 뽑아 분신을 만드는 손오공 분신술과 같다.</p>
+    <div class="diag">
+      <svg viewBox="0 0 560 170" role="img" aria-label="패킷 하나가 여러 조각으로 분할되어 서버로 가는 그림">
+        <rect x="14" y="66" width="96" height="40" rx="9" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+        <text x="62" y="84" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-primary)">패킷 1개</text>
+        <text x="62" y="99" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">공격자</text>
+        <rect x="236" y="30" width="90" height="26" rx="7" fill="var(--rose-bg)" stroke="var(--rose-border)"/><text x="281" y="47" text-anchor="middle" font-size="11" fill="var(--rose)">frag ① (MF=1)</text>
+        <rect x="236" y="72" width="90" height="26" rx="7" fill="var(--rose-bg)" stroke="var(--rose-border)"/><text x="281" y="89" text-anchor="middle" font-size="11" fill="var(--rose)">frag ② (MF=1)</text>
+        <rect x="236" y="114" width="90" height="26" rx="7" fill="var(--rose-bg)" stroke="var(--rose-border)"/><text x="281" y="131" text-anchor="middle" font-size="11" fill="var(--rose)">frag ③ (MF=1)</text>
+        <rect x="446" y="56" width="100" height="58" rx="10" fill="var(--surface-2)" stroke="var(--accent)" stroke-width="1.4"/>
+        <text x="496" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-primary)">서버</text>
+        <text x="496" y="97" text-anchor="middle" font-size="10" fill="var(--text-muted)">버퍼에 계속 쌓임</text>
+        <g stroke="var(--border-strong)" stroke-width="1.2" fill="none">
+          <path d="M110 80 L236 43"/><path d="M110 86 L236 85"/><path d="M110 92 L236 127"/>
+          <path d="M326 43 L446 78"/><path d="M326 85 L446 85"/><path d="M326 127 L446 92"/>
+        </g>
+        <text x="281" y="162" text-anchor="middle" font-size="10.5" fill="var(--rose)">마지막(MF=0)을 끝내 보내지 않음 → 재조립 불가</text>
+      </svg>
+      <div class="cap">조각을 계속 보내되 마지막 조각(MF=0)을 주지 않는다</div>
+    </div>
+  </div>
+
+  <div class="card imp">
+    <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>공격 원리 — 마지막 조각을 안 보낸다<span class="badge-exam">중요</span></h3>
+    <p>fragflag를 <b>1, 1, 1 …</b> 로 계속 보내다가, <b>마지막 0을 끝내 보내지 않는다.</b></p>
+    <ul>
+      <li>수신 서버는 조각들을 재조립하려고 <b>버퍼에 계속 쌓아 둔다.</b></li>
+      <li>마지막 조각이 안 오니 <b>재조립을 완성하지 못하고</b>, 위로 TCP를 올리지도 못한다.</li>
+      <li>이런 미완성 조각 세트를 <b>수천 개</b>씩 쏟아부으면 → 서버 리소스(버퍼)가 고갈되어 <b>서비스 불능</b>.</li>
+    </ul>
+    <p class="muted">강의자료 p.13 명시: <b>IP 단편화에 의해 DoS 공격을 유발할 수 있음.</b></p>
+  </div>
+
+  <div class="card">
+    <h3>비교 — 두 가지 서버 마비 공격</h3>
+    <div class="grid">
+      <div class="mini">
+        <div class="mt">SYN Flooding</div>
+        <div class="mv">연결 요청 폭주</div>
+        <div class="ms">연결 요청(SYN)만 엄청나게 보내 서버가 정상 서비스를 못 하도록 막는다.</div>
+      </div>
+      <div class="mini">
+        <div class="mt">IP 단편화 공격</div>
+        <div class="mv">미완성 조각 폭주</div>
+        <div class="ms">분할 조각을 보내되 마지막을 안 줘서, 서버가 버퍼에 쌓아두기만 하다 마비된다.</div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:12px">공통점: 서버가 자원을 붙잡은 채 완성을 기다리게 만들어 <b>서비스 거부(DoS/DDoS)</b>를 일으킨다.</p>
+  </div>
+
+  <div class="card note">
+    <h3>다음 시간 예고<span class="note-tag">부연설명</span></h3>
+    <p>다음 시간부터는 <b>IP 주소</b> 상세 — 서브넷 구성, NAT, 주소 할당 방식 등(강의자료 p.14 이후)과 <b>ICMP 프로토콜</b>, 그리고 마지막에 <b>라우팅 프로토콜(RIP·OSPF·BGP)</b>을 다룬다.</p>
+  </div>
+</section>
+
+<div class="footer">컴퓨터네트워크 · 12주차 2차시 &nbsp;·&nbsp; 강의자료 제4장 (Network Layer) p.4~13 &nbsp;·&nbsp; 강의 녹음 재구성</div>
+</div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tab');
+  var panels=document.querySelectorAll('.panel');
+  function go(i){
+    tabs.forEach(function(t){t.classList.toggle('active',t.dataset.i==i);});
+    panels.forEach(function(p){p.classList.toggle('active',p.dataset.i==i);});
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  tabs.forEach(function(t){t.addEventListener('click',function(){go(t.dataset.i);});});
+})();
+</script>
+</body>
+</html>
