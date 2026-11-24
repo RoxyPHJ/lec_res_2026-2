@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>DApp</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;--fill-accent:#378ADD;--on-accent:#ffffff;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;--fill-warning:#EF9F27;--on-warning:#412402;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --c-blue-fill:#E6F1FB;--c-blue-stroke:#185FA5;--c-blue-text:#0C447C;
+  --c-gray-fill:#F1EFE8;--c-gray-stroke:#5F5E5A;--c-gray-text:#444441;
+  --c-amber-fill:#FAEEDA;--c-amber-stroke:#854F0B;
+  --c-teal-fill:#E1F5EE;--c-teal-stroke:#0F6E56;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;--fill-accent:#378ADD;--on-accent:#ffffff;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;--fill-warning:#EF9F27;--on-warning:#412402;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+    --c-blue-fill:#0C447C;--c-blue-stroke:#85B7EB;--c-blue-text:#E6F1FB;
+    --c-gray-fill:#444441;--c-gray-stroke:#B4B2A9;--c-gray-text:#F1EFE8;
+    --c-amber-fill:#633806;--c-amber-stroke:#FAC775;
+    --c-teal-fill:#085041;--c-teal-stroke:#9FE1CB;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.title .i{font-size:22px;color:var(--text-secondary)}
+.subt{font-size:13px;color:var(--text-secondary);margin-top:2px}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none}
+.back:hover{color:var(--text-accent)}
+.src{font-size:12px;color:var(--text-muted);margin-top:8px}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--text-secondary);margin-top:6px;flex-wrap:wrap}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 18px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.sec h2{margin:0 0 12px;font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:.9rem 1.1rem;margin:0 0 12px;font-size:14px;line-height:1.7;color:var(--text-primary)}
+.card h3{margin:0 0 6px;font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card p{margin:0 0 4px}
+.imp{background:var(--bg-warning);border-color:var(--border-warning)}
+.imp,.imp h3{color:var(--text-warning)}
+.ext{background:var(--bg-accent);border-color:var(--border-accent)}
+.ext,.ext h3{color:var(--text-accent)}
+.pg{font-size:11px;font-weight:400;padding:1px 8px;border-radius:10px;background:var(--surface-1);color:var(--text-secondary);border:0.5px solid var(--border)}
+.tag{font-size:11px;padding:1px 8px;border-radius:10px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.t-imp{background:var(--fill-warning);color:var(--on-warning)}
+.t-ext{background:var(--fill-accent);color:var(--on-accent)}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0 4px;white-space:pre;overflow-x:auto;line-height:1.6;color:var(--text-primary)}
+code{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);padding:1px 5px;border-radius:4px;color:var(--text-primary)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0}
+.cell{background:var(--surface-1);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.6;color:var(--text-primary)}
+.cell b{font-weight:500;display:block;font-size:14px}
+.muted{color:var(--text-secondary)}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
+.node{padding:6px 10px;border-radius:8px;font-size:13px;border:0.5px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary)}
+.n-ok{background:var(--bg-success);color:var(--text-success);border-color:var(--border-success)}
+.n-bad{background:var(--bg-danger);color:var(--text-danger);border-color:var(--border-danger)}
+.arw{color:var(--text-muted);display:flex;align-items:center}
+.bd{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--surface-1);border:0.5px solid var(--border);margin:2px;color:var(--text-primary)}
+.stp{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:0.5px solid var(--border);font-size:14px;line-height:1.6}
+.stp:first-of-type{border-top:none}
+.num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--bg-accent);color:var(--text-accent);font-size:12px;display:flex;align-items:center;justify-content:center}
+.btn{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.btn:hover{background:var(--surface-1)}
+.row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
+.row label{color:var(--text-secondary);min-width:96px}
+.row input{flex:1}
+.row span{font-weight:500;min-width:24px;font-size:14px}
+ul{margin:4px 0;padding-left:20px}
+svg text{font-family:var(--font-sans)}
+.t{font-size:14px;fill:var(--text-primary)}
+.ts{font-size:12px;fill:var(--text-secondary)}
+.th{font-size:14px;font-weight:500;fill:var(--text-primary)}
+.c-blue rect{fill:var(--c-blue-fill);stroke:var(--c-blue-stroke)}
+.c-blue text{fill:var(--c-blue-text)}
+.c-gray rect{fill:var(--c-gray-fill);stroke:var(--c-gray-stroke)}
+.c-gray text{fill:var(--c-gray-text)}
+circle.c-amber{fill:var(--c-amber-fill);stroke:var(--c-amber-stroke)}
+circle.c-teal{fill:var(--c-teal-fill);stroke:var(--c-teal-stroke)}
+.arr{stroke:var(--text-secondary);stroke-width:1.5;fill:none}
+.card li b,.card p b{font-weight:500}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-world" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+</svg>
+<div class="page">
+<a class="back" href="../index.html">← 목차로</a>
+<div class="title" style="margin-top:10px">
+<svg class="i" aria-hidden="true"><use href="#i-world"/></svg>
+<h1>DApp</h1>
+</div>
+<div class="subt">Web3 서비스(DApp) 개발 실습 · Like / Escrow / Attendance · 지갑 없는 경우와 Walletless</div>
+<div class="legend">
+<span><span class="tag t-imp"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 중요</span> 강의에서 강조</span>
+<span><span class="tag t-ext">부연설명</span> 강의 외 보충</span>
+<span><span class="pg">p.N</span> 강의자료 페이지</span>
+</div>
+<div class="src">강의자료: 4 Web3.pdf · p.23 ~ p.35 (Chapter 2 Developing Web3 Services ~ Walletless) · 참고: 5 Smart Contracts.pdf p.38 · 페이지는 슬라이드 하단 번호 기준 (PDF 뷰어 페이지 = 번호 − 1)</div>
+<div class="tabs" id="tabs">
+<button data-t="0" class="on">1. 개요·필수 요소</button>
+<button data-t="1">2. 개발 환경·셋업</button>
+<button data-t="2">3. Like 서비스</button>
+<button data-t="3">4. Escrow·Attendance</button>
+<button data-t="4">5. 지갑이 없을 때</button>
+<button data-t="5">6. Walletless</button>
+</div>
+
+<div class="sec" data-s="0">
+<h2>개요와 Web3 필수 요소 <span class="pg">p.23–24</span></h2>
+<div class="card"><h3>강의 목표 <span class="pg">p.23</span></h3>
+<p>JavaScript 문법이나 React 코드 자체를 이해하는 게 목표가 아니라, <b>어떤 과정을 거쳐 Web3 서비스가 만들어지는가</b>를 이해하는 것이 목표. 나중에 창업할 때 개발자와 소통하는 데 도움이 되도록 흐름에 집중.</p></div>
+<div class="card"><h3>지난 시간 컨트랙트 → 오늘 만들 3개 서비스 <span class="pg">p.23</span></h3>
+<div class="grid">
+<div class="cell"><b>Storage → Like</b>number 상태 변수 하나. 좋아요 카운터</div>
+<div class="cell"><b>Payable → Escrow</b>payable 함수로 이더 예치·출금</div>
+<div class="cell"><b>Mapping → Attendance</b>주소 ↔ 이름 매핑. 출석부</div>
+</div>
+<p class="muted" style="font-size:12px">배포 주소는 수업 GitHub 저장소(INU 블록체인 · 고급과정 2)에 정리되어 있음. 1·3·4번 컨트랙트 사용</p></div>
+<div class="card"><h3>Web3 필수 요소 <span class="pg">p.24</span></h3>
+<div class="flow"><span class="node">① 스마트 컨트랙트 작성</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">Gateway(RPC) 통해 블록체인에 배포</span></div>
+<div class="flow"><span class="node">② Frontend 작성 (HTML·CSS·JS)</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">Server에 올림</span></div>
+<ul><li>Frontend 안에 <b>배포된 스마트 컨트랙트 정보(주소)</b>는 반드시 포함</li>
+<li>RPC(Gateway) 정보는 넣어도 되고 안 넣어도 됨. MetaMask를 연동하면 MetaMask가 이미 알고 있기 때문</li></ul></div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Web3 서비스 개발 순서 <span class="pg">p.24</span></h3>
+<p>"이 순서를 꼭 잘 기억해 주시면 되겠습니다"</p>
+<div class="flow"><span class="node">서비스 기획</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">적합한 스마트 컨트랙트 구상·작성</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">배포 → 주소 획득</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">그 주소와 상호작용하는 Frontend 개발·테스트</span></div></div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 모든 기능을 스마트 컨트랙트에 담을 필요 없음</h3>
+<ul><li>위·변조되면 큰일 나는 데이터(예: 돈, 거래 내역)처럼 <b>무결성 보장이 필요한 부분만</b> 스마트 컨트랙트로</li>
+<li>나머지는 기존 Web 2.0 방식(중앙화 DB 등) 그대로</li>
+<li>Web2 지식을 버리는 게 아니라 Web3 지식과 <b>결합</b>하는 것</li></ul></div>
+</div>
+
+<div class="sec" data-s="1">
+<h2>개발 환경과 프로젝트 셋업 <span class="pg">p.25–27</span></h2>
+<div class="card"><h3>프론트엔드 개발 도구 <span class="pg">p.25</span></h3>
+<div class="grid">
+<div class="cell"><b>Node.js</b>개발 환경 (런타임)</div>
+<div class="cell"><b>JavaScript</b>개발 언어</div>
+<div class="cell"><b>React</b>FE 프레임워크</div>
+<div class="cell"><b>Vite</b>빌드 도구</div>
+<div class="cell"><b>ethers.js</b>블록체인 연동 라이브러리</div>
+</div>
+<p class="muted" style="font-size:12px">개발 환경 세팅은 비전공자에게 어려워 실습용 노트북에 미리 설치해 둠</p></div>
+<div class="card"><h3>Setup 명령어 <span class="pg">p.26</span></h3>
+<p>프로젝트용 폴더(디렉토리)를 하나 만들고 그 안에서 실행</p>
+<pre>$ npm create vite@latest   # React 프로젝트 생성
+$ npm i                    # 개발에 필요한 패키지 내려받기
+$ npm install ethers       # ethers.js 설치</pre>
+<p class="muted" style="font-size:12px">생성 과정: Project name → Package name → Select a framework: React → Select a variant: JavaScript + SWC</p></div>
+<div class="card"><h3>파일 정리 순서 <span class="pg">p.26–27</span></h3>
+<div class="flow"><span class="node">src/index.css 삭제</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">src/App.css 삭제</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">main.jsx 3번째 줄(css import) 삭제</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">App.jsx 내용 전부 삭제</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">루트에 abi.json 생성</span></div>
+<ul><li>main.jsx의 3번째 줄은 방금 지운 css 파일을 불러오고 있어서 남겨두면 에러</li>
+<li>수정 후 반드시 <code>Ctrl+S</code>로 저장 (탭의 동그라미 표시가 사라지면 저장된 것)</li>
+<li>App.jsx는 파일을 지우는 게 아니라 <b>내용만</b> 지움. 여기가 Frontend를 개발할 곳</li></ul></div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> 각 파일의 역할</h3>
+<ul><li><code>main.jsx</code>: React 앱의 진입점. <code>App</code> 컴포넌트를 화면에 붙이는 역할</li>
+<li><code>App.jsx</code>: 실제 화면과 로직을 담는 컴포넌트. 오늘은 서비스마다 이 파일만 교체</li>
+<li><code>abi.json</code>: 컨트랙트 인터페이스를 따로 저장해 App.jsx에서 import</li></ul></div>
+</div>
+
+<div class="sec" data-s="2">
+<h2>1st Web Service — Like <span class="pg">p.27–28</span></h2>
+<div class="card"><h3>ABI 가져오기 <span class="pg">p.27</span></h3>
+<div class="flow"><span class="node">Storage 컨트랙트 주소 복사</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">Etherscan(Sepolia) 검색</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">Contract 탭 → Contract ABI 복사</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">abi.json에 붙여넣기·저장</span></div>
+<ul><li>컨트랙트가 Verify 되어 있어야 Etherscan Contract 탭에서 ABI가 보임</li>
+<li>한 줄로 붙든 여러 줄로 붙든 상관없음</li>
+<li>App.jsx는 ChatGPT에 ABI를 붙이고 아래처럼 요청하면 생성해 줌 (또는 수업 저장소 <code>web3/like/App.jsx</code> 복사)</li></ul>
+<pre>---------- Contract ABI 붙여넣기 ----------
+이 스마트 컨트랙트 ABI와 상호작용하는 JS React App.jsx 코드 작성해줘.</pre></div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> App.jsx에서 가장 중요한 두 줄 <span class="pg">p.27</span></h3>
+<pre>import { useEffect, useState } from "react";
+import { ethers } from "ethers";
+import ABI from "../abi.json";   // 추가: 컨트랙트에 어떤 함수가 있는지
+
+const CONTRACT_ADDRESS = "0xB7A30D30E70a4cE21769B2D44efff8C367C237D1";  // 배포 주소
+
+// const ABI = [ ... ];  // 삭제: ChatGPT가 파일 안에 직접 써 준 ABI</pre>
+<ul><li><code>CONTRACT_ADDRESS</code>: 블록체인에 배포해서 얻은 주소가 <b>그대로</b> 들어가야 함. "가장 중요"</li>
+<li><code>ABI</code>: 컨트랙트가 어떻게 생겼는지(어떤 함수가 있는지) 정보를 abi.json에서 가져옴</li>
+<li>ChatGPT가 준 코드엔 ABI가 파일 안에 길게 박혀 있으므로, 그걸 지우고 import로 바꾸는 것도 중요</li></ul></div>
+<div class="card"><h3>npm run dev — 내 컴퓨터 안의 가상 서버 <span class="pg">p.28</span></h3>
+<pre>$ npm run dev
+  VITE ready
+  ➜  Local:   http://localhost:5173/</pre>
+<div class="flow"><span class="node">웹 브라우저에 localhost:5173 입력</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">request → Server (내 PC 안)</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">response: Frontend를 받아 브라우저에서 실행</span></div>
+<p>서버를 만든 적이 없어도 <code>npm run dev</code>를 실행하는 순간 내 PC에 가상 서버가 떠서 Frontend를 호스팅함. 서버가 멀리 떨어져 있다고 상상하면 정확히 같은 구조. 서버 중지는 <code>Ctrl+C</code>.</p></div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 좋아요 버튼 = 트랜잭션 발생 <span class="pg">p.27–28</span></h3>
+<p>"굉장히 중요한 얘기인데" — 버튼 클릭은 배포된 Storage 컨트랙트의 상태 변수 <code>number</code>를 바꾸겠다는 트랜잭션을 보내는 행위</p>
+<div class="flow"><span class="node">지갑 연결 (MetaMask·Sepolia)</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">좋아요 클릭</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">MetaMask 서명 (Confirm)</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">Gateway로 tx 전달</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">블록체인 처리 → 응답</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">카운트 +1 화면 갱신</span></div></div>
+<div class="card"><h3>Etherscan에서 본 기록</h3>
+<ul><li>누가 언제 카운트를 올렸는지 트랜잭션이 전부 남아 있음</li>
+<li><b>느낌표(!)가 붙은 tx = 처리 실패</b>. 상태를 바꾸지 못한 트랜잭션</li>
+<li>여러 번 연속 클릭하거나 여러 명이 동시에 누르면 버려지는 tx가 생김. 한 번 누르고 기다릴 것</li></ul></div>
+<div class="card"><h3>코드 속 MetaMask 연동 부분</h3>
+<p><code>window.ethereum</code>으로 MetaMask 설치 여부를 확인. 미설치 사용자에겐 알림창으로 이용 불가를 알리고, 설치된 사용자만 서비스를 이용. useState나 return 안의 태그(JSX)는 React 문법이라 낯설 뿐 몰라도 됨.</p></div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> ABI란</h3>
+<p>Application Binary Interface. 컨트랙트의 함수 이름·인자·반환 타입·상태 변경 여부를 JSON으로 적은 "사용 설명서". 슬라이드의 ABI에 보이는 <code>retrieve</code>(view, 읽기)와 <code>store(uint256)</code>(nonpayable, 쓰기)가 Storage의 함수. ethers.js는 주소 + ABI로 컨트랙트 객체를 만들어 함수를 호출함.</p></div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> 포트 번호</h3>
+<p>스크립트엔 "5137"로 받아써졌지만 슬라이드와 Vite 기본값은 <code>5173</code>.</p></div>
+</div>
+
+<div class="sec" data-s="3">
+<h2>2nd Escrow · 3rd Attendance <span class="pg">p.29–30</span></h2>
+<div class="card"><h3>서비스 교체 절차 (2·3번째 공통) <span class="pg">p.29–30</span></h3>
+<div class="flow"><span class="node">Ctrl+C 서버 중지</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">App.jsx 전체 교체 (escrow / attendance 폴더)</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">바뀐 컨트랙트 주소로 Etherscan → ABI 복사</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">abi.json 교체</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">npm run dev → localhost:5173</span></div>
+<p>App.jsx 안의 컨트랙트 주소가 바뀐 것을 꼭 확인. 다른 컨트랙트와 상호작용하는 완전히 다른 서비스이므로 ABI도 반드시 교체.</p></div>
+<div class="card"><h3>2nd Web Service — Escrow (SimplePayable DApp) <span class="pg">p.29</span></h3>
+<div class="grid">
+<div class="cell"><b>입금 (deposit)</b>내 지갑 → 컨트랙트 주소로 ETH 예치. balance 상태를 바꾸므로 트랜잭션</div>
+<div class="cell"><b>출금 (withdraw)</b>받을 주소·금액 입력. 잔액을 줄이는 트랜잭션</div>
+<div class="cell"><b>Contract Balance</b>컨트랙트가 보관 중인 총 ETH 잔액 표시</div>
+</div>
+<ul><li>payable이 붙은 함수 = 돈을 예치할 수 있는 함수</li>
+<li>입금은 지갑 → 지갑이 아니라 <b>지갑 → 스마트 컨트랙트 주소</b></li>
+<li>특정 주소만 출금하도록 제약을 두지 않아서 <b>누구나 입금·출금 가능</b> (실습에서 Sepolia ETH를 빼가라고 함)</li>
+<li>MetaMask에서 계정을 바꾸고 새로고침하면 Connected 주소가 바뀜</li></ul></div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> 실제 서비스라면</h3>
+<p>누구나 출금할 수 있는 구조는 실습용. 실제 에스크로라면 <code>require(msg.sender == ...)</code>나 <code>onlyOwner</code> modifier로 출금 권한을 제한해야 함 (5 Smart Contracts.pdf p.32 문법표의 modifier 참고).</p></div>
+<div class="card"><h3>3rd Web Service — Attendance (On-chain Name DApp) <span class="pg">p.30</span></h3>
+<p>몇 줄 안 되는 Mapping 컨트랙트로 "출석부"를 만든 예시</p>
+<pre>// SPDX-License-Identifier: GPL-3.0
+pragma solidity &gt;=0.8.2 &lt;0.9.0;
+
+contract Mapping {
+    mapping(address =&gt; string) public names;
+
+    function setName(string memory _name) public {
+        names[msg.sender] = _name;
+    }
+
+    function DeleteName() public {
+        delete names[msg.sender];
+    }
+}</pre>
+<p class="muted" style="font-size:12px">코드 출처: 5 Smart Contracts.pdf p.38</p>
+<div class="grid">
+<div class="cell"><b>내 이름 저장</b>names 상태를 바꾸는 쓰기 → 서명 → tx</div>
+<div class="cell"><b>삭제</b>DeleteName 호출, 역시 tx</div>
+<div class="cell"><b>주소로 이름 조회</b>다른 지갑 주소 입력 → 등록된 이름 반환 (예: "박")</div>
+</div>
+<p>names는 값 하나가 아니라 주소별로 이름이 들어가는 map(배열 같은) 구조라서 이런 서비스가 가능. 컨트랙트 하나로도 아이디어에 따라 다양한 서비스를 만들 수 있음.</p></div>
+</div>
+
+<div class="sec" data-s="4">
+<h2>MetaMask가 설치 안 된 경우 <span class="pg">p.31–32</span></h2>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 지갑이 없어도 읽기는 된다 <span class="pg">p.31–32</span></h3>
+<p>"너무 오해를 안 하셨으면 좋겠어요"</p>
+<div class="grid">
+<div class="cell" style="border:0.5px solid var(--border-success)"><b style="color:var(--text-success)">읽기 (read) — 가능</b>상태를 바꾸지 않으므로 tx 불필요. RPC 노드 주소를 이미 알고 있어 노드에서 값을 읽어올 수 있음. Etherscan 조회도 지갑 없이 누구나 가능</div>
+<div class="cell" style="border:0.5px solid var(--border-danger)"><b style="color:var(--text-danger)">쓰기 (write) — 불가</b>상태 변경 = tx 발생 = 서명 필요. 지갑이 없으면 서명을 못 하므로 제출 불가</div>
+</div>
+<div class="flow"><span class="node">Web Browser (지갑 없음)</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node n-bad">submit transaction 제출 불가</span><span class="node">Gateway (RPC)</span></div></div>
+<div class="card"><h3>지갑 유무에 따라 분기하는 코드 <span class="pg">p.32</span></h3>
+<pre>import React, { useEffect, useState } from "react";
+import { ethers } from "ethers";
+
+export default function App() {
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
+  const [numBlk, setNumBlk] = useState(0);
+
+  useEffect(() =&gt; {
+    async function init() {
+      if (window.ethereum == null) {
+        // 지갑이 없는 경우: 읽기 요청만 가능 (기본 퍼블릭 RPC와 연결) → 서명 불가
+        console.log("MetaMask not installed; using read-only defaults");
+        const defaultProvider = ethers.getDefaultProvider();
+        setProvider(defaultProvider);
+      } else {
+        // 지갑이 있는 경우: 지갑의 개인키를 통해 쓰기 요청 가능
+        const browserProvider = new ethers.BrowserProvider(window.ethereum);
+        setProvider(browserProvider);
+        const signerObj = await browserProvider.getSigner();
+        setSigner(signerObj);
+      }
+    }
+    init();
+  }, []);
+
+  const fetchBlockNumber = async () =&gt; {
+    if (provider) {
+      const blockNumber = await provider.getBlockNumber();
+      setNumBlk(blockNumber);
+    } else {
+      console.log("Provider not initialized yet");
+    }
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Web3 App&lt;/h1&gt;
+      &lt;p&gt;Provider: {provider ? "Connected" : "Not Connected"}&lt;/p&gt;
+      &lt;p&gt;Signer: {signer ? "Signer Ready" : "No Signer"}&lt;/p&gt;
+      &lt;button onClick={fetchBlockNumber}&gt;Get Block Number&lt;/button&gt;
+      &lt;p&gt;Current Block: {numBlk}&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}</pre></div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> Provider vs Signer</h3>
+<ul><li><b>Provider</b>: 블록체인에 접속해 데이터를 읽는 연결 통로 (읽기 전용)</li>
+<li><b>Signer</b>: 개인키로 tx에 서명할 수 있는 주체 (쓰기 가능)</li>
+<li>view 함수 호출(<code>eth_call</code>)은 블록에 기록되지 않아 가스비도 없고, 그래서 서명도 필요 없음</li>
+<li><code>window.ethereum</code>은 MetaMask가 브라우저에 주입하는 EIP-1193 Provider 객체 (4 Web3.pdf p.21–22)</li></ul></div>
+</div>
+
+<div class="sec" data-s="5">
+<h2>MetaMask 실행 없이 트랜잭션 전송 (Walletless) <span class="pg">p.33–35</span></h2>
+<div class="card"><h3>필요한 두 가지 <span class="pg">p.33–34</span></h3>
+<div class="grid">
+<div class="cell"><b>① EOA 개인키 정보</b>직접 서명이 가능하도록 (MetaMask 계정 세부정보에서 개인키 추출)</div>
+<div class="cell"><b>② RPC 노드 정보</b>블록체인 네트워크와 통신할 수 있도록 (예: https://eth.alchemy.com)</div>
+</div>
+<div class="flow"><span class="node">Frontend에 개인키·RPC 주소 하드코딩</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">버튼 클릭 시 Frontend가 직접 서명</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">Signed tx를 RPC로 제출</span><span class="arw"><svg class="i"><use href="#i-right"/></svg></span><span class="node">블록체인 상태 변경</span></div>
+<p>MetaMask 팝업(Confirm) 없이 저장 버튼만 누르면 내부에서 바로 서명해서 보냄. 가스비는 그 개인키 지갑의 ETH로 지불.</p></div>
+<div class="card"><h3>구현 <span class="pg">p.35</span></h3>
+<pre>$ npm create vite@latest
+$ npm i
+$ npm install ethers
+$ npm install dotenv</pre>
+<pre># .env (숨김 파일)
+VITE_PRIVATE_KEY=0x1028...       # 개인키
+VITE_WALLET_ADDRESS=0x...        # 지갑주소</pre>
+<pre>// App.jsx: 개인키 / RPC 서버 주소로 지갑 객체 생성
+const wallet = new ethers.Wallet(PRIVATE_KEY, rpcProvider);
+// 직접 서명하므로 사용자에게 서명을 요구하지 않음</pre></div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 위험성과 한계</h3>
+<ul><li><b>굉장히 위험한 방법</b>: Frontend는 사용자에게 전달되므로 개인키가 노출됨. 원래는 Backend에 감춰야 함</li>
+<li>사용자는 지갑 없이 쓰므로 Web2인지 Web3인지 구별할 수 없음</li>
+<li><b>계정 추상화(Account Abstraction)가 아님</b>. 지갑을 없애는 하나의 "요령"일 뿐</li>
+<li>단점: Etherscan에서 보면 모든 tx가 하드코딩된 한 주소에서 나온 것으로 찍혀 <b>실제로 누가 보냈는지 구별할 수 없음</b></li></ul></div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> VITE_ 환경변수도 결국 공개됨</h3>
+<p>Vite는 <code>VITE_</code> 접두사가 붙은 변수를 빌드할 때 프론트엔드 번들 안에 그대로 넣음. .env로 "숨겨도" 브라우저 개발자도구에서 볼 수 있으므로, 강의에서 말한 대로 실서비스라면 개인키는 서버(Backend)에서만 다뤄야 함.</p></div>
+</div>
+</div>
+<script>
+(function(){
+  var bs = document.querySelectorAll('#tabs button');
+  var ss = document.querySelectorAll('.sec');
+  function show(i){
+    ss.forEach(function(s){ s.style.display = s.dataset.s == i ? 'block' : 'none'; });
+    bs.forEach(function(b){ b.classList.toggle('on', b.dataset.t == i); });
+  }
+  bs.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.t); window.scrollTo({top:0}); }); });
+  show('0');
+})();
+</script>
+</body>
+</html>
