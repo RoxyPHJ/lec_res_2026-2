@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Chap 3. Transport Layer (1) — 8주차1</title>
+<style>
+  :root{
+    --bg:#0e1117; --bg2:#151b24; --panel:#1b2330; --panel2:#222c3c;
+    --line:#2b3648; --txt:#e6edf3; --txt2:#aeb9c7; --txt3:#7d8aa0;
+    --accent:#6ea8fe; --accent2:#4b7bec;
+    --amber:#f5b041; --amber-bg:rgba(245,176,65,.08); --amber-line:rgba(245,176,65,.4);
+    --blue:#5aa9ff; --blue-bg:rgba(90,169,255,.08); --blue-line:rgba(90,169,255,.4);
+    --green:#4cd3a5; --red:#ff6b6b; --purple:#b78cff;
+    --udp:#f5b041; --tcp:#4cd3a5;
+    --code-bg:#0b0f16; --radius:14px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:var(--sans);line-height:1.65;
+    -webkit-font-smoothing:antialiased;padding:28px 18px 80px}
+  .wrap{max-width:1000px;margin:0 auto}
+
+  /* Header */
+  header{margin-bottom:10px}
+  .eyebrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .session-badge{background:linear-gradient(135deg,var(--accent2),var(--purple));
+    color:#fff;font-weight:700;font-size:.78rem;padding:5px 12px;border-radius:20px;letter-spacing:.3px}
+  .course-tag{color:var(--txt3);font-size:.82rem;font-weight:600}
+  h1.title{font-size:1.9rem;font-weight:800;letter-spacing:-.4px;line-height:1.25}
+  h1.title .ko{display:block;font-size:1.1rem;color:var(--txt2);font-weight:600;margin-top:4px}
+  .srcnote{margin:14px 0 6px;font-size:.78rem;color:var(--txt3);
+    background:var(--bg2);border:1px dashed var(--line);border-radius:10px;padding:9px 13px;display:flex;gap:8px;align-items:flex-start}
+  .srcnote svg{flex-shrink:0;margin-top:2px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:6px 0 4px;margin:14px 0 22px;
+    border-bottom:1px solid var(--line);scrollbar-width:thin}
+  .tabs::-webkit-scrollbar{height:5px}
+  .tabs::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .tab{white-space:nowrap;background:transparent;border:none;color:var(--txt3);
+    font-family:var(--sans);font-size:.88rem;font-weight:600;padding:9px 14px;border-radius:9px 9px 0 0;
+    cursor:pointer;position:relative;transition:.15s;display:flex;align-items:center;gap:6px}
+  .tab:hover{color:var(--txt2);background:var(--bg2)}
+  .tab.active{color:var(--accent);background:var(--panel)}
+  .tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:-5px;height:2px;background:var(--accent);border-radius:2px}
+  .tab .tnum{font-size:.72rem;opacity:.6;font-weight:700}
+  .tab.suppl.active{color:var(--blue)}
+  .tab.suppl.active::after{background:var(--blue)}
+
+  /* Sections */
+  .section{display:none;animation:fade .3s ease}
+  .section.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sec-head{margin-bottom:18px}
+  .sec-head h2{font-size:1.35rem;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+  .sec-head .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .sec-head p{color:var(--txt2);font-size:.92rem;margin-top:6px}
+
+  /* Cards */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-bottom:16px}
+  .card h3{font-size:1.02rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card p{color:var(--txt2);font-size:.92rem;margin-bottom:8px}
+  .card p:last-child{margin-bottom:0}
+  .card ul{list-style:none;margin:8px 0}
+  .card li{color:var(--txt2);font-size:.92rem;padding:4px 0 4px 20px;position:relative}
+  .card li::before{content:"▸";position:absolute;left:2px;color:var(--accent);font-size:.85rem}
+  .card li ul{margin:4px 0 4px 0}
+  .card li li::before{content:"–";color:var(--txt3)}
+  .pgbadge{margin-left:auto;font-size:.7rem;color:var(--txt3);font-weight:600;
+    background:var(--bg2);border:1px solid var(--line);padding:2px 8px;border-radius:12px;white-space:nowrap}
+  b,strong{color:var(--txt);font-weight:700}
+  code.inl{font-family:var(--mono);background:var(--bg2);color:var(--green);
+    font-size:.84em;padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+
+  /* Amber (important) card */
+  .card.amber{background:var(--amber-bg);border-color:var(--amber-line)}
+  .card.amber h3{color:var(--amber)}
+  .card.amber li::before{color:var(--amber)}
+  .star{color:var(--amber);flex-shrink:0}
+  .imp-tag{font-size:.68rem;font-weight:700;color:#1a1205;background:var(--amber);
+    padding:2px 8px;border-radius:10px;letter-spacing:.3px}
+
+  /* Blue (supplementary) card */
+  .card.blue{background:var(--blue-bg);border-color:var(--blue-line)}
+  .card.blue h3{color:var(--blue)}
+  .card.blue li::before{color:var(--blue)}
+  .sup-tag{font-size:.68rem;font-weight:700;color:#04121f;background:var(--blue);
+    padding:2px 8px;border-radius:10px;letter-spacing:.3px}
+
+  /* Code block */
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;overflow-x:auto;margin:10px 0;font-family:var(--mono);font-size:.82rem;line-height:1.6}
+  pre code{color:#c9d6e5;white-space:pre}
+  .c-key{color:#ff7b9c}.c-type{color:#6ec7ff}.c-fn{color:#f5d76e}
+  .c-str{color:#9fe88d}.c-com{color:#6b7a8d;font-style:italic}.c-num{color:#f0a868}.c-pre{color:#b78cff}
+
+  /* Flow diagram */
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0;justify-content:center}
+  .node{background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;
+    padding:9px 14px;font-size:.85rem;font-weight:600;text-align:center;min-width:54px}
+  .node.bad{border-color:var(--red);color:#ff9d9d;background:rgba(255,107,107,.08)}
+  .node.ok{border-color:var(--green);color:#9bead0;background:rgba(76,211,165,.08)}
+  .node.hl{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
+  .node.udp{border-color:var(--udp);color:var(--udp);background:var(--amber-bg)}
+  .node.tcp{border-color:var(--tcp);color:var(--tcp);background:rgba(76,211,165,.08)}
+  .arrow{color:var(--txt3);font-size:1.1rem;font-weight:700}
+  .arrow.bad{color:var(--red)}
+  .flow-label{width:100%;text-align:center;font-size:.76rem;color:var(--txt3);margin-top:2px}
+
+  /* Grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .gcell{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+  .gcell .gh{font-weight:700;font-size:.92rem;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+  .gcell p{font-size:.85rem;color:var(--txt2)}
+  .gcell ul{list-style:none;margin:4px 0 0}
+  .gcell li{font-size:.84rem;color:var(--txt2);padding:3px 0 3px 15px;position:relative}
+  .gcell li::before{content:"·";position:absolute;left:4px;font-weight:700;color:var(--accent)}
+  .chip{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:8px;margin:3px 4px 3px 0}
+  .chip.a{background:rgba(245,176,65,.14);color:var(--amber);border:1px solid var(--amber-line)}
+  .chip.g{background:rgba(76,211,165,.14);color:var(--green);border:1px solid rgba(76,211,165,.35)}
+  .chip.p{background:rgba(183,140,255,.14);color:var(--purple);border:1px solid rgba(183,140,255,.35)}
+  .chip.b{background:rgba(90,169,255,.14);color:var(--blue);border:1px solid var(--blue-line)}
+
+  /* Compare two columns */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  @media(max-width:620px){.cmp{grid-template-columns:1fr}}
+  .cmp .col{border-radius:11px;padding:14px;border:1px solid var(--line);background:var(--panel2)}
+  .cmp .col h4{font-size:.95rem;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .cmp .col.udp h4{color:var(--udp)}
+  .cmp .col.tcp h4{color:var(--tcp)}
+  .cmp .col ul{list-style:none}
+  .cmp .col li{font-size:.85rem;color:var(--txt2);padding:3px 0 3px 16px;position:relative}
+  .cmp .col li::before{content:"·";position:absolute;left:4px;font-weight:700}
+  .cmp .col.udp li::before{color:var(--udp)}
+  .cmp .col.tcp li::before{color:var(--tcp)}
+
+  /* Analogy table */
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;margin:12px 0}
+  table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:520px}
+  th,td{padding:10px 13px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--bg2);font-size:.78rem;color:var(--txt3);font-weight:700;letter-spacing:.03em}
+  tr:last-child td{border-bottom:0}
+  td:first-child{color:var(--txt);font-weight:700;white-space:nowrap}
+  td{color:var(--txt2)}
+
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+    color:var(--txt3);font-size:.78rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">
+      <span class="session-badge">8주차1</span>
+      <span class="course-tag">컴퓨터네트워크 · 강의녹음 재구성</span>
+    </div>
+    <h1 class="title">Chap 3. Transport Layer (1)
+      <span class="ko">전송계층 도입 — 종단 간 논리 연결 · 연결형/비연결형 · 다중화/역다중화 · UDP vs TCP</span>
+    </h1>
+    <div class="srcnote">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7d8aa0" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>강의자료: <b>제3장-1 (Transport Layer 1)</b> · 본 차시는 대략 <b>p.2–13</b> 범위(전송계층 개요→전송 vs 네트워크→연결형/비연결형→다중화/역다중화→UDP/TCP 역다중화). <b>스레드 서버 상세</b>와 <b>UDP 체크섬(p.14–15)</b>은 다음 차시로 미뤄짐. 각 카드 우측에 해당 페이지 표기.</span>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-sec="s1"><span class="tnum">01</span>전송계층 개요</button>
+    <button class="tab" data-sec="s2"><span class="tnum">02</span>전송 vs 네트워크</button>
+    <button class="tab" data-sec="s3"><span class="tnum">03</span>연결형 vs 비연결형</button>
+    <button class="tab" data-sec="s4"><span class="tnum">04</span>다중화/역다중화</button>
+    <button class="tab" data-sec="s5"><span class="tnum">05</span>역다중화 원리</button>
+    <button class="tab" data-sec="s6"><span class="tnum">06</span>비연결형 역다중화</button>
+    <button class="tab" data-sec="s7"><span class="tnum">07</span>연결지향형 역다중화</button>
+    <button class="tab suppl" data-sec="s8"><span class="tnum">＋</span>부연설명</button>
+  </nav>
+
+  <!-- ============ S1 전송계층 개요 ============ -->
+  <section class="section active" id="s1">
+    <div class="sec-head">
+      <h2><span class="dot"></span>전송계층 개요 — 지금 어디를 공부하나</h2>
+      <p>응용계층(HTTP·SMTP)과 소켓 API까지 끝냈다. 이제 <b>한 단계 아래로 내려가</b> 소켓 안에 숨어 있던 전송계층의 기능을 들여다본다.</p>
+    </div>
+
+    <div class="card">
+      <h3>지금까지와 앞으로의 로드맵<span class="pgbadge">p.1</span></h3>
+      <ul>
+        <li>이미 끝낸 것: 응용계층 + 그 아래 소켓 <b>인터페이스</b> (UDP 소켓·TCP 소켓을 API로 만들어 본 <b>간접 경험</b>)</li>
+        <li>지금부터: 소켓 "안"에서 실제로 어떤 기능이 돌아가는지 <b>전송계층</b>을 스터디</li>
+        <li>일정: 전송계층 약 <b>4–5주</b> → 이어서 네트워크 계층 약 <b>3주</b></li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>전송계층은 "두 종단(end system)"에만 존재<span class="imp-tag">중요</span><span class="pgbadge">p.2</span></h3>
+      <p>인터넷 구조를 보면 가운데 <b>코어(core)</b>에는 <b>네트워크 계층</b>만 존재한다. <b>전송계층과 응용계층</b>은 양쪽 끝 — 즉 <b>클라이언트와 서버(출발지·목적지)</b> 두 종단에서만 수행된다.</p>
+      <div class="flow">
+        <div class="node tcp">클라이언트<br><span style="font-size:.72rem;font-weight:400">app + transport</span></div>
+        <span class="arrow">→</span>
+        <div class="node">코어(core)<br><span style="font-size:.72rem;font-weight:400">network only</span></div>
+        <span class="arrow">→</span>
+        <div class="node tcp">서버<br><span style="font-size:.72rem;font-weight:400">app + transport</span></div>
+        <div class="flow-label">전송계층은 코어를 거치지 않고 <b>양 끝단(end-to-end)</b>에서만 동작</div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>계층화 모델의 통신 규칙<span class="imp-tag">중요</span><span class="pgbadge">p.2</span></h3>
+      <p>교수님이 "첫 번째로 반드시 이해해야 할 것"이라고 강조한 부분:</p>
+      <ul>
+        <li>전송계층은 반대쪽의 <b>전송계층하고만</b> 통신한다 (peer 계층끼리)</li>
+        <li>전송계층이 상대의 네트워크 계층과 마음대로 통신하면 <b>룰 위반</b> — 계층화된 모델이 아니다</li>
+        <li>나머지 하위 계층의 내용은 <b>밀봉(캡슐화)</b>되어, 우편물이 봉투째 전달되듯 그대로 전달된다</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>송신/수신 측이 하는 일<span class="pgbadge">p.2</span></h3>
+      <div class="cmp">
+        <div class="col tcp">
+          <h4>Send side (송신)</h4>
+          <ul>
+            <li>어플리케이션 메시지를 <b>세그먼트로 분할</b></li>
+            <li>세그먼트를 아래 <b>네트워크 계층으로</b> 내려보냄</li>
+          </ul>
+        </div>
+        <div class="col udp">
+          <h4>Receive side (수신)</h4>
+          <ul>
+            <li>세그먼트를 다시 <b>메시지로 조립</b></li>
+            <li>조립한 메시지를 <b>어플리케이션에 전달</b></li>
+          </ul>
+        </div>
+      </div>
+      <p>인터넷은 응용에게 <b>한 종류 이상의 전송 프로토콜</b>을 제공한다 → <b>TCP</b>와 <b>UDP</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============ S2 전송 vs 네트워크 ============ -->
+  <section class="section" id="s2">
+    <div class="sec-head">
+      <h2><span class="dot"></span>전송 계층 vs 네트워크 계층</h2>
+      <p>두 계층이 책임지는 "연결"의 대상이 다르다 — <b>프로세스 간</b> 연결 vs <b>호스트 간</b> 연결.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>누가 무엇을 연결하는가<span class="imp-tag">중요</span><span class="pgbadge">p.3</span></h3>
+      <div class="cmp">
+        <div class="col tcp">
+          <h4>Transport layer</h4>
+          <ul>
+            <li><b>프로세스 간</b> 논리적 연결 제공</li>
+            <li>종단 시스템에서만 수행</li>
+            <li>네트워크 계층에 <b>의존</b></li>
+          </ul>
+        </div>
+        <div class="col udp">
+          <h4>Network layer</h4>
+          <ul>
+            <li><b>호스트 간</b> 논리적 연결 제공</li>
+            <li>코어를 포함해 경로 상에서 수행</li>
+            <li>목적지까지의 <b>경로</b>를 책임짐</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>우편물 비유 — 경로는 네트워크 계층이 알아서<span class="pgbadge">p.3</span></h3>
+      <p>편지지를 봉투에 넣고 <b>받는 사람 주소</b>를 적어 우체통에 넣으면, 그 편지가 <b>어떤 경로로</b> 가는지는 <b>우체국(=네트워크 계층)</b>이 알아서 한다.</p>
+      <ul>
+        <li>전송계층은 네트워크 계층에서 <b>일어나는 일에는 상관하지 않는다</b></li>
+        <li>"목적지 주소만 적어주면 전달 방법·경로 결정은 네트워크 계층의 몫"</li>
+        <li>즉 전송계층은 <b>네트워크 계층을 이용해서</b> 보낸다 (우체국을 이용하듯)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>교재의 household 비유<span class="pgbadge">p.3</span></h3>
+      <div class="tbl-wrap">
+        <table>
+          <tr><th>비유</th><th>실제 개념</th></tr>
+          <tr><td>아이들(kids)</td><td>프로세스(processes)</td></tr>
+          <tr><td>봉투 속 편지(letters)</td><td>어플리케이션 메시지(app messages)</td></tr>
+          <tr><td>집(houses)</td><td>호스트(hosts)</td></tr>
+          <tr><td>Ann & Bill</td><td>전송 프로토콜(transport protocol)</td></tr>
+          <tr><td>우편 서비스(postal service)</td><td>네트워크 계층 프로토콜</td></tr>
+        </table>
+      </div>
+      <p style="font-size:.82rem;color:var(--txt3)">※ 12명의 아이가 12명에게 편지를 보내는 상황 — 집까지는 우편(네트워크)이, 집 안에서 각 아이에게 나눠주는 건 Ann·Bill(전송)이 한다.</p>
+    </div>
+  </section>
+
+  <!-- ============ S3 연결형 vs 비연결형 ============ -->
+  <section class="section" id="s3">
+    <div class="sec-head">
+      <h2><span class="dot"></span>연결형 vs 비연결형 — "연결"의 두 가지 뜻</h2>
+      <p>학생들이 가장 많이 헷갈리는 지점. 네트워크 계층의 "연결"과 전송계층의 "연결"은 <b>완전히 다른 개념</b>이다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>두 "연결" 개념의 차이<span class="imp-tag">중요</span><span class="pgbadge">p.3–4</span></h3>
+      <div class="cmp">
+        <div class="col udp">
+          <h4>네트워크 계층의 연결</h4>
+          <ul>
+            <li><b>어떤 경로</b>를 통해 목적지로 갈 것이냐</li>
+            <li>집에 갈 때 지하철? 버스? — 다양한 경로 중 선택</li>
+            <li><b>호스트 ↔ 호스트</b>를 이어주는 개념</li>
+          </ul>
+        </div>
+        <div class="col tcp">
+          <h4>전송 계층의 연결 (TCP)</h4>
+          <ul>
+            <li>클라이언트가 서버를 <b>사전에 컨택</b>하느냐 아니냐</li>
+            <li>경로 선택과는 <b>무관</b></li>
+            <li><b>프로세스 ↔ 프로세스</b>를 이어주는 개념</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:10px">⚠ "TCP = 연결형"을 "경로를 정해 연결한다"로 착각하기 쉬움 → 그건 네트워크 계층의 연결이다. <b>TCP의 연결 = 사전 컨택 여부</b>.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>"사전 컨택"이란?<span class="imp-tag">중요</span><span class="pgbadge">p.4</span></h3>
+      <p>연결형(TCP)에서 "컨택한다"는 것은 <b>서버가 클라이언트가 올 것을 예상하고 미리 준비한다</b>는 뜻이다. (일종의 예약)</p>
+      <ul>
+        <li>버퍼(buffer) 확보</li>
+        <li>변수 초기화 등 <b>받을 준비</b>를 미리 해둠</li>
+        <li>우리가 TCP 서버를 짤 때: 먼저 실행 → 준비 → 클라이언트 접속 대기 (= 연결 과정)</li>
+      </ul>
+      <p>비연결형(UDP)은 이런 사전 준비(데이터 받을 준비)를 <b>하지 않는다</b>. 서버를 사전에 컨택하지 않는다.</p>
+    </div>
+
+    <div class="card">
+      <h3>정리: Host-to-host vs Process-to-process<span class="pgbadge">p.3</span></h3>
+      <div class="flow">
+        <div class="node">집</div><span class="arrow">—우편(네트워크)→</span><div class="node">집</div>
+        <div class="flow-label">네트워크 계층 = <b>호스트 단(host-to-host)</b> 연결</div>
+      </div>
+      <div class="flow">
+        <div class="node tcp">프로세스</div><span class="arrow">—전송계층→</span><div class="node tcp">프로세스</div>
+        <div class="flow-label">전송 계층 = <b>프로세스 간(process-to-process)</b> 연결 — 여러 프로세스 간 연결을 책임짐</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>TCP vs UDP 특성 요약<span class="pgbadge">p.4, p.12–13</span></h3>
+      <div class="cmp">
+        <div class="col tcp">
+          <h4>TCP — 연결형 · 신뢰적</h4>
+          <ul>
+            <li>잃어버리면 안 되는 데이터 → <b>복잡한 기능</b> 필요</li>
+            <li>flow control(흐름 제어)</li>
+            <li>connection setup(연결 설정)</li>
+            <li>congestion control(혼잡 제어)</li>
+            <li>버퍼 확보 · 신뢰적 순차 배달</li>
+          </ul>
+        </div>
+        <div class="col udp">
+          <h4>UDP — 비연결형 · 비신뢰적</h4>
+          <ul>
+            <li><b>best-effort</b>: 보내지면 보내고, 못 받으면 할 수 없고</li>
+            <li>별도 작업을 전혀 하지 않음 → 매우 <b>심플</b></li>
+            <li>프로그램 크기 작고, 처리할 것 적음</li>
+            <li>헤더가 작음 · 연결 상태 관리 불필요</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>보장할 수 없는 서비스<span class="imp-tag">중요</span><span class="pgbadge">p.4</span></h3>
+      <p>TCP·UDP 모두 <b>지연(delay) 보장</b>이나 <b>대역폭(bandwidth) 보장</b>은 <b>할 수 없다</b>.</p>
+      <ul>
+        <li>이유: <b>네트워크 계층 자체가</b> 이를 서포트하지 않기 때문</li>
+        <li>전송계층은 어차피 네트워크 계층을 이용할 수밖에 없으므로, 네트워크가 못 하는 것을 대신 해줄 수 없다</li>
+        <li>지연 보장을 하려면 "빨리 가는 놈·늦게 가는 놈"을 네트워크 계층에서 별도로 제어해야 하는데 그런 힘이 없다</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ S4 다중화/역다중화 ============ -->
+  <section class="section" id="s4">
+    <div class="sec-head">
+      <h2><span class="dot"></span>다중화 / 역다중화 (Multiplexing / Demultiplexing)</h2>
+      <p>네트워크가 집(학과사무실)까지 데이터를 가져다주면, 전송계층이 <b>해당 프로세스(교수님)에게 분배</b>한다.</p>
+    </div>
+
+    <div class="card">
+      <h3>두 방향의 기능<span class="pgbadge">p.5</span></h3>
+      <div class="cmp">
+        <div class="col tcp">
+          <h4>Multiplexing (송신 측)</h4>
+          <ul>
+            <li>여러 소켓으로부터 데이터를 <b>수집</b></li>
+            <li>헤더를 붙여 하나의 통로로 <b>전송</b></li>
+            <li>교수님들의 우편물을 모아서 보내는 것</li>
+          </ul>
+        </div>
+        <div class="col udp">
+          <h4>Demultiplexing (수신 측)</h4>
+          <ul>
+            <li>수신된 세그먼트를 <b>올바른 소켓</b>에 전달</li>
+            <li>도착한 패킷을 각 프로세스로 <b>분배</b></li>
+            <li>학과사무실에서 교수님별로 나눠주는 것</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>조교 / 학과사무실 비유<span class="imp-tag">중요</span><span class="pgbadge">p.5</span></h3>
+      <p>인천대·서울대·부산대 교수님이 메일을 주고받는다고 하자.</p>
+      <div class="flow">
+        <div class="node">우편물</div><span class="arrow">→</span>
+        <div class="node">학과사무실 도착<br><span style="font-size:.72rem;font-weight:400">= 네트워크 계층까지</span></div>
+        <span class="arrow">→</span>
+        <div class="node hl">조교가 분류<br><span style="font-size:.72rem;font-weight:400">= 전송계층</span></div>
+        <span class="arrow">→</span>
+        <div class="node tcp">교수님 우편함</div>
+      </div>
+      <ul>
+        <li>모든 우편물은 <b>학과사무실까지</b>만 온다 → 여기까지가 <b>네트워크 계층</b>의 역할</li>
+        <li>학과사무실에 온 우편물을 <b>교수님별로 분류·배달</b>하는 조교 = <b>전송계층</b></li>
+        <li>반대로 각 교수님이 보내는 우편물을 모아 다시 내보내는 것도 조교(전송계층)의 역할</li>
+      </ul>
+      <p style="font-size:.82rem;color:var(--txt3)">※ 집에 오는 우편(12명 가족 비유)도 동일: 집 현관까지는 우편(네트워크), 가족 각자에게 나눠주는 막내가 전송계층.</p>
+    </div>
+  </section>
+
+  <!-- ============ S5 역다중화 원리 ============ -->
+  <section class="section" id="s5">
+    <div class="sec-head">
+      <h2><span class="dot"></span>역다중화 동작 원리 & 데이터 명칭</h2>
+      <p>IP 주소와 포트 번호를 이용해 세그먼트를 올바른 소켓으로 전달한다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>역다중화의 4단계 원리<span class="imp-tag">중요</span><span class="pgbadge">p.6</span></h3>
+      <ul>
+        <li>호스트는 <b>IP 데이터그램</b>을 수신한다</li>
+        <li>각 데이터그램은 <b>송신 IP 주소 · 수신 IP 주소</b>를 가진다</li>
+        <li>각 데이터그램은 한 개의 <b>트랜스포트 세그먼트</b>를 담고 있다</li>
+        <li>각 세그먼트는 <b>송신 포트번호 · 수신 포트번호</b>를 가진다</li>
+        <li>→ 호스트는 <b>IP 주소 + 포트번호</b>로 적절한 소켓에 세그먼트를 전달</li>
+      </ul>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>계층별 데이터 명칭 (헷갈리지 말 것)<span class="imp-tag">중요</span><span class="pgbadge">p.6</span></h3>
+      <div class="tbl-wrap">
+        <table>
+          <tr><th>계층</th><th>데이터 단위(PDU)</th><th>헤더에 붙는 정보</th></tr>
+          <tr><td>응용 계층</td><td>메시지(message)</td><td>HTTP 요청/응답, SMTP 메일 메시지 등</td></tr>
+          <tr><td>전송 계층</td><td>세그먼트(segment)</td><td>송·수신 포트번호 (TCP 세그먼트 / UDP 세그먼트)</td></tr>
+          <tr><td>네트워크 계층</td><td>데이터그램(datagram)</td><td>송·수신 IP 주소 (IP 데이터그램)</td></tr>
+          <tr><td>링크 계층</td><td>프레임(frame)</td><td>—</td></tr>
+        </table>
+      </div>
+      <p style="margin-top:8px">⚠ "TCP 데이터그램"은 <b>잘못된 표현</b> → 네트워크 계층은 <b>IP 데이터그램</b>, 전송 계층 TCP는 <b>TCP 세그먼트</b>다. 하나의 (IP) 데이터그램은 하나의 세그먼트를 담는다.</p>
+    </div>
+
+    <div class="card">
+      <h3>세그먼트 포맷 (공통 헤더)<span class="pgbadge">p.6</span></h3>
+      <div class="flow">
+        <div class="node">source port #</div>
+        <div class="node">dest port #</div>
+        <div class="node">other header fields</div>
+        <div class="node tcp">application data (message)</div>
+        <div class="flow-label">32 bits 폭 — 수신 포트번호로 어느 소켓에 줄지 결정</div>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>Well-known 포트 번호<span class="imp-tag">중요</span><span class="pgbadge">p.6</span></h3>
+      <p>특정 어플리케이션용으로 <b>미리 정의된 포트번호</b>가 있다 (0–1023, well-known port).</p>
+      <div class="grid">
+        <div class="gcell"><div class="gh"><span class="chip b">21</span> FTP</div></div>
+        <div class="gcell"><div class="gh"><span class="chip b">23</span> Telnet</div></div>
+        <div class="gcell"><div class="gh"><span class="chip b">25</span> SMTP (메일)</div></div>
+        <div class="gcell"><div class="gh"><span class="chip b">80</span> HTTP (웹서버)</div></div>
+        <div class="gcell"><div class="gh"><span class="chip b">443</span> HTTPS (보안 HTTP)</div></div>
+      </div>
+      <ul>
+        <li><b>1023번 이하</b>(0–1023)는 시스템이 사용 → 사용자가 대부분 쓸 수 없음 (well-known port)</li>
+        <li>사용자 프로그램은 <b>높은 포트번호</b>를 지정해서 사용 (실습에서 쓴 12000번대 등)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ S6 비연결형 역다중화 ============ -->
+  <section class="section" id="s6">
+    <div class="sec-head">
+      <h2><span class="dot"></span>비연결형 역다중화 (UDP)</h2>
+      <p>UDP 소켓은 <b>2개의 튜플</b>로 식별된다 — 매우 심플.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>UDP 소켓 = 2-튜플<span class="imp-tag">중요</span><span class="pgbadge">p.7</span></h3>
+      <p>UDP 소켓은 <b>(수신 IP 주소, 수신 포트 번호)</b> 2개 값으로 식별된다.</p>
+      <ul>
+        <li>호스트가 UDP 세그먼트를 받으면, 세그먼트의 <b>수신 포트번호</b>를 확인</li>
+        <li>해당 포트번호를 가진 소켓에 세그먼트를 전달</li>
+        <li><b>송신 IP·포트가 서로 다른</b> 데이터그램이라도 <b>같은 소켓</b>으로 전달될 수 있다</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>소켓 생성 코드<span class="pgbadge">p.7–8</span></h3>
+<pre><code><span class="c-com"># UDP 소켓 생성 (SOCK_DGRAM) 후 포트에 바인딩</span>
+serverSocket = socket(AF_INET, SOCK_DGRAM)
+serverSocket.bind((<span class="c-str">''</span>, <span class="c-num">6428</span>))</code></pre>
+      <p>포트번호(예: 6428)를 이용해 소켓을 만들고 바인딩하면, 그 포트로 들어오는 데이터가 해당 소켓으로 전달된다.</p>
+    </div>
+
+    <div class="card">
+      <h3>동작 예시 (6428)<span class="pgbadge">p.8</span></h3>
+      <div class="flow">
+        <div class="node">P3<br><span style="font-size:.72rem;font-weight:400">src:6428 / dst:9157</span></div>
+        <span class="arrow">↘</span>
+        <div class="node udp">서버 소켓<br>:6428</div>
+        <span class="arrow">↙</span>
+        <div class="node">P1<br><span style="font-size:.72rem;font-weight:400">src:5775 / dst:6428</span></div>
+        <div class="flow-label">서버는 <b>수신 포트 6428</b>만 보고 소켓을 찾음 — 서로 다른 출처(P1·P3)도 같은 소켓으로</div>
+      </div>
+      <p>클라이언트는 서버 소켓의 <b>IP 주소 + 포트 번호</b>만 지정하면 해당 소켓으로 데이터가 전달된다. (UDP 실습이 심플했던 이유)</p>
+    </div>
+  </section>
+
+  <!-- ============ S7 연결지향형 역다중화 ============ -->
+  <section class="section" id="s7">
+    <div class="sec-head">
+      <h2><span class="dot"></span>연결지향형 역다중화 (TCP)</h2>
+      <p>TCP 소켓은 <b>4개의 튜플</b>로 식별된다 — 그래서 복잡하다.</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>TCP 소켓 = 4-튜플<span class="imp-tag">중요</span><span class="pgbadge">p.9</span></h3>
+      <p>TCP 소켓은 <b>4가지 팩터</b>로 식별된다. 수신 호스트는 이 4개 값을 모두 이용해 적절한 소켓에 세그먼트를 전달한다.</p>
+      <div class="grid">
+        <div class="gcell"><div class="gh"><span class="chip g">1</span> 송신 IP 주소</div></div>
+        <div class="gcell"><div class="gh"><span class="chip g">2</span> 송신 포트 번호</div></div>
+        <div class="gcell"><div class="gh"><span class="chip g">3</span> 수신 IP 주소</div></div>
+        <div class="gcell"><div class="gh"><span class="chip g">4</span> 수신 포트 번호</div></div>
+      </div>
+      <p>UDP(2-튜플)와 달리, 단순히 수신자 IP·포트만이 아니라 <b>송신자 IP·포트까지</b> 함께 봐서 소켓을 구별한다. (DB에서 레코드를 유일하게 식별하는 튜플과 비슷한 개념)</p>
+    </div>
+
+    <div class="card amber">
+      <h3><svg class="star" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 21.2l1.4-6.8L2.2 9.7l6.9-.7z"/></svg>웹서버: 연결마다 소켓을 새로 만든다<span class="imp-tag">중요</span><span class="pgbadge">p.9–11</span></h3>
+      <p>웹서버의 포트 80은 <b>기본(welcoming) 소켓 하나</b>라고 생각하기 쉽지만, 그렇지 않다.</p>
+      <ul>
+        <li>80번은 <b>기본 소켓</b>이고, 이를 바탕으로 <b>연결 소켓을 계속 만들어</b> 낸다</li>
+        <li>서버 호스트는 동시에 <b>많은 TCP 소켓</b>을 지원 — 각 소켓은 4-튜플로 식별</li>
+        <li>웹서버는 <b>연결마다 다른 소켓</b>을 가진다</li>
+        <li><b>비지속(non-persistent) HTTP</b>는 <b>요청마다 다른 소켓</b>을 가진다</li>
+      </ul>
+      <div class="flow">
+        <div class="node tcp">:80 welcoming</div><span class="arrow">→</span>
+        <div class="node">연결소켓 A</div>
+        <div class="node">연결소켓 B</div>
+        <div class="node">연결소켓 C …</div>
+        <div class="flow-label">클라이언트가 접속할 때마다 연결 소켓을 계속 생성 — 이것이 TCP의 부담</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>왜 과제 서버가 자꾸 죽었나<span class="pgbadge">p.11</span></h3>
+      <p>클라이언트가 계속 들어오면 서버는 연결 소켓을 <b>끊임없이 만들어</b> 내야 한다.</p>
+      <ul>
+        <li>소켓 생성에는 약간의 <b>시간 딜레이</b>가 있고, <b>리소스는 한정</b>되어 있다</li>
+        <li>처리 중 오류가 생기면 <b>코어 덤프(core dump)</b>로 죽어버림</li>
+        <li>각 연결을 <b>스레드로 분리</b>해 주지 않으면 다음 요청과 엉켜 죽는다</li>
+        <li>→ 해법인 <b>멀티스레드</b> 개념은 <b>다음 차시</b>에서 다룸</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ S8 부연설명 ============ -->
+  <section class="section" id="s8">
+    <div class="sec-head">
+      <h2><span class="dot" style="background:var(--blue)"></span>부연설명 <span class="sup-tag" style="margin-left:6px">강의 외 보충</span></h2>
+      <p>강의에 직접 나오진 않았지만 이해를 돕는 배경 지식. (시험 대비 핵심은 앞 탭의 <span style="color:var(--amber)">amber 카드</span> 참고)</p>
+    </div>
+
+    <div class="card blue">
+      <h3>세그먼트·데이터그램·패킷·프레임, 왜 이름이 다른가</h3>
+      <p>같은 데이터라도 <b>어느 계층이 캡슐화했느냐</b>에 따라 이름(PDU)이 바뀐다. "패킷(packet)"은 넓게 전송 단위를 통칭할 때 쓰이지만, 정확히는 전송계층=세그먼트, 네트워크계층=(IP) 데이터그램, 링크계층=프레임으로 구분한다. 강의에서 "TCP 데이터그램은 틀린 표현"이라고 한 이유가 이것.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>2-튜플 vs 4-튜플이 가르는 것</h3>
+      <p>UDP(2-튜플)는 수신 IP·포트만 같으면 모두 한 소켓으로 모인다 → 서버가 여러 클라이언트를 소켓 하나로 받는 구조가 가능. TCP(4-튜플)는 송신 IP·포트까지 달라서 <b>클라이언트마다 별도 소켓</b>으로 구분된다 → 동시에 많은 클라이언트와 독립된 신뢰적 연결을 유지할 수 있다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>포트번호 범위 더 보기</h3>
+      <p>0–1023은 well-known port(시스템·표준 서비스), 1024–49151은 registered port(등록 포트), 49152–65535는 dynamic/private port(임시 포트)로 나뉜다. 실습에서 12000번대 같은 높은 번호를 쓴 것은 well-known 영역을 피해 사용자 프로그램용 포트를 지정하기 위함이다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>UDP를 쓰는 이유 (교재 p.12)</h3>
+      <p>연결 설정 과정이 없어 <b>지연(delay)이 적고</b>, 연결 상태를 관리하지 않아 <b>간편</b>하며, 헤더가 작고 혼잡제어가 없어 <b>빠르게</b> 보낼 수 있다. 그래서 손실에 관대하고 전송률에 민감한 <b>스트리밍 멀티미디어</b>, 그리고 <b>DNS·SNMP</b> 등에 쓰인다. 신뢰성이 필요하면 응용계층에서 직접 에러복구를 얹는다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>TCP의 3-way handshake</h3>
+      <p>강의의 "사전 컨택 / 연결 설정"은 구체적으로 SYN → SYN-ACK → ACK의 3단계 교환(three-way handshake)을 말한다. 이 과정에서 양쪽이 서로의 시작 시퀀스 번호를 교환하고 버퍼를 확보한다. 상세 절차는 이후 차시에서 다룬다.</p>
+    </div>
+
+    <div class="card blue">
+      <h3>전송계층이 "엣지(edge)"에만 있다는 의미</h3>
+      <p>강의에서 "데이터센터·AI 플랫폼도 결국 엣지에 있는 응용"이라고 한 것은, 전송·응용계층이 코어 라우터가 아니라 <b>종단(end system)</b>에서만 동작한다는 원칙을 강조한 것이다. 라우터는 네트워크 계층까지만 처리하고 세그먼트 내부(포트·TCP/UDP)는 들여다보지 않는 것이 계층화 모델의 기본이다.</p>
+    </div>
+  </section>
+
+  <footer>
+    컴퓨터네트워크 8주차1 · Chap 3. Transport Layer (1) · 강의녹음 재구성 (제3장-1 기준, p.2–13)
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var tabs = document.querySelectorAll('.tab');
+    var secs = document.querySelectorAll('.section');
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        var id = t.getAttribute('data-sec');
+        tabs.forEach(function(x){x.classList.remove('active')});
+        secs.forEach(function(x){x.classList.remove('active')});
+        t.classList.add('active');
+        var el = document.getElementById(id);
+        if(el) el.classList.add('active');
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+    });
+  })();
+</script>
+</body>
+</html>
