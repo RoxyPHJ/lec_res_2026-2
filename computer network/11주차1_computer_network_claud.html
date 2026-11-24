@@ -63,6 +63,9 @@ header .desc{font-size:13.5px;color:var(--text-secondary);margin:0 0 4px}
 /* cards */
 .card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 14px}
 .card h3{font-size:15px;margin:0 0 10px;font-weight:620;display:flex;align-items:center;gap:8px}
+.cpg{font-size:10.5px;font-family:var(--mono);color:var(--text-muted);margin:0 0 9px;letter-spacing:.01em}
+.card.imp .cpg{color:var(--amber)}
+.card.note .cpg{color:var(--blue)}
 .card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
 .card ul{margin:6px 0 10px;padding-left:2px;list-style:none}
 .card ul li{position:relative;padding-left:20px;margin:7px 0}
@@ -178,6 +181,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.8</div>
     <h3>타임아웃을 기다리면 너무 늦다</h3>
     <p class="lead">재전송 방법에는 두 가지가 있다. 하나는 <b>타임아웃 재전송</b>, 또 하나가 <b>빠른 재전송</b>이다. 패킷이 손실됐는데 <b>타임아웃이 될 때까지 기다리면 복구가 너무 늦다.</b> 더 빨리 손실을 알아채고 복구할 방법이 빠른 재전송이다.</p>
     <ul>
@@ -187,6 +191,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.8~9</div>
     <h3>동작 예시 — 100번 데이터가 손실되면</h3>
     <p>수신자가 기대하는 다음 바이트가 100번인데 100이 손실됐다. 이후 데이터가 도착해도 수신자는 계속 <b>"100을 달라"는 같은 ACK</b>만 되돌려 보낸다.</p>
     <div class="diag">
@@ -222,6 +227,7 @@ text{font-family:var(--sans)}
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>왜 하필 "3번"일까?<span class="badge-exam">시험·핵심</span></h3>
+    <div class="cpg">제3장-3 · p.8~9</div>
     <p class="lead">교수님이 특별히 강조한 포인트. 1번도 2번도 아니고 <b>왜 3개의 중복 ACK를 기다렸다가 재전송</b>할까? 그냥 심심해서 정한 숫자가 아니다.</p>
     <p>네트워크(IP 계층)에서는 패킷이 <b>보낸 순서와 다르게 도착</b>할 수 있다. 내가 1·2·3번 순서로 보내도 수신단에는 <b>1·3·2 순서</b>로 도착할 수 있다.</p>
     <ul>
@@ -244,6 +250,7 @@ text{font-family:var(--sans)}
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.3~4 (세그먼트 구조 실습)</div>
     <h3>Wireshark 필터로 하나의 TCP 흐름만 본다</h3>
     <p>패킷이 병렬로 너무 많이 움직여 보기 힘들다. 그래서 특정 조건만 남기도록 <b>필터링</b>한다 — 예: 특정 포트의 패킷만, 또는 <span class="tag">tcp.port == 6211</span> 같은 조건으로 하나의 연결만 추려서 본다.</p>
     <div class="code"><span class="cm"># Wireshark 디스플레이 필터 예시</span>
@@ -253,6 +260,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.3~4</div>
     <h3>세그먼트 헤더에서 확인한 값들</h3>
     <div class="seg">
       <div class="f k">Seq (순서번호)<b>내가 보내는 바이트 번호</b></div>
@@ -270,6 +278,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>ACK 번호 = Seq + Length<span class="badge-exam">핵심</span></h3>
+    <div class="cpg">제3장-3 · p.4 (Seq #'s and ACKs)</div>
     <p>Wireshark에서 실제로 확인한 관계. 어떤 세그먼트의 <b>순서번호에 데이터 길이를 더하면</b> → 상대가 보내올 <b>다음 ACK 번호</b>가 된다.</p>
     <div class="formula">
       다음 ACK = Seq + Length<br>
@@ -280,6 +289,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.3</div>
     <h3>헤더 길이 · 체크섬</h3>
     <ul>
       <li><b>헤더 길이(4비트):</b> Wireshark 값이 <b>5(0101)</b>. 기본 단위가 <b>4바이트</b>이므로 5 × 4 = <b>20바이트</b>. 옵션이 없는 기본 TCP 헤더 크기.</li>
@@ -288,6 +298,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card note">
+    <div class="cpg">제3장-3 · p.3 (옵션: 윈도우 스케일 팩터)</div>
     <h3>Window 값과 윈도우 스케일<span class="note-tag">부연설명</span></h3>
     <p>Wireshark에서 Window 값이 <b>255</b>로 보였는데, 실제 버퍼는 그보다 훨씬 크다. <b>윈도우 스케일 팩터</b>가 적용되어 <b>255 × 256 = 65,280 바이트</b>의 버퍼를 의미한다.</p>
     <p class="muted">작은 16비트 Window 필드로 큰 버퍼를 표현하기 위해 스케일 배수를 곱하는 옵션. 지금은 "숫자 뒤에 배수가 곱해진다" 정도로만 이해하면 충분.</p>
@@ -305,6 +316,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.10 (TCP Flow Control)</div>
     <h3>버퍼가 넘치지 않게 — 속도를 맞추는 일</h3>
     <p class="lead">수신측은 도착한 데이터를 <b>버퍼(buffer)에 쌓아 두고</b>, 응용 프로그램(CPU)이 그걸 꺼내어 실행한다. 미디어 플레이어로 영상을 재생하거나 게임이 데이터를 소비하는 것이 그 예다.</p>
     <div class="diag">
@@ -335,6 +347,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.10</div>
     <h3>너무 느려도, 너무 빨라도 문제</h3>
     <div class="grid">
       <div class="mini" style="border-color:var(--rose-border)">
@@ -353,6 +366,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>흐름제어 = 스피드 매칭 (Speed Matching)<span class="badge-exam">핵심</span></h3>
+    <div class="cpg">제3장-3 · p.10~11</div>
     <p><b>송신자의 전송률</b>과 <b>수신자의 응용 소비율</b>을 같게 맞춰, 수신 버퍼가 넘치지 않도록 <b>데이터 양을 조절</b>하는 것이 흐름제어다.</p>
     <ul>
       <li>수신자는 <b>버퍼의 여유 공간</b>을 세그먼트의 <b>Receive Window(RcvWindow)</b>에 담아 송신자에게 알린다.</li>
@@ -362,6 +376,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.11 (how it works)</div>
     <h3>Receive Window 계산식</h3>
     <p>전체 버퍼 크기에서 "아직 응용이 읽어가지 않고 쌓여 있는 양"을 빼면 여유 공간이 나온다.</p>
     <div class="formula">
@@ -387,6 +402,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.12 (Connection Management)</div>
     <h3>TCP는 신뢰적 통신 → 먼저 연결을 요청한다</h3>
     <p class="lead">TCP는 연결형·신뢰적 프로토콜이라 데이터를 보내기 전에 <b>연결 요청</b> 과정을 거친다. 연결 요청에는 플래그 비트 중 <span class="tag syn">SYN</span>을 사용한다.</p>
     <ul>
@@ -397,6 +413,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>TCP는 양방향 → 연결이 2개 필요하다<span class="badge-exam">핵심</span></h3>
+    <div class="cpg">제3장-3 · p.12</div>
     <p>중요한 포인트: TCP는 <b>양방향(bidirectional)</b>이다. 클라이언트→서버 방향만 있는 게 아니라 <b>서버→클라이언트 방향 연결도</b> 있다. 그래서 <b>양쪽이 각자 연결을 요청</b>해야 한다.</p>
     <ul>
       <li>클라이언트 → 서버 방향: 클라이언트가 <span class="tag syn">SYN</span> 보냄, 서버가 <span class="tag ack">ACK</span>.</li>
@@ -407,6 +424,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>3-way handshake (3방향 악수)<span class="badge-exam">시험·핵심</span></h3>
+    <div class="cpg">제3장-3 · p.12~13</div>
     <p>원래는 SYN·ACK·SYN·ACK 4번이지만, 가운데 두 개(서버의 ACK + 서버의 SYN)를 <b>SYN-ACK 하나로 합쳐</b> 3번에 끝낸다.</p>
     <div class="diag">
       <svg viewBox="0 0 520 190" role="img" aria-label="3-way handshake 흐름">
@@ -448,11 +466,13 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card note">
+    <div class="cpg">강의 보충 · 연결 관리(p.12~13) 관련</div>
     <h3>왜 이 이야기가 나오나<span class="note-tag">부연설명</span></h3>
     <p>TCP의 연결·해제는 <b>공격을 가장 많이 당하는 부분</b> 중 하나다. 뉴스에 자주 나오는 <b>DDoS 공격으로 서버 다운</b> — "대량의 패킷이 도착해 서버가 죽었다"는 사건의 상당수가 <b>TCP 연결 요청(SYN)을 악용</b>한 것이다.</p>
   </div>
 
   <div class="card">
+    <div class="cpg">강의 보충 · SYN(p.12) 악용</div>
     <h3>공격 원리 — 응답할 수 없는 가짜 연결 요청</h3>
     <p>공격자는 <b>출발지 IP 주소를 랜덤하게(위장) 생성</b>해 서버에 대량의 SYN을 보낸다.</p>
     <div class="diag">
@@ -485,6 +505,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>왜 출발지 IP를 랜덤하게 만들까<span class="badge-exam">핵심</span></h3>
+    <div class="cpg">강의 보충 · SYN Flooding</div>
     <ul>
       <li>IP 주소가 <b>일정하면</b> 서버가 그 IP에서 오는 SYN을 쉽게 <b>차단(필터링)</b>할 수 있다.</li>
       <li>그래서 공격자는 <b>IP를 매번 랜덤하게 위장</b> → 어느 것이 진짜 공격자인지 구분·추적이 어렵다.</li>
@@ -505,6 +526,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.14 (Closing a connection)</div>
     <h3>FIN으로 "보낼 데이터 없음"을 알린다</h3>
     <p class="lead">연결 해제는 플래그 비트 <span class="tag fin">FIN</span>을 설정해 보낸다. FIN = "이 방향으로 <b>더 이상 보낼 데이터가 없다</b>"는 뜻.</p>
     <ul>
@@ -515,6 +537,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>해제는 4단계 (FIN · ACK · FIN · ACK)<span class="badge-exam">시험·핵심</span></h3>
+    <div class="cpg">제3장-3 · p.14</div>
     <p>설정은 SYN-ACK로 묶여 <b>3단계</b>였지만, 해제는 <b>4단계</b>다.</p>
     <div class="diag">
       <svg viewBox="0 0 520 210" role="img" aria-label="4-way handshake 연결 해제 흐름">
@@ -543,6 +566,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>TIME_WAIT — 왜 바로 종료하지 않고 20초 기다릴까<span class="badge-exam">시험·중요</span></h3>
+    <div class="cpg">제3장-3 · p.14 (timed wait)</div>
     <p class="lead">클라이언트는 마지막 ACK를 보낸 뒤 <b>곧바로 종료하지 않고</b> 약 <b>20초(Timed Wait)</b>를 기다렸다가 종료한다. 왜?</p>
     <ul>
       <li>만약 그 <b>마지막 ACK가 손실</b>되면, 서버는 ACK를 못 받아 <b>종료하지 못한다.</b></li>
@@ -565,11 +589,13 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.15~16 (상태 처리)</div>
     <h3>연결은 여러 "상태"를 거쳐 이뤄진다</h3>
     <p>TCP는 연결형이라, 연결 요청 → 설정 → 종료까지 <b>여러 개의 상태를 차례로 거친다.</b> 클라이언트와 서버가 각각 어떤 상태로 전환되는지 본다.</p>
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.15 (클라이언트 측)</div>
     <h3>클라이언트 측 상태 전이</h3>
     <div class="diag">
       <svg viewBox="0 0 560 130" role="img" aria-label="클라이언트 상태 전이도">
@@ -599,6 +625,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">제3장-3 · p.16 (서버 측)</div>
     <h3>서버 측 상태 전이</h3>
     <div class="diag">
       <svg viewBox="0 0 560 100" role="img" aria-label="서버 상태 전이도">
@@ -637,6 +664,7 @@ tcp.port == 6211                <span class="cm"># 특정 포트 흐름만</span
   </div>
 
   <div class="card">
+    <div class="cpg">강의 실습 · 상태 처리(p.15~16) 활용</div>
     <h3>내 컴퓨터의 TCP 연결 상태 보기</h3>
     <p>지금 이 순간에도 내 컴퓨터에는 여러 포트가 열려 TCP 커넥션이 맺어져 있다. <span class="tag">netstat</span> 명령으로 그 상태를 직접 볼 수 있다.</p>
     <div class="code"><span class="cm"># -n : 호스트/포트를 숫자로 표시</span>
@@ -645,6 +673,7 @@ netstat -n</div>
   </div>
 
   <div class="card">
+    <div class="cpg">강의 실습 · 상태 처리(p.15~16)</div>
     <h3>상태(State) 읽기</h3>
     <div class="grid">
       <div class="mini"><div class="mt">ESTABLISHED</div><div class="mv">연결됨</div><div class="ms">현재 데이터를 주고받는 활성 연결</div></div>
@@ -657,6 +686,7 @@ netstat -n</div>
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>백도어(backdoor) 탐지에 활용<span class="badge-exam">응용</span></h3>
+    <div class="cpg">강의 보충 · 보안 응용</div>
     <p>백도어가 설치되면 <b>몰래 포트가 열려(ESTABLISHED 유지)</b> 외부에서 내 컴퓨터 정보를 빼낼 통로가 된다. netstat로 수상한 연결을 찾아낼 수 있다.</p>
     <ul>
       <li>웹사이트를 닫거나 아무 작업을 안 해도 <b>지워지지 않고 계속 유지되는 연결</b>이 있다면 의심.</li>
@@ -666,12 +696,14 @@ netstat -n</div>
   </div>
 
   <div class="card note">
+    <div class="cpg">강의 보충 · 보안 응용</div>
     <h3>IP 소유자 조회(whois)<span class="note-tag">부연설명</span></h3>
     <p>인터넷에서 IP 주소를 넣으면 <b>그 IP의 소유 기관</b>을 확인할 수 있다. 낯선 회사가 나오면 무엇을 하는 곳인지 확인해 보는 것이 안전하다. 광고·스니핑 목적의 수상한 팝업/사이트와 연결된 커넥션이라면 끊어 주는 것이 좋다.</p>
   </div>
 
   <div class="card imp">
     <h3><svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21l1.4-6.8L2.2 9.6l6.9-.7z"/></svg>오늘의 결론<span class="badge-exam">시험 포인트</span></h3>
+    <div class="cpg">제3장-3 · p.12~16 요약</div>
     <p>오늘 핵심은 <b>TCP 연결(3-way)과 해제(4-way)를 명확히 이해</b>하는 것. <b>SYN·SYN-ACK·ACK</b>로 연결, <b>FIN·ACK·FIN·ACK</b>로 해제, 그리고 종료 전 <b>TIME_WAIT 대기</b>의 이유 — 이것만 확실히 하면 오늘은 성공.</p>
   </div>
 </section>
