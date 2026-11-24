@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Blockchain Basics - Token, DID</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.title .i{font-size:22px;color:var(--text-secondary)}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none}
+.back:hover{color:var(--text-accent)}
+.src{font-size:12px;color:var(--text-muted);margin-top:8px}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--text-secondary);margin-top:6px;flex-wrap:wrap}
+.legend .i{color:var(--text-warning)}
+.legend .lb .i{color:var(--text-accent)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 18px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.bd{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--surface-1);color:var(--text-secondary);margin:2px 2px}
+.c{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14px;line-height:1.65}
+.imp{background:var(--bg-warning);border:0.5px solid var(--border-warning)}
+.imp .ct{color:var(--text-warning)}
+.add{background:var(--bg-accent);border:0.5px solid var(--border-accent)}
+.add .ct{color:var(--text-accent)}
+.ct{font-weight:500;font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pg{font-size:11px;font-weight:400;padding:1px 7px;border-radius:999px;border:0.5px solid var(--border-strong);color:var(--text-secondary);background:var(--surface-1)}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.cell{background:var(--surface-1);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.55;min-width:0}
+.cell b{font-weight:500;display:block;font-size:13px}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
+.nd{padding:5px 10px;border-radius:8px;border:0.5px solid var(--border-strong);background:var(--surface-1);font-size:13px}
+.ar{color:var(--text-muted);font-size:16px}
+pre{background:var(--surface-1);border-radius:8px;padding:10px 12px;font-family:var(--font-mono);font-size:12px;line-height:1.55;overflow-x:auto;margin:6px 0 0}
+code{font-family:var(--font-mono);font-size:12px}
+ul{margin:4px 0;padding-left:18px}
+li{margin:2px 0}
+.mut{color:var(--text-secondary);font-size:13px}
+.mono{font-family:var(--font-mono);font-size:13px}
+button.act{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+button.act:hover{background:var(--surface-1)}
+.tw{overflow-x:auto}
+table.amm{width:100%;min-width:460px;border-collapse:collapse;font-size:13px}
+table.amm td,table.amm th{padding:5px 6px;border-bottom:0.5px solid var(--border);text-align:center;font-weight:400}
+table.amm th{color:var(--text-secondary);font-size:12px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-coins" viewBox="0 0 24 24"><path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3z"/><path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4"/><path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598z"/><path d="M3 6v10c0 .888 .772 1.45 2 2"/><path d="M3 11c0 .888 .772 1.45 2 2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+</svg>
+<div class="page">
+<a class="back" href="../index.html">← 목차로</a>
+<div class="title">
+<svg class="i" aria-hidden="true"><use href="#i-coins"/></svg>
+<h1>Blockchain Basics - Token, DID</h1>
+<span class="bd">블록체인 응용 — Stablecoin and DID</span><span class="bd">박기석 교수</span>
+</div>
+<div class="src">강의자료: 2 Token and DID.pdf (분할본 1–40 / 41–84) · 스크립트 범위 p.1 ~ p.83 (p.84는 Q&amp;A 표지)</div>
+<div class="legend">
+<span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> amber = 강의 강조 포인트</span>
+<span class="lb"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> blue = [부연설명] (강의 외 내용)</span>
+</div>
+<div class="tabs" id="tabs"></div>
+
+<section class="sec" data-t="1 · 거래 처리와 코인">
+<div class="c"><div class="ct">강의 목차 <span class="pg">p.2</span></div>
+<div class="g2"><div class="cell"><b>Chapter 1. 토큰과 스테이블코인</b>코인 vs 토큰 · ERC-20 · 토큰 교환 · 유동성</div><div class="cell"><b>Chapter 2. 분산 신원 증명 (DID)</b>Centralized ID → Federated ID → Self-Sovereign ID</div></div>
+<p class="mut" style="margin:8px 0 0">토큰, 스테이블코인, DID 모두 이더리움의 스마트 컨트랙트 덕분에 가능해진 응용 서비스 (EVM 응용)</p></div>
+
+<div class="c"><div class="ct">기존 은행 vs 블록체인 거래 처리 <span class="pg">p.3</span></div>
+<div class="cell" style="margin-bottom:8px"><b>기존 은행 (예: 국민은행 앱)</b>
+<div class="fl"><span class="nd">영희 이체 요청 (거래 제출)</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">은행 중앙 서버 DB 1곳</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">영희 잔액 −, 철수 잔액 +</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">즉시 응답 (0.0x초)</span></div></div>
+<div class="cell"><b>블록체인 (예: 메타마스크로 1 ETH 송금)</b>
+<div class="fl"><span class="nd">거래 제출</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">수천~수만 노드 모두에게 전달</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">모든 노드가 독립 실행 + 블록에 담음</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">응답 (수십 초 ~ 10분)</span></div></div>
+<ul class="mut"><li>노드 = 서비스 제공자(Service Provider). 컴퓨터만 있으면 누구나 참여 가능</li><li>블록체인 네트워크 전체를 "하나의 거대한 서버"로 보면 됨</li></ul></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>코인 = 블록체인을 유지시키는 원동력 <span class="pg">p.4</span></div>
+<p style="margin:0 0 6px">아무 보상 없이 누가 서버 역할을 해주겠는가? → 블록체인 플랫폼이 자체 프로토콜로 코인을 발행해 노드에게 보상</p>
+<div><span class="bd">Bitcoin → BTC</span><span class="bd">Ethereum → ETH</span><span class="bd">Solana → SOL</span><span class="bd">Tron → TRX</span></div>
+<ul><li>블록 생성 보상 + 사용자가 낸 거래 수수료까지 모두 노드가 가져감</li><li>자체 메인넷을 가진 플랫폼은 모두 자체 코인을 가짐</li></ul></div>
+
+<div class="c"><div class="ct">수강생 Q&amp;A</div>
+<div class="g2"><div class="cell"><b>Q. 하드포크로 갈라진 체인의 화폐는?</b>독자적인 새 블록체인 플랫폼이 되므로 → 코인</div><div class="cell"><b>Q. 채굴(PoW)을 안 하는 체인도 보상?</b>PoS 등 방식만 다를 뿐 블록을 만들면 보상을 받음. 채굴만이 보상 조건은 아님</div></div></div>
+</section>
+
+<section class="sec" data-t="2 · 코인 vs 토큰, ERC-20">
+<div class="c"><div class="ct">토큰 생성 과정 <span class="pg">p.5</span></div>
+<div class="fl"><span class="nd">① 개발자가 스마트 컨트랙트 작성</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">② 이더리움에 제출 (= 트랜잭션)</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">③ 모든 노드가 코드 저장 후 응답</span></div>
+<p class="mut" style="margin:4px 0 0">토큰은 블록체인 플랫폼이 아니라 개발자가 만든다 → 수천·수만 개, 무한히 생성 가능</p></div>
+
+<div class="c"><div class="ct">스마트 컨트랙트에 적어두는 것 (INU 토큰 예) <span class="pg">p.6</span></div>
+<div class="g"><div class="cell"><b>토큰 이름</b>INU</div><div class="cell"><b>지갑별 보유량</b>0xD123…B09 → 95<br>0xA814…C13 → 192<br>0xF43C…980 → 192</div><div class="cell"><b>최대 발행량</b>예: 1만 개 이상 발행 금지 (BTC 2,100만 개처럼)</div><div class="cell"><b>최소 단위</b>소수점 몇 자리까지 쪼갤지</div><div class="cell"><b>잔액 초과 송금 금지</b>95개 보유 시 96개 송금 불가</div><div class="cell"><b>하루 송금 한도</b>대량 매도 방지 (예: 100개)</div></div></div>
+
+<div class="c"><div class="ct">토큰 송금 흐름 <span class="pg">p.7</span></div>
+<div class="fl"><span class="nd">영희: 철수에게 INU 5개</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">INU 컨트랙트 로직으로 모든 노드 실행</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">영희 −5 / 철수 +5, 블록에 기록</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">완료 응답</span></div></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>코인 vs 토큰 — 확실히 구분 <span class="pg">p.8–9</span></div>
+<div class="g2"><div class="cell"><b>코인 (Coin)</b>블록체인 플랫폼 자체 프로토콜로 생성<br>인프라 유지를 위한 자원 — 없으면 네트워크 마비<br><span class="bd">BTC</span><span class="bd">ETH</span><span class="bd">SOL</span><span class="bd">TRX</span></div><div class="cell"><b>토큰 (Token)</b>스마트 컨트랙트로 생성되는 응용 서비스<br>개발자 누구나 생성 · 비트코인에선 불가<br><span class="bd">USDC</span><span class="bd">USDT</span><span class="bd">DAI</span><span class="bd">INU</span></div></div>
+<p style="margin:8px 0 0">스테이블코인은 이름에 "코인"이 붙었지만 토큰이다</p></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>ERC-20 — 토큰에도 규격이 있다 <span class="pg">p.10–12</span></div>
+<p style="margin:0 0 6px">ERC = Ethereum Request for Comments (EIP로 제안된 표준). 어댑터 규격처럼 맞춰 만들어야 연결된다</p>
+<ul><li>규격을 안 지키면 → 메타마스크에 토큰이 안 보임, 이더스캔 검색 안 됨 ("쓰레기"로 취급)</li><li>이더리움 측이 코드 드래프트를 제공 (OpenZeppelin 라이브러리) → 복사해서 수정</li></ul></div>
+
+<div class="c"><div class="ct">ERC-20 구성 요소 <span class="pg">p.11</span></div>
+<div class="g"><div class="cell"><b>name</b>"Incheon National Univ"</div><div class="cell"><b>symbol</b>"INU"</div><div class="cell"><b>decimals</b>18</div><div class="cell"><b>totalSupply</b>1,000,000 (예시)</div><div class="cell"><b>balances[address]</b>지갑별 잔액</div><div class="cell"><b>transfer(to, amount)</b>내 토큰 송금</div><div class="cell"><b>approve(spender, amount)</b>제3자에게 사용 권한 위임</div><div class="cell"><b>transferFrom(from, to, amount)</b>위임받은 토큰 대신 송금</div><div class="cell"><b>event Transfer / Approval</b>외부(지갑·이더스캔)가 감지하는 로그</div></div></div>
+
+<div class="c add"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg>[부연설명] 강의 실습 동작을 재현한 INU 토큰 예시 코드</div>
+<p style="margin:0" class="mut">교수님 실제 코드가 아니라, 강의에서 보인 동작(발행자만 mint, 누구나 자기 토큰 burn)을 OpenZeppelin v5로 재현한 예시</p>
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract INUToken is ERC20, ERC20Burnable, Ownable {
+    constructor()
+        ERC20("Incheon National Univ", "INU")
+        Ownable(msg.sender)
+    {
+        _mint(msg.sender, 1000 * 10 ** decimals());
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
+    }
+}</pre></div>
+</section>
+
+<section class="sec" data-t="3 · INU 토큰 실습">
+<div class="c"><div class="ct">실습 순서 <span class="pg">p.13–23</span></div>
+<div class="fl"><span class="nd">이더스캔 조회</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">메타마스크 토큰 가져오기</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">송금 (Transfer)</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">발행 (Mint)</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">소각 (Burn)</span></div>
+<p class="mut" style="margin:4px 0 0">INU 컨트랙트 주소 <code style="word-break:break-all">0x49c96d7833A4B9E9340BD49FF0D07Eb17Ace7B1f</code> (Sepolia 테스트넷)</p></div>
+
+<div class="c"><div class="ct">이더스캔 조회 · 투명성 <span class="pg">p.13</span></div>
+<div class="g"><div class="cell"><b>1,156</b>총 발행량</div><div class="cell"><b>16명</b>보유자 (교수님 지갑 4 + 수강생 12)</div><div class="cell"><b>26회</b>전송 기록</div></div>
+<p style="margin:8px 0 0">ERC-20 규격에 맞으므로 주소만 넣어도 자동 인식. 누가 누구에게 언제 보냈는지 모두 공개 → 지갑 주소만 알면 전부 추적 가능 (투명성)</p></div>
+
+<div class="c"><div class="ct">메타마스크에서 토큰 가져오기 <span class="pg">p.14–15</span></div>
+<div class="fl"><span class="nd">네트워크 Sepolia 선택</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">토큰 탭 ⋯ → 토큰 가져오기</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">컨트랙트 주소 입력 → 자동 검색</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">보유량 표시 (수강생 10 INU)</span></div>
+<p class="mut" style="margin:4px 0 0">Sepolia = 이더리움 테스트넷. 메인넷이 선택돼 있으면 안 보임</p></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>토큰을 보내도 수수료는 반드시 ETH <span class="pg">p.16–18</span></div>
+<p style="margin:0">INU 100개 송금 시 수수료는 INU가 아니라 ETH로 지불 → 인프라(노드)가 처리하는 거래이기 때문. ETH가 없으면 토큰 교환 자체가 불가능 → 그래서 이더리움이 중요</p>
+<p class="mut" style="margin:6px 0 0">전송 후 이더스캔 거래 로그에서 보낸 주소 → 받은 주소, 100 INU 확인 가능</p></div>
+
+<div class="c"><div class="ct">발행 (Mint) 과 DApp <span class="pg">p.19–21</span></div>
+<ul><li>메타마스크 지갑에는 송금 기능밖에 없음 → 추가 기능은 개발자가 만든 웹 서비스로</li><li>웹 서비스 = 프론트엔드 = 분산 웹 서비스 = DApp = Web3 (예: inu-token.vercel.app)</li><li>지갑이 웹 서비스에 "달라붙어" 더 많은 기능 수행</li><li>Mint는 발행 권한이 있는 지갑(토큰 생성자)만 가능 → 수강생에게 999개 민팅</li></ul>
+<div class="g2" style="margin-top:6px"><div class="cell"><b>송금 (100개)</b>내 잔액이 줄면서 이동 → 총발행량 변화 없음</div><div class="cell"><b>민팅 (999개)</b>새로 만들어 지급 → 총발행량 1,156 → 2,155</div></div></div>
+
+<div class="c"><div class="ct">소각 (Burn) <span class="pg">p.22–23</span></div>
+<ul><li>누구나 자기 토큰을 소각할 수 있게 프로그래밍 → 교수님 500개 소각 (921 → 421)</li><li>소각도 컨트랙트 실행 요청 = 거래 → ETH 수수료 필요</li><li>총발행량 감소 → 보유자에게 희소식 (주식 소각과 같은 원리)</li></ul>
+<p class="mut" style="margin:4px 0 0">스크립트상 소각 후 발행량 1,545개 (2,155 − 500 = 1,655이므로 수강생 소각이 겹쳤거나 전사 오류일 가능성)</p></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>발행량 = 투자 시 반드시 확인할 것</div>
+<p style="margin:0">컨트랙트에 발행 한도가 없으면 무한 발행 가능 → 가치 하락. 그래서 거래소는 스마트 컨트랙트를 면밀히 검토 (사기 여부, 발행량 구조)</p></div>
+</section>
+
+<section class="sec" data-t="4 · 유동성과 토큰 가치">
+<div class="c"><div class="ct">출발점: 토큰을 왜 만드나? <span class="pg">p.24–25</span></div>
+<p style="margin:0">토큰으로 뭘 살 수 있나? 실체도 없는데 쓰레기 아닌가? → 답의 열쇠는 유동성</p></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>유동성 (Liquidity) — 굉장히 중요한 개념 <span class="pg">p.26</span></div>
+<p style="margin:0 0 6px">자산을 원하는 시점에 빠르게 사고팔 수 있는 정도. 시장이 효율적으로 돌아가려면 유동성이 있어야 함</p>
+<div class="g2"><div class="cell"><b>유동성 높음</b>살 사람·팔 사람 많음 (예: 삼성전자 주식)</div><div class="cell"><b>유동성 낮음</b>거래 없음 → 가격 왜곡 (예: 집 한 채 거래로 시세 급변, 작전 세력)</div></div>
+<p style="margin:6px 0 0">INU가 "쓰레기"처럼 보이는 이유 = 처음엔 유동성이 없기 때문</p></div>
+
+<div class="c"><div class="ct">토큰에 가치를 부여해 유동성 공급 <span class="pg">p.27–34</span></div>
+<p class="mut" style="margin:0 0 6px">화폐 변천사처럼 가치 없는 돌·자갈에도 가치를 새기면 화폐가 된다 (p.29–30)</p>
+<div class="g"><div class="cell"><b>게임 아이템</b>리니지 같은 게임에서 토큰으로 아이템 구매 (p.31). 실제 사례 Axie Infinity 마켓플레이스 (p.33)</div><div class="cell"><b>온라인 결제</b>예: 무신사 토큰으로 옷 구매</div><div class="cell"><b>접근권</b>예: INU 토큰 보유자만 특강 수강</div><div class="cell"><b>거버넌스</b>토큰 보유자만 의사결정·투표 참여</div></div>
+<p style="margin:8px 0 0">→ 토큰 이코노미 (토크노믹스). 게임사 토큰 예: 넥슨 토큰이 여러 게임에서 쓰이면 투자 몰림</p></div>
+
+<div class="c"><div class="ct">Token Utility 표 <span class="pg">p.35</span></div>
+<p class="mut" style="margin:0 0 4px">강의에서 언급된 유형</p>
+<span class="bd">결제 (Payment)</span><span class="bd">게임 자산 / NFT</span><span class="bd">거버넌스 (UNI, COMP, MKR)</span><span class="bd">접근권 (Access)</span>
+<p class="mut" style="margin:8px 0 4px">슬라이드 표에만 있는 나머지 유형 (강의 미언급)</p>
+<span class="bd">보상</span><span class="bd">예치·스테이킹</span><span class="bd">유틸리티 (가스)</span><span class="bd">연료 (Filecoin 등)</span><span class="bd">증명 (SBT, POAP)</span><span class="bd">구독</span></div>
+</section>
+
+<section class="sec" data-t="5 · CEX vs DEX">
+<div class="c"><div class="ct">거래소의 두 종류 <span class="pg">p.36–41</span></div>
+<div class="g2"><div class="cell"><b>CEX · 중앙화 거래소</b>업비트, 빗썸, 코인원
+<ul><li>오더북(호가창): 판매가·구매가가 매칭될 때 체결 (p.37)</li><li>자체 DB에 "김OO 1.23 BTC" 식으로 기록만</li><li>출금 요청 시에야 블록체인으로 실제 전송 (p.41)</li><li>거래소가 망하면 회수 불확실</li><li>상장 매우 어려움 (p.38)</li></ul></div>
+<div class="cell"><b>DEX · 탈중앙화 거래소</b>Uniswap(가장 유명), SushiSwap 등
+<ul><li>스마트 컨트랙트로 동작하는 분산 웹 서비스 (DApp) (p.39)</li><li>내 지갑을 직접 연결 → 교환 즉시 내 지갑으로 (p.40)</li><li>매 거래마다 ETH 수수료</li><li>상장 절차 없이 누구나 거래 창구 생성</li></ul></div></div></div>
+
+<div class="c"><div class="ct">CEX 상장 심사 <span class="pg">p.38</span></div>
+<p style="margin:0">토큰 목적, 스마트 컨트랙트(사기 여부), 운영 주체의 자본금·재무지표까지 확인 → 개인이 만든 INU는 사실상 상장 불가</p></div>
+
+<div class="c"><div class="ct">Uniswap 시연</div>
+<div class="fl"><span class="nd">지갑 연결 (메인넷)</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">0.008 ETH ≈ $40 보유</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">ETH → USDC 스왑</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">≈ 37 USDC (수수료분 ETH 남김)</span></div></div>
+
+<div class="c"><div class="ct">남는 질문 <span class="pg">p.42</span></div>
+<p style="margin:0">CEX는 기록만 하면 되지만 DEX는 즉시 줘야 한다. 유니스왑은 그 많은 토큰을 어디서 가져오나? INU 몇 개로 ETH 몇 개를 받나? → 유동성 풀</p></div>
+</section>
+
+<section class="sec" data-t="6 · 유동성 풀과 AMM">
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>유동성 풀 (Liquidity Pool, LP) <span class="pg">p.43–45</span></div>
+<p style="margin:0 0 6px">중앙 거래소 없이 토큰 교환을 가능하게 하는 핵심. 돈 많은 공급자가 두 토큰을 쌍(pair)으로 풀에 예치</p>
+<span class="bd">ETH / INU</span><span class="bd">ETH / DAI</span><span class="bd">USDC / DAI</span><span class="bd">USDT / ETH</span>
+<ul style="margin-top:6px"><li>교환하려는 토큰의 쌍 풀이 반드시 있어야 함. 없으면 교환 불가</li><li>풀은 누군가 만들어야 함 → 보통 토큰 발행자 (예: 교수님이 INU 풀 생성)</li><li>직접 쌍이 없으면 라우팅으로 풀을 연결해 여러 번 교환</li><li>공급자는 교환 수수료를 받음 (수익) — 다만 가격 변동 위험 존재</li></ul></div>
+
+<div class="c"><div class="ct">AMM (Automated Market Maker) <span class="pg">p.46–55</span></div>
+<p style="margin:0 0 4px">규칙: 풀 안 두 토큰 수량의 곱을 항상 일정하게 유지</p>
+<p class="mono" style="margin:0 0 6px">ETH × INU = k = 100 × 100 = 10,000 &nbsp;→&nbsp; ETH<sub>out</sub> = ETH<sub>before</sub> − k / INU<sub>after</sub></p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><button class="act" id="swapBtn">INU 10개 투입</button><button class="act" id="resetBtn">초기화</button></div>
+<div class="g" style="margin-bottom:8px"><div class="cell"><b id="poolInu">100</b>풀 안 INU</div><div class="cell"><b id="poolEth">100.000</b>풀 안 ETH</div><div class="cell"><b id="kVal">10,000</b>곱 k</div></div>
+<div class="tw"><table class="amm"><thead><tr><th>차례</th><th>INU 후</th><th>ETH 후 (정확)</th><th>받는 ETH</th><th>강의 (정수 근사)</th></tr></thead><tbody id="ammLog"></tbody></table></div>
+<p class="mut" style="margin:6px 0 0">강의는 91×110, 83×120으로 정수 근사 → 9개, 7개. 실제로는 소수점까지 계산 (수수료도 차감)</p></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>같은 10 INU인데 받는 ETH가 줄어든다 <span class="pg">p.55</span></div>
+<p style="margin:0">INU 매도가 이어질수록 풀에 INU가 쌓이고 ETH가 줄어 → INU 가치 하락, ETH 상대 가치 상승. 시장 원리가 수식으로 자동 구현됨</p></div>
+
+<div class="c"><div class="ct">기타 언급 <span class="pg">p.56</span></div>
+<ul><li>CEX·DEX 가격 차이를 노린 차익거래 시도 → 결국 시장 원리로 가격이 비슷하게 수렴, 오히려 손실도 많음</li><li>암호화폐 시장은 가격 변동성이 매우 큼 → 투기성 → 스테이블코인 등장 배경</li></ul></div>
+
+<div class="c add"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg>[부연설명] Uniswap V2 실제 계산</div>
+<p style="margin:0">V2는 투입량의 0.3%를 수수료로 떼고 나머지로 x·y=k 계산 → 수수료가 풀에 쌓여 LP 수익이 됨. 강의의 "위험 부담"은 주로 비영구적 손실(impermanent loss): 예치한 두 토큰의 가격 비율이 변하면 그냥 보유했을 때보다 가치가 낮아지는 현상</p></div>
+</section>
+
+<section class="sec" data-t="7 · 스테이블코인">
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>스테이블코인 = 토큰 <span class="pg">p.57</span></div>
+<p style="margin:0 0 6px">변동성 큰 시장에서 1 토큰 = 1 달러 가치를 유지 (원화 가격은 환율 그대로, 예: 1,378원)</p>
+<span class="bd">USDC · Circle</span><span class="bd">USDT · Tether</span></div>
+
+<div class="c"><div class="ct">두 가지 유형 <span class="pg">p.58–60</span></div>
+<div class="g2"><div class="cell"><b>Algorithmic (알고리즘형)</b>테라·루나 사태. 두 토큰을 발행·소각하며 알고리즘으로 가격을 맞추려다 실패</div>
+<div class="cell"><b>Fiat-backed (법정화폐 담보형)</b>USDC, USDT. 1달러 예치 → 1개 발행. 언제든 1:1 상환(Redeem) 약속 → 대규모 매도에 대비해 막대한 현금 보유</div></div>
+<div class="fl" style="margin-top:8px"><span class="nd">$1 예치</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">발행사가 1 USDC 발행</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">사용·송금</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">반납 시 $1 상환</span></div></div>
+
+<div class="c"><div class="ct">발행사는 왜 가격도 안 오르는 토큰을 발행하나 <span class="pg">p.61–62</span></div>
+<div class="fl"><span class="nd">사용자 USD 예치</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">스테이블코인 발행</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">예치금 일부 현금 보관</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">일부 단기 상품(국채 등) 투자</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">이자 수익</span></div>
+<p class="mut" style="margin:4px 0 0">예: 100만 개 판매 = 100만 달러 목돈. 사용자는 결제(커피, 물건)에 사용</p></div>
+
+<div class="c"><div class="ct">사용자는 왜 사나 — 해외 송금 <span class="pg">p.63–66</span></div>
+<div class="g2"><div class="cell"><b>전통 은행</b>국내 은행 → 중개 기관 → 미국 현지 은행. 2~5일 소요 + 수수료 + 환전</div><div class="cell"><b>Stablecoin Sandwich</b>원화 → USDC로 지갑 주소에 1,000개 즉시 전송 → 현지에서 달러 환전 또는 USDC로 바로 결제</div></div>
+<p class="mut" style="margin:6px 0 0">교수님 예: 미국에 있는 연인이 "오늘까지 1,000달러" 요청 → 지갑 주소만 받으면 끝</p></div>
+
+<div class="c"><div class="ct">통화 주권 (Monetary Sovereignty) <span class="pg">p.67</span></div>
+<ul><li>미국 GENIUS Act로 스테이블코인 제도화 → 미국이 시장 주도</li><li>모두가 USDC·USDT를 쓰면 = 달러를 쓰는 효과. 개발도상국일수록 자국 화폐 대신 구매</li><li>발행사가 준비금으로 미국 국채 매입 → 국채 수요 증가 → 디지털 세계의 기축통화 확보</li><li>한국 대선에서도 원화 스테이블코인 논의. 교수님: 원화 페그에 사람들이 가치를 느낄지는 의문</li></ul></div>
+</section>
+
+<section class="sec" data-t="8 · DID">
+<div class="c"><div class="ct">신원 증명의 3단계 <span class="pg">p.69–74</span></div>
+<div class="fl"><span class="nd">Centralized ID</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">Federated ID</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">Self-Sovereign ID (SSI)</span></div>
+<div class="g" style="margin-top:6px">
+<div class="cell"><b>Centralized <span class="pg">p.70–71</span></b>서비스마다 회원가입, 이름·생년월일·전화번호 입력 + ID/PW. 서비스마다 개인정보 저장 → 유출, 관리자가 다 볼 수 있음</div>
+<div class="cell"><b>Federated <span class="pg">p.72–73</span></b>구글·페이스북·네이버·카카오 소셜 로그인. 정보는 그 기업에만 → 특정 기업 의존, 내 온라인 활동 추적 가능</div>
+<div class="cell"><b>SSI <span class="pg">p.74</span></b>내 신원은 내가 관리. 어디에도 위탁하지 않고 내 핸드폰(지갑 앱)에 보관</div></div>
+<p class="mut" style="margin:6px 0 0">Identity(내가 누구인가) ≠ 로그인 ID(Identifier, 서비스 내 식별자)</p></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>SSI ⊃ DID <span class="pg">p.74, 80</span></div>
+<p style="margin:0">SSI(자기주권신원)가 더 큰 개념이고, DID는 SSI를 구현하는 데 필요한 요소 기술 중 하나. 공개키를 블록체인에 DID 문서 형태로 저장하기 때문에 "DID"라는 말이 계속 나옴</p></div>
+
+<div class="c"><div class="ct">3자 구조와 VC <span class="pg">p.75–76</span></div>
+<div class="fl"><span class="nd">Issuer 발급자<br><span class="mut">인천광역시, 인천대</span></span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">Holder 소유자<br><span class="mut">시민·학생의 지갑 앱</span></span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">Verifier 검증자<br><span class="mut">QR 단말기</span></span></div>
+<ul><li>VC (Verifiable Credential): 위변조 불가, 검증 가능한 증명서 (모바일 인천시민카드, 재학증명서)</li><li>활용: 여객터미널 무료 승선, 시민 할인 매장, 재학생 할인</li><li>선택적 공개: 거주지만 필요하면 그 정보만 골라 QR 생성. 전부 노출할 필요 없음</li></ul></div>
+
+<div class="c imp"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>서명과 검증 흐름 <span class="pg">p.77–82</span></div>
+<p class="mut" style="margin:0 0 6px">문제: 서울 시민이 캡처본으로 인천시민 행세하면? (p.77)</p>
+<div class="fl"><span class="nd">① 인천시가 개인키로 VC 서명·발급 (p.78)</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">② 소유자가 자기 개인키로 서명해 VP 제출 (p.79)</span></div>
+<div class="fl"><span class="nd">③ 검증자: 인천시 공개키로 VC 서명 확인</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">④ 소유자 공개키로 VP 서명 확인</span><svg class="i ar" aria-hidden="true"><use href="#i-right"/></svg><span class="nd">혜택 제공</span></div>
+<p style="margin:6px 0 0">공개키는 어디서? → 인천시와 사용자의 공개키가 블록체인에 DID 문서로 저장돼 있고, 단말기가 자동으로 가져옴 (p.80–82)</p>
+<p style="margin:4px 0 0">서명 ① = 위변조 방지, 서명 ② = "나임"을 증명 (개인키는 나만 가짐)</p></div>
+
+<div class="c"><div class="ct">인천광역시 DID 사업 <span class="pg">p.83</span></div>
+<p style="margin:0">인천TP 주관 I-SUM 프로젝트. 이더리움 대신 코인 없는 자체 블록체인 플랫폼을 구축해 DID 문서 저장, DID·VC 개발 중</p></div>
+
+<div class="c add"><div class="ct"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg>[부연설명] 용어 정리</div>
+<ul style="margin:0"><li>강의의 "공개키로 해독/풀어본다"는 정확히는 서명 검증 (서명은 암호화가 아님)</li><li>VC, VP, DID 모두 W3C 표준. DID 형식 예: <code>did:method:고유식별자</code> → DID 문서에 공개키 수록</li><li>선택적 공개는 BBS+ 서명이나 영지식 증명(ZKP)으로 구현 → "만 19세 이상"처럼 값 자체 없이 조건만 증명 가능</li></ul></div>
+</section>
+</div>
+
+<script>
+(function(){
+  var secs = Array.prototype.slice.call(document.querySelectorAll('.sec'));
+  var bar = document.getElementById('tabs');
+  secs.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.textContent = s.dataset.t;
+    b.addEventListener('click', function(){ show(i); window.scrollTo({top:0}); });
+    bar.appendChild(b);
+  });
+  function show(i){
+    secs.forEach(function(s, j){ s.style.display = j === i ? 'block' : 'none'; });
+    Array.prototype.forEach.call(bar.children, function(b, j){ b.classList.toggle('on', j === i); });
+  }
+  show(0);
+
+  var K = 10000, inu = 100, eth = 100, n = 0;
+  var lecture = {1:'91×110 → 9개', 2:'83×120 → 7개'};
+  var fmt = new Intl.NumberFormat('ko-KR');
+  function render(){
+    document.getElementById('poolInu').textContent = fmt.format(inu);
+    document.getElementById('poolEth').textContent = eth.toFixed(3);
+    document.getElementById('kVal').textContent = fmt.format(Math.round(inu * eth));
+  }
+  document.getElementById('swapBtn').addEventListener('click', function(){
+    n++;
+    var inuA = inu + 10;
+    var ethA = K / inuA;
+    var out = eth - ethA;
+    inu = inuA; eth = ethA;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + n + '</td><td>' + inuA + '</td><td>' + ethA.toFixed(3) + '</td><td>' + out.toFixed(3) + '</td><td>' + (lecture[n] || '—') + '</td>';
+    document.getElementById('ammLog').appendChild(tr);
+    render();
+  });
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    inu = 100; eth = 100; n = 0;
+    document.getElementById('ammLog').innerHTML = '';
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
