@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ERC 721 - NFT</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;--fill-accent:#378ADD;--on-accent:#ffffff;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;--fill-warning:#EF9F27;--on-warning:#412402;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --bg-pro:#EEEDFE;--text-pro:#534AB7;--border-pro:#AFA9EC;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;--fill-accent:#378ADD;--on-accent:#ffffff;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;--fill-warning:#EF9F27;--on-warning:#412402;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+    --bg-pro:#26215C;--text-pro:#CECBF6;--border-pro:#534AB7;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.title .i{font-size:22px;color:var(--text-secondary)}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none}
+.back:hover{color:var(--text-accent)}
+.src{font-size:12px;color:var(--text-muted);margin-top:8px}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--text-secondary);margin-top:6px;flex-wrap:wrap}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 18px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:8px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.sec h2{margin:0 0 12px;font-size:18px;font-weight:500}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:.9rem 1.1rem;margin:0 0 12px;font-size:14px;line-height:1.7;color:var(--text-primary)}
+.card h3{margin:0 0 6px;font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card p{margin:0 0 6px}
+.imp{background:var(--bg-warning);border-color:var(--border-warning)}
+.imp,.imp h3{color:var(--text-warning)}
+.ext{background:var(--bg-accent);border-color:var(--border-accent)}
+.ext,.ext h3{color:var(--text-accent)}
+.pg{font-size:11px;font-weight:400;padding:1px 8px;border-radius:10px;background:var(--surface-1);color:var(--text-secondary);border:0.5px solid var(--border)}
+.tag{font-size:11px;padding:1px 8px;border-radius:10px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.t-imp{background:var(--fill-warning);color:var(--on-warning)}
+.t-ext{background:var(--fill-accent);color:var(--on-accent)}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0 4px;white-space:pre;overflow-x:auto;line-height:1.6;color:var(--text-primary)}
+.cm{color:var(--text-muted)}
+code{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);padding:1px 5px;border-radius:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0}
+.cell{background:var(--surface-1);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.5;color:var(--text-primary)}
+.cell b{font-weight:500;display:block;font-size:14px;margin-bottom:2px}
+.cell span{color:var(--text-secondary)}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
+.node{padding:6px 12px;border-radius:8px;font-size:13px;border:0.5px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);display:inline-flex;align-items:center;gap:6px}
+.n-ok{background:var(--bg-success);color:var(--text-success);border-color:var(--border-success)}
+.n-bad{background:var(--bg-danger);color:var(--text-danger);border-color:var(--border-danger)}
+.n-pro{background:var(--bg-pro);color:var(--text-pro);border-color:var(--border-pro)}
+.n-warn{background:var(--bg-warning);color:var(--text-warning);border-color:var(--border-warning)}
+.arw{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px}
+.note{font-size:13px;color:var(--text-secondary);margin:6px 0 0}
+.cap{font-size:12px;color:var(--text-muted);margin:10px 0 0}
+.store{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1fr);gap:4px;margin:10px 0 6px;font-size:12.5px;font-family:var(--font-mono)}
+.store div{padding:3px 8px}
+.store .h{font-family:var(--font-sans);color:var(--text-secondary);background:var(--surface-1);border-radius:6px}
+.chain{display:flex;flex-direction:column;gap:6px;margin:8px 0 0}
+.chain .lvl{background:var(--surface-1);border-radius:8px;padding:8px 12px}
+.chain .lvl b{font-weight:500;display:flex;align-items:center;gap:6px}
+.chain .lvl span{font-size:12.5px;color:var(--text-secondary);font-family:var(--font-mono)}
+.chain .down{text-align:center;font-size:12px;color:var(--text-secondary)}
+.qz{border-top:0.5px solid var(--border);padding:8px 0;cursor:pointer}
+.qz .q{display:flex;align-items:center;gap:6px}
+.qz .a{display:none;font-size:13px;color:var(--text-success);margin-top:4px}
+.qz.open .a{display:block}
+ul{margin:4px 0;padding-left:20px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-hex" viewBox="0 0 24 24"><path d="M4 18v-5l4 -2l4 2v5l-4 2z"/><path d="M8 11v-5l4 -2l4 2v5"/><path d="M12 13l4 -2l4 2v5l-4 2l-4 -2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5l0 14"/><path d="M18 13l-6 6"/><path d="M6 13l6 6"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M7 8l-4 4l4 4"/><path d="M17 8l4 4l-4 4"/><path d="M14 4l-4 16"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 9l1 0"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><path d="M15 8h.01"/><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 16v.01"/><path d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483"/></symbol>
+</svg>
+<div class="page">
+<a class="back" href="../index.html">← 목차로</a>
+<div class="title" style="margin-top:10px">
+<svg class="i" aria-hidden="true"><use href="#i-hex"/></svg>
+<h1>ERC 721 - NFT</h1>
+</div>
+<div class="src">강의자료: 4 Distributed Storage.pdf (ERC-721 파트) · p.53 ~ p.59 · 복습 참조: p.7 게이트웨이, p.14–16 Pinata, p.19–20 CID·디렉토리 구조 · 연계: 2 Token and DID p.13 (ERC-20 INU 토큰)</div>
+<div class="legend">
+<span><span class="tag t-imp"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 중요</span> 강의에서 강조</span>
+<span><span class="tag t-ext">부연설명</span> 강의 외 보충</span>
+</div>
+<div class="tabs" id="tabs">
+<button data-t="0" class="on">1. NFT 개요</button>
+<button data-t="1">2. ERC-721과 배포</button>
+<button data-t="2">3. 컨트랙트 구조</button>
+<button data-t="3">4. IPFS 업로드·메타데이터</button>
+<button data-t="4">5. 민팅 실습</button>
+<button data-t="5">6. 전체 흐름</button>
+</div>
+
+<div class="sec" data-s="0">
+<h2>NFT란 무엇인가</h2>
+<div class="card"><h3>강의 맥락 <span class="pg">p.53</span></h3>
+지난주 IPFS 수업에서 못 다룬 응용 실습. IPFS 분산 스토리지가 블록체인에서 직접적으로 쓰인 대표 사례가 바로 NFT 발급이다.
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> NFT = 유일한 토큰 <span class="pg">p.53</span></h3>
+<div class="flow">
+<div class="node">Contract address</div>
+<div class="arw">+</div>
+<div class="node">tokenId</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node n-warn">세상에 하나뿐인 토큰</div>
+</div>
+</div>
+<div class="card"><h3>OpenSea · CryptoPunks <span class="pg">p.54</span></h3>
+<ul>
+<li>OpenSea에 보이는 CryptoPunks 이미지 하나하나가 NFT 작품</li>
+<li>이미지를 블록체인 상에 올려두고, 소유자가 다른 사람에게 비싼 값에 계속 재판매</li>
+<li>핵심 가치: 디지털 자산의 <b>소유권 증명</b></li>
+</ul>
+</div>
+<div class="card"><h3>NFT의 현재와 비판 <span class="pg">p.54</span></h3>
+<div class="grid">
+<div class="cell"><b>3~4년 전</b><span>큰 인기. 연예인도 작품을 NFT로 발급해 팬에게 판매</span></div>
+<div class="cell"><b>지금</b><span>확실히 시들해짐. NFT 창업 아이템은 시대에 맞지 않다는 평가</span></div>
+<div class="cell"><b>당시 의문</b><span>실물(유명 화가 작품 등)과 연계되지 않은 이미지 소유권이 무슨 가치가 있나?</span></div>
+</div>
+</div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> Fungible vs Non-fungible</h3>
+대체 가능(Fungible) 토큰은 1 INU와 다른 1 INU가 완전히 같아서 서로 바꿔도 무방하다. 대체 불가능(Non-fungible) 토큰은 tokenId마다 소유자와 연결된 데이터가 달라서 #31과 #32를 맞바꿀 수 없다. 그래서 "개수"가 아니라 "어떤 토큰을 누가 가졌는가"를 관리한다.
+</div>
+</div>
+
+<div class="sec" data-s="1">
+<h2>ERC-721 표준과 컨트랙트 배포</h2>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> NFT도 일종의 토큰 — 표준만 다르다 <span class="pg">p.53</span></h3>
+<div class="grid">
+<div class="cell"><b>ERC-20</b><span>일반 토큰 표준. 스팀잇 코인, 지난 실습의 INU 토큰. 메타마스크 "토큰" 탭에 표시</span></div>
+<div class="cell" style="border:0.5px solid var(--border-warning)"><b>ERC-721</b><span>이더리움 NFT 표준. 이 규칙에 맞게 만든 스마트 컨트랙트를 NFT라고 부름. 메타마스크 "NFT" 탭에 표시</span></div>
+</div>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 반드시 ERC-721 규격대로 작성 <span class="pg">p.53, 57</span></h3>
+<ul>
+<li>마음대로 만들면 규격이 맞지 않아 메타마스크가 읽어서 보여줄 수 없다</li>
+<li>규격에 맞으면 Etherscan도 자동으로 NFT로 인식해 검색해 준다</li>
+</ul>
+</div>
+<div class="card"><h3>스마트 컨트랙트 배포 흐름 <span class="pg">p.55</span></h3>
+토큰은 블록체인 플랫폼 상에서 프로그래머(개발자)에 의해 생성된다.
+<div class="flow">
+<div class="node"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg> 개발자: ERC-721 코드 작성</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">① 코드 제출 (거래)</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">② 모든 노드에 코드 등록 (거래 처리)</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node n-ok">③ 배포 완료 응답</div>
+</div>
+<p class="note">배포 방법 자체는 이어지는 스마트 컨트랙트 수업에서 자세히 다룸. 이번 시연은 교수님이 미리 배포해 둔 컨트랙트 사용.</p>
+</div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> ERC-721이 요구하는 핵심 함수</h3>
+<pre>ownerOf(tokenId)                 <span class="cm">// 해당 토큰의 소유자 주소</span>
+balanceOf(owner)                 <span class="cm">// 소유자가 가진 토큰 개수</span>
+transferFrom(from, to, tokenId)  <span class="cm">// 소유권 이전</span>
+tokenURI(tokenId)                <span class="cm">// 메타데이터 경로 (Metadata 확장)</span></pre>
+지갑과 Etherscan은 이 함수 이름이 정해져 있다는 것을 전제로 호출한다. 그래서 규격이 다르면 "읽어서 보여줄 수가 없는" 것.
+</div>
+</div>
+
+<div class="sec" data-s="2">
+<h2>NFT 스마트 컨트랙트 안에 들어가는 것</h2>
+<div class="card"><h3>스마트 컨트랙트 상태 저장공간 <span class="pg">p.56</span></h3>
+<code>0x27b476983a2A5fc8a414912eC71Eb350Ea4519c3</code>
+<div class="grid">
+<div class="cell"><span>토큰 이름</span><b>DWEBNFT</b></div>
+<div class="cell"><span>발행 한도</span><b>100</b></div>
+</div>
+<div class="store">
+<div class="h">토큰 ID</div><div class="h">토큰 URL (IPFS)</div><div class="h">소유자 지갑 주소</div>
+<div>0</div><div>ipfs://bafy…esw</div><div>0x23…AF</div>
+<div>1</div><div>ipfs://bafy…dkf</div><div>0xkg…BB</div>
+<div>2</div><div>ipfs://bafy…nbf</div><div>0x91…CA</div>
+<div>…99</div><div>…</div><div>…</div>
+</div>
+<ul>
+<li>발행 한도는 무한대가 아니라 보통 100개, 1,000개 등으로 지정</li>
+<li>한도 100 → 서로 다른 이미지 100개, 최대 100명이 소유 가능 (한 명이 여러 개 소유도 가능)</li>
+<li>100개 토큰에 대한 일종의 배열 공간(0~99번)이 생기고, 각 칸에 URL과 소유자 지갑 주소 저장</li>
+</ul>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> NFT 데이터는 IPFS에, CID만 컨트랙트에 <span class="pg">p.56</span></h3>
+교수님이 "중요한 얘기"라고 짚은 부분. 이미지 자체를 컨트랙트에 넣는 게 아니라, IPFS에 올리고 얻은 CID 값만 저장해서 참조 형식으로 데이터를 가져온다.
+<div class="grid">
+<div class="cell"><b>블록체인 노드</b><span>CID (짧은 문자열) 저장</span></div>
+<div class="cell"><b>IPFS 노드 (분산 스토리지)</b><span>이미지·메타데이터 원본 저장</span></div>
+</div>
+</div>
+<div class="card"><h3>왜 온체인에 이미지를 넣지 않나 <span class="pg">p.56</span></h3>
+<div class="grid">
+<div class="cell"><b style="color:var(--text-danger)">On-chain</b><span>블록체인 스토리지 자체 사용. 고해상도 이미지를 노드 DB에 넣으면 노드 하나당 데이터가 너무 많아지고 가스비가 어마어마하게 발생</span></div>
+<div class="cell"><b style="color:var(--text-success)">Off-chain</b><span>IPFS 등에 저장하고 위치(CID)만 온체인에 기록. 비용 절감 효과</span></div>
+</div>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 서비스 설계 원칙 <span class="pg">p.56</span></h3>
+이더리움 기반 서비스를 만들 때 모든 데이터를 블록체인에 넣으려 하지 말 것. AWS든 IPFS든 값싼 스토리지에 데이터를 저장하고, 해시값·참조값·URL만 블록체인에 넣어 원본에 접근하게 하는 것이 일반적이다.
+</div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> 비용 감각과 CID의 장점</h3>
+<ul>
+<li>이더리움에서 새 저장 슬롯(32바이트) 하나를 쓰는 데 약 2만 gas가 든다. 수 MB 이미지는 수만 개 슬롯이 필요해 현실적으로 불가능</li>
+<li>AWS URL은 같은 주소의 내용이 바뀔 수 있지만, CID는 내용의 해시라서 내용이 바뀌면 CID도 바뀐다 → 온체인에 기록한 CID로 원본 무결성까지 보장</li>
+</ul>
+</div>
+</div>
+
+<div class="sec" data-s="3">
+<h2>IPFS 업로드와 메타데이터 작성</h2>
+<div class="card"><h3>업로드 순서 <span class="pg">p.59 · 복습 p.14–16</span></h3>
+<div class="flow">
+<div class="node">① 이미지 폴더 업로드</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">② 이미지 CID 확보</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">③ 메타데이터 JSON 작성</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">④ 메타데이터 폴더 업로드</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node n-ok">⑤ 메타데이터 CID 확보</div>
+</div>
+<p class="note">이미지 CID를 알아야 메타데이터의 image 경로를 쓸 수 있으므로 순서가 정해진다.</p>
+</div>
+<div class="card"><h3>① 이미지 업로드 (Pinata) <span class="pg">p.14–16 복습</span></h3>
+<ul>
+<li>인천대 마스코트 횃불이 이미지 5개(31~35.png)를 "NFT image" 폴더에 준비 → 5개의 NFT 토큰을 만들 계획</li>
+<li>Pinata: IPFS를 직접 설치하기 어려운 사용자를 위한 서드파티 서비스. Add → Folder upload</li>
+<li>업로드하면 폴더 자체의 CID 하나를 얻음</li>
+</ul>
+<pre>https://&lt;게이트웨이&gt;/ipfs/&lt;이미지 폴더 CID&gt;/31.png
+https://&lt;게이트웨이&gt;/ipfs/&lt;이미지 폴더 CID&gt;/32.png</pre>
+<p class="note">폴더 업로드는 디렉토리 구조를 가지므로 CID 뒤에 /파일명을 붙여 개별 파일 접근 (p.20 디렉토리 구조, p.7 게이트웨이 복습).</p>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> CID를 아는 게 굉장히 중요 <span class="pg">p.19 복습</span></h3>
+CID만 있으면 IPFS에 업로드된 데이터를 찾아서 가져올 수 있다.
+</div>
+<div class="card"><h3>③ 메타데이터 작성 <span class="pg">p.59</span></h3>
+<ul>
+<li>"NFT metadata" 폴더에 이미지별 설명서 31.json ~ 35.json 작성 (이름을 이미지와 일치)</li>
+<li>.json은 .txt처럼 그냥 파일 확장자 중 하나. 메모장으로 작성해도 됨</li>
+</ul>
+<p class="cap">강의 시연 31.json (재구성, CID는 자리표시)</p>
+<pre>{
+  "name": "31번째 INU NFT 토큰",
+  "description": "31번째 NFT입니다",
+  "image": "https://&lt;게이트웨이&gt;/ipfs/&lt;이미지 폴더 CID&gt;/31.png"
+}</pre>
+<p class="cap">강의자료 예시 (p.59)</p>
+<pre>{
+  "name": "Incheon Blockchain NFT #1",
+  "description": "#Masot of Incheon National Univ.",
+  "image": "ipfs://bafybeih74zqj63oikb5uc7zln4q3ux7hagaihurri6xsxuceg6kbynqemy/1.png",
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Blue"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Level",
+      "value": 5
+    }
+  ]
+}</pre>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 필수 3필드: name · description · image <span class="pg">p.59</span></h3>
+<div class="flow">
+<div class="node n-warn">name — NFT 이름</div>
+<div class="node n-warn">description — 무엇인지</div>
+<div class="node n-warn">image — 저장 경로</div>
+</div>
+이 세 가지가 가장 중요하고 나머지(attributes 등)는 부수 정보. 부수 정보를 더 적어두면 웹서비스들이 사용자 화면에 띄워줄 수 있으니 나쁠 건 없다.
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> image 경로를 정확히 <span class="pg">p.59</span></h3>
+<ul>
+<li>31.json에는 31.png의 경로를 (32가 아니라 31) — 번호 매칭 주의</li>
+<li>경로를 복사해 브라우저에 붙였을 때 이미지가 나와야 함</li>
+<li>이미지가 안 나오면 NFT 발급 실패. 메타마스크가 이 경로로 이미지를 불러와 보여주기 때문</li>
+</ul>
+</div>
+<div class="card"><h3>④⑤ 메타데이터 업로드 <span class="pg">p.59</span></h3>
+메타데이터 폴더도 Pinata에 Folder upload → 메타데이터 폴더 CID 획득. 게이트웨이로 <code>.../31.json</code>을 열면 그냥 문서이고, 그 안의 image 경로를 다시 열면 이미지가 나온다.
+</div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> ipfs:// 와 https 게이트웨이 표기</h3>
+강의 시연은 게이트웨이 URL을 복사해 넣었고, 강의자료 p.59는 <code>ipfs://CID/파일</code> 표기를 썼다. ipfs:// 형식은 특정 게이트웨이 서버에 묶이지 않아서 해당 게이트웨이가 사라져도 유효하고, 지갑과 마켓이 각자 게이트웨이로 바꿔 읽는다. attributes의 trait_type/value 구조는 OpenSea 등 마켓이 속성·희귀도를 표시할 때 쓰는 관례다.
+</div>
+</div>
+
+<div class="sec" data-s="4">
+<h2>민팅 실습</h2>
+<div class="card"><h3>Etherscan에서 컨트랙트 확인 <span class="pg">p.57</span></h3>
+<ul>
+<li>컨트랙트 주소 검색 → Dweb Lab NFT (DWEBNFT), ERC-721로 자동 인식</li>
+<li>지난주 미리 17번까지 발급해 둔 상태 → 이번 시연에서 31~35번 추가 발급</li>
+</ul>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 상호작용 웹서비스가 필요하다 <span class="pg">p.58</span></h3>
+블록체인에 배포만 해서는 사용에 한계가 있다. 사용자가 지갑을 연결해 민팅·소각·거래할 수 있는 웹서비스를 개발해야 한다 (웹서비스 개발은 다음 주 수업).
+</div>
+<div class="card"><h3>민팅 과정 (SimpleNFT – Folder CID Minter) <span class="pg">p.58</span></h3>
+<div class="flow">
+<div class="node"><svg class="i" aria-hidden="true"><use href="#i-wallet"/></svg> 메타마스크 연결</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">메타데이터 폴더 CID + tokenId 31 입력</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">Mint 클릭</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">지갑의 이더로 수수료 지불·트랜잭션 발행</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node">보류 → 컨펌</div>
+<div class="arw"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></div>
+<div class="node n-ok">메타마스크 NFT 탭·Etherscan에 #31 표시</div>
+</div>
+<pre>tokenURI preview: ipfs://&lt;메타데이터 폴더 CID&gt;/&lt;tokenId&gt;.json
+                  ipfs://&lt;메타데이터 폴더 CID&gt;/31.json</pre>
+<p class="note">이 메타데이터 경로 정보를 트랜잭션에 담아 컨트랙트에 제출하는 것이 민팅이다.</p>
+</div>
+<div class="card"><h3>거래와 가치 <span class="pg">p.57–58</span></h3>
+<ul>
+<li>"보내기"로 다른 사람 지갑에 전송 → 소유자가 바뀌고 블록체인에 영구 기록·증명</li>
+<li>NFT 자체에 가치가 있는 게 아니라, 실생활 계약으로 만든다 (예: 이 NFT로 박물관 입장 가능하다는 협약)</li>
+</ul>
+</div>
+<div class="card ext"><h3><span class="tag t-ext">부연설명</span> 왜 민팅에 수수료가 드나</h3>
+민팅은 컨트랙트 저장공간(소유자, tokenURI)을 바꾸는 상태 변경 트랜잭션이라 가스비가 필요하다. 반면 ownerOf·tokenURI 같은 조회는 상태를 바꾸지 않아 무료로 호출된다. "보류 → 컨펌"은 트랜잭션이 블록에 포함되는 과정이다.
+</div>
+</div>
+
+<div class="sec" data-s="5">
+<h2>전체 흐름 정리</h2>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 참조의 참조로 이미지를 가져온다 <span class="pg">p.56, 58–59</span></h3>
+<div class="chain">
+<div class="lvl"><b><svg class="i" aria-hidden="true"><use href="#i-link"/></svg> 스마트 컨트랙트 (온체인)</b><span>tokenId 31 → ipfs://&lt;메타CID&gt;/31.json, owner 0x…</span></div>
+<div class="down"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg> 메타데이터 경로 (참조 1)</div>
+<div class="lvl"><b><svg class="i" aria-hidden="true"><use href="#i-file"/></svg> IPFS: 31.json (오프체인)</b><span>name, description, image → .../31.png</span></div>
+<div class="down"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg> 이미지 경로 (참조 2)</div>
+<div class="lvl"><b><svg class="i" aria-hidden="true"><use href="#i-photo"/></svg> IPFS: 31.png (오프체인)</b><span style="font-family:var(--font-sans)">실제 이미지 → 메타마스크·웹서비스 화면에 표시</span></div>
+</div>
+</div>
+<div class="card imp"><h3><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 한 문장 결론</h3>
+ERC-721 규격에 맞게 스마트 컨트랙트를 작성해 두기만 하면, IPFS에 이미지와 메타데이터를 올리고 그 참조(CID)만 트랜잭션으로 계속 전달하며 NFT를 발급해 나갈 수 있다.
+</div>
+<div class="card"><h3>셀프 체크 (클릭해서 답 보기)</h3>
+<div id="qz"></div>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var bs = document.querySelectorAll('#tabs button');
+  var ss = document.querySelectorAll('.sec');
+  function show(i){
+    ss.forEach(function(s){ s.style.display = s.dataset.s == i ? 'block' : 'none'; });
+    bs.forEach(function(b){ b.classList.toggle('on', b.dataset.t == i); });
+  }
+  bs.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.t); window.scrollTo({top:0}); }); });
+  show('0');
+
+  var qs = [
+    ['NFT 스마트 컨트랙트의 이더리움 표준은?', 'ERC-721 (일반 토큰은 ERC-20)'],
+    ['NFT 이미지는 어디에, 컨트랙트에는 무엇을 저장하나?', '이미지·메타데이터는 IPFS(오프체인), 컨트랙트에는 CID 경로만 저장'],
+    ['이미지를 온체인에 넣지 않는 이유는?', '노드당 저장량이 너무 커지고 가스비(트랜잭션 비용)가 어마어마해짐'],
+    ['메타데이터 필수 3필드는?', 'name, description, image'],
+    ['NFT 발급이 실패한 것으로 보는 경우는?', 'image 경로를 따라갔을 때 이미지가 나오지 않는 경우'],
+    ['업로드 순서는?', '이미지 폴더 → 이미지 CID → 메타데이터 작성 → 메타데이터 폴더 → 메타데이터 CID로 민팅']
+  ];
+  var box = document.getElementById('qz');
+  qs.forEach(function(p){
+    var d = document.createElement('div');
+    d.className = 'qz';
+    d.innerHTML = '<div class="q"><svg class="i" aria-hidden="true"><use href="#i-help"/></svg>' + p[0] + '</div><div class="a">' + p[1] + '</div>';
+    d.addEventListener('click', function(){ d.classList.toggle('open'); });
+    box.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>
