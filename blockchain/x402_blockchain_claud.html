@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>x402 — EIP-712 & EIP-3009</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+code{font-family:var(--font-mono);font-size:.92em}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-accent)}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.chip{background:var(--bg-accent);color:var(--text-accent);font-size:12px;padding:3px 10px;border-radius:var(--radius)}
+.src{font-size:12px;color:var(--text-secondary);margin:10px 0 6px;display:flex;align-items:center;gap:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.legend{font-size:12px;color:var(--text-secondary);margin:4px 0 16px;display:flex;gap:12px;flex-wrap:wrap}
+.legend .lw{color:var(--text-warning)}.legend .la{color:var(--text-accent)}
+.c{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:14px;line-height:1.7}
+.ci,.ca{background:var(--surface-2);border-radius:12px;margin:0 0 12px;overflow:hidden;font-size:14px;line-height:1.7}
+.ci{border:1px solid var(--border-warning)}.ca{border:1px solid var(--border-accent)}
+.ch{padding:7px 16px;font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ch>span:first-child{display:flex;align-items:center;gap:6px}
+.ci .ch{background:var(--bg-warning);color:var(--text-warning)}.ca .ch{background:var(--bg-accent);color:var(--text-accent)}
+.cb{padding:12px 16px}
+.pg{font-size:11px;color:var(--text-secondary);border:0.5px solid var(--border-strong);border-radius:6px;padding:1px 6px;white-space:nowrap;font-weight:400}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.k{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;font-size:13px;line-height:1.55}
+.k b{display:block;font-weight:500;font-size:13px;margin-bottom:2px}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;font-size:13px}
+.fl span.n{background:var(--surface-1);border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 10px;text-align:center}
+.fl small{color:var(--text-secondary)}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border-radius:var(--radius);padding:12px 14px;overflow-x:auto;line-height:1.55;margin:8px 0}
+.cm{color:var(--text-muted)}
+.t{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px}
+.t h3{font-size:15px;font-weight:500;margin:0}
+.step{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:50%;background:var(--text-accent);color:#fff;font-size:12px;font-weight:600;margin-right:6px;padding:0 3px}
+.ent{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
+.ent .k{display:flex;flex-direction:column;gap:2px}
+.ent .k svg{color:var(--text-accent)}
+.bal{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:10px 0;font-size:13px;text-align:center}
+.bal .box{background:var(--surface-1);border-radius:var(--radius);padding:10px}
+.bal .box b{display:block;font-size:12px;color:var(--text-secondary);font-weight:500;margin-bottom:4px}
+.bal .was{color:var(--text-muted);text-decoration:line-through;font-size:12px}
+.bal .now{font-size:16px;font-weight:600}
+.tx-d{color:var(--text-danger)}.tx-s{color:var(--text-success)}.tx-w{color:var(--text-warning)}.tx-a{color:var(--text-accent)}
+.bd-d{border:0.5px solid var(--border-danger)}.bd-s{border:0.5px solid var(--border-success)}.bd-a{border:0.5px solid var(--border-accent)}
+ul,ol{margin:6px 0 0;padding-left:20px}
+li{margin:2px 0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1"/><path d="M12 7v10"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 9l1 0"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></symbol>
+  <symbol id="i-robot" viewBox="0 0 24 24"><path d="M6 4m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/><path d="M12 2v2"/><path d="M9 12v9"/><path d="M15 12v9"/><path d="M5 16l4 -2"/><path d="M15 14l4 2"/><path d="M9 18h6"/><path d="M10 8v.01"/><path d="M14 8v.01"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v0a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M3 12m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v0a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M7 8l0 .01"/><path d="M7 16l0 .01"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.978a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.978a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z"/><path d="M15 9h.01"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06"/><path d="M15 19l2 2l4 -4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 7v5l3 3"/></symbol>
+  <symbol id="i-gas" viewBox="0 0 24 24"><path d="M14 11h1a2 2 0 0 1 2 2v3a1.5 1.5 0 0 0 3 0v-7l-3 -3"/><path d="M4 20v-14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v14"/><path d="M3 20l12 0"/><path d="M18 7v1a1 1 0 0 0 1 1h1"/><path d="M4 11l10 0"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M3 10l18 0"/><path d="M7 15l.01 0"/><path d="M11 15l2 0"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></symbol>
+</svg>
+
+<div class="page">
+<a class="back" href="../index.html"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg>목차</a>
+<div class="title">
+  <svg class="i" aria-hidden="true" style="font-size:22px;color:var(--text-secondary)"><use href="#i-card"/></svg>
+  <h1>x402 — EIP-712 &amp; EIP-3009</h1>
+  <span class="chip">블록체인</span>
+</div>
+<div class="src"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>강의자료: 26-2 3 x402.pdf · p.1–15 (표지 포함 전체 범위)</div>
+<div class="tabs" id="tabs">
+  <button class="on" data-t="1">1. x402란?</button><button data-t="2">2. 구성 요소</button><button data-t="3">3. ①② 요청·402</button><button data-t="4">4. ③④ 서명</button><button data-t="5">5. ⑤⑥ 검증</button><button data-t="6">6. ⑦⑧ 정산</button><button data-t="7">7. 가스리스·EIP-3009</button><button data-t="8">핵심 요약</button>
+</div>
+<div class="legend">
+  <span class="lw"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> amber = 강의 강조 포인트</span>
+  <span class="la"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> blue = [부연설명]</span>
+</div>
+
+<!-- ============ TAB 1 ============ -->
+<section data-s="1">
+<div class="c"><div class="t"><h3>x402 = HTTP 402 Payment Required</h3><span class="pg">강의 도입</span></div>
+x402의 "402"는 수십 년 전 만들어진 웹(HTTP) 프로토콜의 <b>상태 코드(status code)</b> 중 하나인 <code>402 Payment Required</code>에서 왔다. 오랫동안 거의 쓰이지 않던 코드인데, 에이전트 시대가 오면서 "이 리소스는 돈을 내야 받을 수 있다"는 신호로 되살아나 활용되기 시작했다.</div>
+
+<div class="c"><div class="t"><h3>왜 지금 필요한가 — 에이전트 자동화(Automation)</h3><span class="pg">p.3</span></div>
+사람을 대신해 일을 수행하는 <b>클라이언트 에이전트</b>를 생각해 보자. 주인이 시킨 일을 하려는데 자기가 가진 정보만으로는 부족한 경우가 있다. 예를 들어 "지난 열흘간의 날씨 정보"가 필요한데 스스로는 알 수 없다. 이럴 때 그 정보를 서비스해 주는 <b>서버 에이전트</b>의 도움을 받아 결과를 받고, 그 결과로 나머지 작업을 이어간다.
+<div class="fl">
+<span class="n">클라이언트 에이전트<br><small>주인 일을 수행</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n">"너 서비스 좀 쓸게"<br><small>날씨 예측 요청</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n">서버 에이전트<br><small>"10 USDC 내"</small></span>
+</div></div>
+
+<div class="c"><div class="t"><h3>결제 수단 — USDC (스테이블코인)</h3><span class="pg">p.3</span></div>
+서버 에이전트가 요구하는 요금은 <b>USDC</b>로 지불한다. USDC는 이더리움 위에서 만들어진 토큰이며 <b>달러에 페깅(pegged)</b>된 스테이블코인이다. 즉 이더리움 네이티브 자산(ETH)이 아니라, 스마트 컨트랙트로 발행·관리되는 토큰이다.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 핵심 문제 — "USDC는 있는데 가스비(ETH)가 없다"</span><span class="pg">p.3, p.13</span></div><div class="cb">
+클라이언트 에이전트가 USDC(토큰)는 가지고 있어도, 이더리움에서 트랜잭션을 발생시키는 데 필요한 <b>가스비(gas fee)는 ETH 같은 네이티브 토큰</b>으로 내야 한다. 토큰은 받았지만 네이티브 코인이 없으면, 그 토큰을 보내는 트랜잭션조차 발생시킬 수 없다.
+<div class="fl" style="margin-top:8px">
+<span class="n bd-s">USDC 보유 <svg class="i" aria-hidden="true"><use href="#i-check"/></svg><br><small>결제할 돈은 있음</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
+<span class="n bd-d">ETH(가스) 없음<br><small>전송 Tx를 못 냄</small></span>
+</div>
+<span style="font-size:13px">→ 이 문제를 x402 + EIP-712 + EIP-3009 조합으로 해결한다 (뒤 탭에서 전개).</span></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] ERC 표준 위치잡기</span><span class="pg">p.1</span></div><div class="cb">
+강의에서 언급된 토큰 표준들의 관계: <b>ERC-20</b>은 가장 범용적인 대체 가능(fungible) 토큰 표준, <b>ERC-721</b>은 NFT 표준이다. 이번 주제의 핵심인 <b>EIP-3009</b>(= ERC-3009)는 ERC-20을 확장해 "서명 기반 전송"을 가능하게 하는 스마트 컨트랙트 표준으로, USDC가 이를 지원한다. 자료 제목도 "EIP-712 &amp; EIP-3009 on x402"다. (EIP는 제안 단계 번호, 채택되면 ERC로도 불려 두 이름이 혼용된다.)</div></div>
+</section>
+
+<!-- ============ TAB 2 ============ -->
+<section data-s="2">
+<div class="c"><div class="t"><h3>x402 표준 플로우의 4개 주체</h3><span class="pg">p.3–4</span></div>
+x402 결제에는 두 에이전트 외에 결제를 돕는 주체와 블록체인이 함께 등장한다.
+<div class="ent">
+<div class="k"><b><svg class="i" aria-hidden="true"><use href="#i-robot"/></svg> Client Agent</b>나를 대신해 일하는 에이전트. 서비스를 요청하고 결제하는 쪽(토큰 소유자)</div>
+<div class="k"><b><svg class="i" aria-hidden="true"><use href="#i-server"/></svg> Server Agent</b>서비스(날씨 예측·LLM 등)를 제공하고 요금을 받는 쪽</div>
+<div class="k"><b><svg class="i" aria-hidden="true"><use href="#i-link"/></svg> Facilitator</b>결제를 도와주는 중간(릴레이) 서버. 검증·정산을 대행</div>
+<div class="k"><b><svg class="i" aria-hidden="true"><use href="#i-coin"/></svg> Blockchain</b>실제 토큰 이동(정산)이 일어나는 곳. 여기서는 Base 네트워크</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 주목 포인트 — 클라이언트·서버는 블록체인에 직접 접근하지 않는다</span><span class="pg">p.3, p.13</span></div><div class="cb">
+클라이언트 에이전트와 서버 에이전트는 블록체인에 <b>직접 접근하지 않는다.</b> 블록체인에 직접 트랜잭션을 발생시키고 접근하는 역할은 <b>Facilitator(릴레이 서버)</b>가 맡는다. 그래서 두 에이전트는 가스비를 직접 다룰 필요가 없고, 결제의 블록체인 처리는 Facilitator에게 위임된다.
+<div class="fl" style="margin-top:8px">
+<span class="n">Client / Server Agent</span>
+<svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
+<span class="n">블록체인 직접 접근</span>
+</div>
+<div class="fl">
+<span class="n">Facilitator</span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-a">블록체인에 Tx 발생 / 접근</span>
+</div></div></div>
+
+<div class="c"><div class="t"><h3>전체 8단계 한눈에</h3><span class="pg">p.4–15</span></div>
+아래 순서가 x402의 표준 플로우다. 각 단계는 다음 탭들에서 자세히 다룬다.
+<div class="g g2">
+<div class="k"><b class="tx-a"><span class="step">①</span>요청</b>Client → Server: 유료 리소스 GET 요청</div>
+<div class="k"><b class="tx-a"><span class="step">②</span>402 응답</b>Server → Client: 402 + 결제 방법(PAYMENT-REQUIRED)</div>
+<div class="k"><b class="tx-a"><span class="step">③</span>Payload 생성</b>Client: authorization + EIP-712 서명 생성</div>
+<div class="k"><b class="tx-a"><span class="step">④</span>재요청</b>Client → Server: PAYMENT-SIGNATURE 헤더로 전송</div>
+<div class="k"><b class="tx-a"><span class="step">⑤</span>검증 의뢰</b>Server → Facilitator: /verify 로 POST</div>
+<div class="k"><b class="tx-a"><span class="step">⑥</span>검증</b>Facilitator: 서명·파라미터·유효성 확인 후 회신</div>
+<div class="k"><b class="tx-a"><span class="step">⑦</span>서비스 수행</b>Server: 요청받은 작업 실행</div>
+<div class="k"><b class="tx-a"><span class="step">⑧</span>정산</b>Server → Facilitator: /settle → 온체인 결제</div>
+</div></div>
+</section>
+
+<!-- ============ TAB 3 ============ -->
+<section data-s="3">
+<div class="c"><div class="t"><h3><span class="step">①</span>클라이언트가 유료 리소스를 요청</h3><span class="pg">p.4</span></div>
+클라이언트가 서버의 특정 엔드포인트로 평범한 HTTP <b>GET 요청</b>을 보낸다. (예: 도메인 <code>api.example.com</code>의 <code>/premium-data</code> 엔드포인트)
+<pre>GET /premium-data HTTP/1.1
+Host: api.example.com</pre></div>
+
+<div class="c"><div class="t"><h3><span class="step">②</span>서버: "이건 유료다" → 402 응답</h3><span class="pg">p.4</span></div>
+서버는 결과를 바로 주지 않고, "요금을 지불해야 한다"는 것을 알려야 한다. 그래서 응답 상태 코드로 <code>402 Payment Required</code>를 보내고, 응답 헤더에 <b>PAYMENT-REQUIRED</b>라는 약속된 헤더로 "어떻게 결제해야 하는지"를 담아 보낸다.
+<pre>HTTP/1.1 402 Payment Required
+PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6MiwiZXJyb3IiOi4uLn0=
+Content-Type: application/json          <span class="cm"># base64-encoded</span></pre>
+헤더 값은 JSON 객체를 <b>Base64로 인코딩</b>한 하나의 문자열이다. 받는 쪽은 다시 Base64 디코딩해서 JSON으로 읽는다.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> PAYMENT-REQUIRED 헤더 안의 결제 조건</span><span class="pg">p.5</span></div><div class="cb">
+디코딩하면 아래 JSON이 나온다. "얼마를 / 어떤 토큰으로 / 어느 주소로 / 어느 네트워크에서" 내야 하는지를 전부 명시한다.
+<pre>{
+  "x402Version": 2,
+  "error": "PAYMENT-SIGNATURE header is required",
+  "resource": {
+    "url": "https://api.example.com/premium-data",
+    "description": "Access to premium market data",
+    "mimeType": "application/json"
+  },
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "eip155:84532",     <span class="cm"># 블록체인 네트워크 지정 (Base)</span>
+      "amount": "10000",
+      "asset":  "0x036CbD53...3dCF7e", <span class="cm"># 토큰 스마트 컨트랙트 (USDC)</span>
+      "payTo":  "0x209693Bc...312287C", <span class="cm"># 서버(Merchant) 주소</span>
+      "maxTimeoutSeconds": 60,
+      "extra": { "name": "USDC", "version": "2" }
+    }
+  ],
+  "extensions": {}
+}</pre></div></div>
+
+<div class="c"><div class="t"><h3>필드 의미</h3><span class="pg">p.5</span></div>
+<div class="g">
+<div class="k"><b>network</b>어느 블록체인인지 식별하는 고유 번호(chain id). 이더리움·Base·Polygon·Arbitrum 등 체인마다 고유 번호가 있다</div>
+<div class="k"><b>asset</b>결제에 쓸 토큰의 스마트 컨트랙트 주소 (= USDC 컨트랙트)</div>
+<div class="k"><b>amount</b>지불할 금액 (USDC 양)</div>
+<div class="k"><b>payTo</b>돈을 받을 서버 에이전트의 지갑 주소</div>
+</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] eip155:84532 와 amount "10000"</span><span class="pg">p.5</span></div><div class="cb">
+<code>eip155:84532</code>는 chain id 84532 = <b>Base Sepolia 테스트넷</b>을 가리킨다(강의에서 "베이스"라고 지칭). <code>amount</code>가 "10000"처럼 정수인 이유는, USDC가 소수점 6자리(6 decimals) 토큰이라 온체인에서는 가장 작은 단위의 정수로 표기하기 때문이다(10000 = 0.01 USDC). 금액 숫자 자체보다 "정수 최소단위로 명시한다"는 점을 보면 된다.</div></div>
+</section>
+
+<!-- ============ TAB 4 ============ -->
+<section data-s="4">
+<div class="c"><div class="t"><h3><span class="step">③④</span>클라이언트가 PaymentPayload를 만들어 재요청</h3><span class="pg">p.6</span></div>
+402 응답을 받은 클라이언트는 "아, 유료였구나. USDC 있으니 결제하자"고 판단하고, 결제 의사를 담은 <b>PaymentPayload</b>를 만들어 같은 엔드포인트로 <b>다시 GET 요청</b>을 보낸다. 이번에는 <b>PAYMENT-SIGNATURE</b> 헤더에 담아 보낸다(역시 JSON → Base64 인코딩).
+<pre>GET /premium-data HTTP/1.1
+Host: api.example.com
+PAYMENT-SIGNATURE: eyJ4NDAyVmVyc2lvbiI6MiwicmVzb3VyY2UiOi4uLn0=</pre></div>
+
+<div class="c"><div class="t"><h3>PaymentPayload 구조 — payload 안의 두 필드</h3><span class="pg">p.7</span></div>
+서버는 이 헤더를 디코딩해 "내가 요구한 대로 결제하겠다는 건지"를 확인한다. 핵심은 <code>payload</code> 안의 <b>authorization</b>과 <b>signature</b> 두 필드다.
+<pre>{
+  "x402Version": 2,
+  "resource": { ... },
+  "accepted": { "scheme": "exact", "network": "eip155:84532",
+                "amount": "10000", "asset": "0x036CbD...",
+                "payTo": "0x209693..." },
+  "payload": {
+    "signature": "0x2d6a7588d6acca505cbf0d9a4a227e0c...",
+    "authorization": {
+      "from":        "0x857b06519E...373e36b66", <span class="cm"># 내 지갑 주소</span>
+      "to":          "0x209693Bc...312287C",      <span class="cm"># 서버 주소</span>
+      "value":       "10000",                     <span class="cm"># 보낼 USDC</span>
+      "validAfter":  "1740672089",                <span class="cm"># 유효 시작</span>
+      "validBefore": "1740672154",                <span class="cm"># 유효 종료</span>
+      "nonce":       "0xf3746613c2d920b5fdabc0856f2aeb2d..."
+    }
+  },
+  "extensions": {}
+}</pre></div>
+
+<div class="c"><div class="t"><h3>authorization — "내가 이렇게 보낼게"라는 승인 내역</h3><span class="pg">p.7</span></div>
+클라이언트는 자신의 <b>개인 키(private key)</b>로 이 내역에 서명한다. authorization에는 서버가 요구한 대로 결제 내용을 그대로 채운다.
+<div class="g">
+<div class="k"><b>from</b>내 지갑 주소 (보내는 쪽)</div>
+<div class="k"><b>to</b>요청받은 서버 에이전트의 지갑 주소 (받는 쪽)</div>
+<div class="k"><b>value</b>요구받은 만큼의 USDC 금액</div>
+<div class="k"><b>validAfter / validBefore</b>이 거래가 유효한 시간 창. "이 시간 안에 돈을 보내겠다"는 약속</div>
+<div class="k"><b>nonce</b>리플레이(replay) 공격 방지용 난수. 중간에 객체를 가로채 같은 요청을 반복 제출하지 못하게 함</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> signature — EIP-712로 서명하는 두 가지 목적</span><span class="pg">p.7</span></div><div class="cb">
+authorization 객체(Typed Structured Data)에 지갑의 개인 키로 서명하면 <b>signature</b>가 나오고, 이를 <code>signature</code> 필드에 넣는다. 서명 규칙은 <b>EIP-712</b> 표준을 따른다(지갑에 이미 라이브러리로 구현됨). 서명하는 이유는 두 가지다.
+<div class="g" style="margin-top:8px">
+<div class="k bd-a"><b class="tx-a">① 부인 방지 (Non-repudiation)</b>나중에 "나 그런 요청 한 적 없어"라고 발뺌하지 못하게 한다</div>
+<div class="k bd-a"><b class="tx-a">② 무결성 (Integrity)</b>authorization의 필드값이 바뀌면 서명값도 달라지므로, 중간에 변조가 있었는지 판단할 수 있다</div>
+</div></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 유효 시간 창의 길이</span><span class="pg">p.5, p.7</span></div><div class="cb">
+강의 구두 설명에서는 유효 시간을 "약 30분 정도"로 예시했지만, 강의자료의 실제 예시값(<code>validAfter 1740672089</code> ~ <code>validBefore 1740672154</code>)은 약 60초 차이이고 PAYMENT-REQUIRED의 <code>maxTimeoutSeconds</code>도 60이다. 길이는 설정값일 뿐이고, 요점은 "서명된 승인에는 유효 기간이 있어 그 안에서만 결제가 체결된다"는 것이다.</div></div>
+</section>
+
+<!-- ============ TAB 5 ============ -->
+<section data-s="5">
+<div class="c"><div class="t"><h3><span class="step">⑤</span>서버가 Facilitator에게 검증을 의뢰 (/verify)</h3><span class="pg">p.8</span></div>
+서버는 받은 PaymentPayload를 <b>스스로 검증할 수도 있지만</b>, 보통 <b>Facilitator</b>라는 중간 서버에게 맡긴다. 서버는 PaymentPayload와 결제 요구사항(paymentRequirements)을 함께 Facilitator의 <code>/verify</code> 엔드포인트로 <b>POST</b> 요청한다.
+<pre>POST /verify HTTP/1.1
+Host: facilitator.example.com
+Content-Type: application/json</pre>
+<b>POST라서 body</b>가 있다. (앞의 GET 요청은 헤더만 있었지만) POST 요청의 body 안에 아래 객체를 그대로 넣어 보낸다.</div>
+
+<div class="c"><div class="t"><h3>/verify 로 보내는 body</h3><span class="pg">p.9</span></div>
+"서버 에이전트는 이렇게 요청했고, 클라이언트 에이전트는 이렇게 결제하겠다고 약속했다"는 내용을 하나로 묶은 객체다.
+<pre>{
+  "x402Version": 2,
+  "paymentPayload": {
+    "x402Version": 2,
+    "accepted": { "scheme": "exact", "network": "eip155:84532",
+                  "amount": "10000", "asset": "0x036CbD...",
+                  "payTo": "0x209693..." },
+    "payload": {
+      "signature": "0x2d6a7588...",
+      "authorization": {
+        "from": "0x857b...", "to": "0x209693...",
+        "value": "10000",
+        "validAfter": "1740672089", "validBefore": "1740672154",
+        "nonce": "0xf374..."
+      }
+    }
+  },
+  "paymentRequirements": {
+    "scheme": "exact", "network": "eip155:84532",
+    "amount": "10000", "asset": "0x036CbD...",
+    "payTo": "0x209693...", "maxTimeoutSeconds": 60
+  }
+}</pre></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> <span class="step">⑥</span>Facilitator의 검증 — 서명으로 주소까지 복구</span><span class="pg">p.8, p.10</span></div><div class="cb">
+Facilitator는 다음을 확인한다: <b>서명(signature)</b>, 결제 파라미터, authorization 유효성, 그리고 scheme에 따라 <b>잔액 / 트랜잭션 성공 가능 여부</b>.
+<ul>
+<li>서버가 요구한 대로 클라이언트가 결제를 승인했는지 항목을 하나하나 대조</li>
+<li>서명이 해시값과 일치하는지(무결성) 확인</li>
+<li><b>서명으로부터 공개 키(=지갑 주소)를 복구</b>해, 돈을 보내겠다는 사람이 진짜 그 클라이언트 에이전트의 주소가 맞는지 확인 (ECDSA 특성)</li>
+</ul>
+이상이 없으면 "검증 완료(verification)"라고 서버에 다시 회신한다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 공개 키 복구가 되는 이유</span><span class="pg">p.10</span></div><div class="cb">
+이더리움이 쓰는 ECDSA 서명은 "서명 + 원본 메시지"만 있으면 서명자의 공개 키를 역산(recover)할 수 있는 성질이 있다. 그래서 별도로 공개 키를 첨부하지 않아도, 서명한 사람의 지갑 주소가 authorization의 <code>from</code>과 같은지 대조할 수 있다.</div></div>
+</section>
+
+<!-- ============ TAB 6 ============ -->
+<section data-s="6">
+<div class="c"><div class="t"><h3><span class="step">⑦</span>검증 성공 → 서버가 서비스를 수행</h3><span class="pg">p.11</span></div>
+Facilitator로부터 "클라이언트가 요구대로 결제를 승인한 게 확인됐다"는 회신을 받으면, 그제서야 서버는 클라이언트가 시킨 요청 작업(예: LLM 서비스, 날씨 예측 등)을 실제로 <b>수행</b>한다.</div>
+
+<div class="c"><div class="t"><h3><span class="step">⑧</span>정산 요청 (/settle) → 온체인 결제</h3><span class="pg">p.11</span></div>
+서버는 작업을 수행하면서 Facilitator에게 <b>정산(/settle)</b>을 요청한다. "클라이언트 지갑에서 내 지갑으로 돈을 보내 달라". 그러면 Facilitator가 <b>블록체인에 트랜잭션을 발생</b>시킨다. Settlement는 결제가 실제로 온체인에 제출·커밋되는 단계다.
+<div class="fl">
+<span class="n">Server → Facilitator<br><small>/settle 요청</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n">Facilitator → Blockchain<br><small>Tx 발생</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-s">USDC 이동 체결</span>
+</div></div>
+
+<div class="c"><div class="t"><h3>정산 결과 — 잔액 변화</h3><span class="pg">p.13</span></div>
+약속된 대로 클라이언트의 지갑 주소에서 서버 에이전트의 지갑 주소로 USDC가 이동한다(예시: 10 USDC).
+<div class="bal">
+<div class="box"><b><svg class="i" aria-hidden="true"><use href="#i-robot"/></svg> Client Agent</b><span class="was">100 USDC</span><div class="now tx-d">90 USDC</div></div>
+<svg class="i" aria-hidden="true" style="font-size:20px"><use href="#i-right"/></svg>
+<div class="box"><b><svg class="i" aria-hidden="true"><use href="#i-server"/></svg> Server Agent</b><span class="was">300 USDC</span><div class="now tx-s">310 USDC</div></div>
+</div></div>
+
+<div class="c"><div class="t"><h3>마무리 — 결과물 응답</h3><span class="pg">p.11</span></div>
+트랜잭션이 처리되면 Facilitator가 "정산 완료"를 서버에 알리고, 그제서야 서버는 수행한 결과물을 클라이언트에게 응답으로 돌려준다. 이렇게 서비스 제공과 결제가 함께 마무리된다.
+<div class="fl">
+<span class="n">Blockchain<br><small>Tx 완료</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n">Facilitator → Server<br><small>"정산 완료"</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-a">Server → Client<br><small>결과물 응답</small></span>
+</div></div>
+</section>
+
+<!-- ============ TAB 7 ============ -->
+<section data-s="7">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 다시 핵심 질문 — 가스(ETH)가 없어도 결제가 될까?</span><span class="pg">p.13</span></div><div class="cb">
+클라이언트가 USDC는 있어도 트랜잭션 수수료(가스)를 낼 네이티브 토큰(ETH)이 없는 경우 — <b>전혀 문제가 없다.</b> 여기서 핵심 아이디어는 "<b>서명한 사람</b>"과 "<b>트랜잭션을 발생시키는 사람</b>"을 분리하는 것이다.
+<div class="g" style="margin-top:8px">
+<div class="k bd-a"><b class="tx-a"><svg class="i" aria-hidden="true"><use href="#i-key"/></svg> Client Agent = Token owner</b>USDC 소유자. EIP-712로 서명만 한다 (가스 안 냄)</div>
+<div class="k bd-a"><b class="tx-a"><svg class="i" aria-hidden="true"><use href="#i-gas"/></svg> Facilitator = Transaction sender</b>블록체인에 직접 Tx를 발생 → <b>가스(ETH)를 대신 낸다(대납)</b></div>
+</div></div></div>
+
+<div class="c"><div class="t"><h3>가스리스(gasless) 흐름</h3><span class="pg">p.13–14</span></div>
+Facilitator는 직접 블록체인 트랜잭션을 발생시키므로 가스를 낼 ETH를 반드시 가지고 있어야 하고, 그 가스를 클라이언트 대신 내준다.
+<div class="fl">
+<span class="n">Client: EIP-712 서명<br><small>USDC 소유, ETH 없음</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n">Server → Facilitator<br><small>서명된 승인 전달</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-s">Facilitator: Tx 발생<br><small>가스(ETH) 대납</small></span>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 왜 가능한가 — USDC는 EIP-3009 지원 토큰</span><span class="pg">p.15</span></div><div class="cb">
+기본 <b>ERC-20</b> 토큰은 이런 "제3자 대납 전송"을 할 수 없다. 하지만 <b>USDC 스테이블코인은 EIP-3009(= ERC-3009) 표준을 지원</b>하는 스마트 컨트랙트라서 가능하다. EIP-3009는 "서명 기반 전송(Signature-Based Transfers)"을 정의한다.</div></div>
+
+<div class="c"><div class="t"><h3>transferWithAuthorization() 호출</h3><span class="pg">p.14</span></div>
+클라이언트가 EIP-712로 서명하면, 서버는 그 서명된 문서를 Facilitator에 전달한다. Facilitator는 USDC 스마트 컨트랙트의 <b>transferWithAuthorization()</b> 함수를, 서명된 필드들과 서명값을 인자로 넣어 호출한다.
+<pre>// USDC(EIP-3009) 컨트랙트의 함수를 Facilitator가 호출
+transferWithAuthorization(
+    from,          <span class="cm">// 보내는 사람 (Client)</span>
+    to,            <span class="cm">// 받는 사람 (Server)</span>
+    value,         <span class="cm">// 보낼 금액</span>
+    validAfter,    <span class="cm">// 유효 시작 시각</span>
+    validBefore,   <span class="cm">// 유효 종료 시각</span>
+    nonce,         <span class="cm">// 리플레이 방지 난수</span>
+    v, r, s        <span class="cm">// 서명 (signature)</span>
+)</pre>
+서명된 문서 안에 "누가 누구에게 얼마를 보낸다"가 적혀 있으므로, 컨트랙트가 그대로 USDC를 이체해 준다. 트랜잭션을 발생시킨 Facilitator가 가스를 대신 낸다.</div>
+
+<div class="c"><div class="t"><h3>컨트랙트 내부 검증 순서</h3><span class="pg">p.15</span></div>
+인자를 받아 함수가 호출되면, 스마트 컨트랙트 내부 로직이 하나하나 값을 검사한다. 모두 통과해야 실제 전송이 실행된다.
+<div class="g">
+<div class="k"><b>① 시간 창</b>현재 블록체인 시간이 validAfter~validBefore 인터벌 안인지. 벗어나면 revert(되돌림, Tx 미체결)</div>
+<div class="k"><b>② nonce</b>이미 쓰인 nonce가 아닌지 (리플레이 방지)</div>
+<div class="k"><b>③ 서명</b>서명이 필드값들과 올바르게 일치하는지 (무결성·서명자 확인)</div>
+<div class="k bd-s"><b class="tx-s">④ 전송 실행</b>모든 무결성 체크 통과 → ERC-20에도 있는 transfer가 실행되어 USDC가 Client → Server로 이동</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 꼭 알아둘 것 — 네이티브 코인 없이도 블록체인 거래가 된다</span><span class="pg">p.13–15</span></div><div class="cb">
+직접 에이전트(클라이언트·서버)를 개발할 때, 에이전트가 이더리움의 ETH 같은 <b>네이티브 토큰(코인)이 없어도</b> 이런 방식으로 블록체인 거래를 할 수 있다. <b>Facilitator</b>를 이용해 <b>EIP-712</b>로 서명하고 <b>EIP-3009</b>의 <code>transferWithAuthorization</code>으로 거래하는 표준이 마련되어 있어서, 에이전트 단에서 USDC 같은 토큰으로 결제가 가능하다.</div></div>
+</section>
+
+<!-- ============ TAB 8 ============ -->
+<section data-s="8">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 핵심 정리 체크리스트</span><span class="pg">p.1–15</span></div><div class="cb">
+<ol style="margin:0">
+<li>x402 = HTTP 상태 코드 <code>402 Payment Required</code>를 에이전트 결제에 활용 <span class="pg">도입</span></li>
+<li>배경: 에이전트가 USDC(토큰)는 있어도 가스(ETH)가 없는 문제 <span class="pg">p.3</span></li>
+<li>4주체: Client Agent · Server Agent · Facilitator · Blockchain. 클라이언트·서버는 블록체인에 직접 접근하지 않고 <b>Facilitator가 접근</b> <span class="pg">p.3</span></li>
+<li>① GET 요청 → ② 402 + <b>PAYMENT-REQUIRED</b>(Base64 JSON: network·asset·amount·payTo) <span class="pg">p.4–5</span></li>
+<li>③④ Client가 PaymentPayload 생성 → <b>PAYMENT-SIGNATURE</b> 헤더로 재요청 <span class="pg">p.6</span></li>
+<li>authorization(from·to·value·validAfter·validBefore·nonce)에 <b>EIP-712</b> 서명 → signature <span class="pg">p.7</span></li>
+<li>서명 목적 2가지: <b>부인 방지 + 무결성</b> <span class="pg">p.7</span></li>
+<li>⑤⑥ Server가 <b>/verify</b>로 POST → Facilitator가 서명·유효성 확인, 서명에서 <b>주소 복구</b> <span class="pg">p.8–10</span></li>
+<li>⑦⑧ 검증 성공 → 서비스 수행 → <b>/settle</b>로 온체인 정산 (Client −, Server +) <span class="pg">p.11, p.13</span></li>
+<li>가스리스 핵심: <b>Client = 서명자(Token owner)</b>, <b>Facilitator = Tx sender(가스 대납)</b> <span class="pg">p.13–14</span></li>
+<li>USDC는 <b>EIP-3009</b> 지원 → <code>transferWithAuthorization(from,to,value,validAfter,validBefore,nonce,v,r,s)</code> <span class="pg">p.14</span></li>
+<li>컨트랙트가 시간 창·nonce·서명 검증 통과 시 ERC-20 transfer 실행 <span class="pg">p.15</span></li>
+</ol></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 다음 시간 예고 (강의 끝 언급)</span><span class="pg">강의 마무리</span></div><div class="cb">
+강의 말미에 예고된 다음 주제들:
+<ul>
+<li>에이전트의 <b>평판(reputation)·신원(identity)</b> 관리를 블록체인에서 하는 또 다른 표준 (ERC-8004 계열)</li>
+<li>x402의 <b>보안 취약점</b>: ⓐ 클라이언트가 결제했는데 서버가 결과물을 안 주거나 엉터리로 주는 경우, ⓑ 반대로 로직을 악용해 클라이언트가 돈을 안 내고 서비스만 받는 경우 — 이를 암호학적으로 어떻게 해결하는지</li>
+</ul></div></div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('#tabs button'), secs = document.querySelectorAll('section[data-s]');
+  function show(n){
+    secs.forEach(function(s){ s.style.display = s.getAttribute('data-s') === n ? 'block' : 'none'; });
+    tabs.forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-t') === n); });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.getAttribute('data-t')); window.scrollTo({top:0}); }); });
+  show('1');
+})();
+</script>
+</body>
+</html>
