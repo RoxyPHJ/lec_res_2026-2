@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ERC-8004 - Trustless Agents</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+code{font-family:var(--font-mono);font-size:.92em}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-accent)}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.chip{background:var(--bg-accent);color:var(--text-accent);font-size:12px;padding:3px 10px;border-radius:var(--radius)}
+.src{font-size:12px;color:var(--text-secondary);margin:10px 0 6px;display:flex;align-items:center;gap:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.legend{font-size:12px;color:var(--text-secondary);margin:4px 0 16px;display:flex;gap:12px;flex-wrap:wrap}
+.legend .lw{color:var(--text-warning)}.legend .la{color:var(--text-accent)}
+.c{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:14px;line-height:1.7}
+.ci,.ca{background:var(--surface-2);border-radius:12px;margin:0 0 12px;overflow:hidden;font-size:14px;line-height:1.7}
+.ci{border:1px solid var(--border-warning)}.ca{border:1px solid var(--border-accent)}
+.ch{padding:7px 16px;font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ch>span:first-child{display:flex;align-items:center;gap:6px}
+.ci .ch{background:var(--bg-warning);color:var(--text-warning)}.ca .ch{background:var(--bg-accent);color:var(--text-accent)}
+.cb{padding:12px 16px}
+.pg{font-size:11px;color:var(--text-secondary);border:0.5px solid var(--border-strong);border-radius:6px;padding:1px 6px;white-space:nowrap;font-weight:400}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.k{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;font-size:13px;line-height:1.55}
+.k b{display:block;font-weight:500;font-size:13px;margin-bottom:2px}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;font-size:13px}
+.fl span.n{background:var(--surface-1);border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 10px;text-align:center}
+.fl small{color:var(--text-secondary)}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border-radius:var(--radius);padding:12px 14px;overflow-x:auto;line-height:1.55;margin:8px 0}
+.t{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px}
+.t h3{font-size:15px;font-weight:500;margin:0}
+.row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 80px;gap:8px;font-size:13px;padding:6px 0;border-bottom:0.5px solid var(--border)}
+.hd{color:var(--text-secondary);font-size:12px}
+.bd-d{border:0.5px solid var(--border-danger)}.bd-s{border:0.5px solid var(--border-success)}.bd-w{border:0.5px solid var(--border-warning)}.bd-a{border:0.5px solid var(--border-accent)}
+.tx-d{color:var(--text-danger)}.tx-s{color:var(--text-success)}.tx-w{color:var(--text-warning)}.tx-a{color:var(--text-accent)}
+.addr{font-family:var(--font-mono);font-size:12px;word-break:break-all}
+.num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--text-warning);color:var(--surface-2);font-size:11px;font-weight:600;flex-shrink:0;margin-right:4px}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:6px;background:var(--bg-accent);color:var(--text-accent);margin:1px 2px}
+ul,ol{margin:6px 0 0;padding-left:20px}
+li{margin:2px 0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></symbol>
+  <symbol id="i-robot" viewBox="0 0 24 24"><path d="M6 9a3 3 0 0 1 3 -3h6a3 3 0 0 1 3 3v7a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3z"/><path d="M9 16h6"/><path d="M9 12v-1"/><path d="M15 12v-1"/><path d="M12 6v-3"/><path d="M10 3h4"/></symbol>
+  <symbol id="i-id" viewBox="0 0 24 24"><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 9l1 0"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"/><path d="M4 6v6a8 3 0 0 0 16 0v-6"/><path d="M4 12v6a8 3 0 0 0 16 0v-6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1"/><path d="M12 7v10"/></symbol>
+</svg>
+
+<div class="page">
+<a class="back" href="../index.html"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg>목차</a>
+<div class="title">
+  <svg class="i" aria-hidden="true" style="font-size:22px;color:var(--text-secondary)"><use href="#i-robot"/></svg>
+  <h1>ERC-8004: Trustless Agents</h1>
+  <span class="chip">블록체인</span>
+</div>
+<div class="src"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>강의자료: ERC-8004.pdf · p.1–29 (표지 포함 전체 범위)</div>
+<div class="tabs" id="tabs">
+  <button class="on" data-t="1">1. 왜 신원·평판인가</button><button data-t="2">2. ERC-8004 & 두 레지스트리</button><button data-t="3">3. A2A & 에이전트 카드</button><button data-t="4">4. Identity Registry 실습</button><button data-t="5">5. Reputation Registry 실습</button><button data-t="6">6. x402 연계 & 한계</button><button data-t="7">핵심 요약</button>
+</div>
+<div class="legend">
+  <span class="lw"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> amber = 강의 강조 포인트</span>
+  <span class="la"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> blue = [부연설명]</span>
+</div>
+
+<!-- ================= SECTION 1 ================= -->
+<section data-s="1">
+<div class="c"><div class="t"><h3>배경 — 에이전트 환경의 도래</h3><span class="pg">p.1</span></div>
+에이전트가 점점 많이 활용되면서, 블록체인에서 에이전트의 신원 증명이 필요하다는 논의가 약 10개월 전부터 나왔고 그 결과로 제안된 표준이 ERC-8004이다. 결국 사람을 대신해 에이전트들이 서로 소통하며 문제를 해결하고, 필요하다면 <b>결제까지 해서</b> 서비스를 이용해 사람이 시킨 일을 수행하게 된다.
+<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">※ 같은 흐름의 표준 시리즈: x402(결제, 지난 시간) · ERC-8004(신원·평판, 오늘) · ERC-4337(스마트 어카운트, 다음 시간)</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 실생활 거래 vs 에이전트 환경 — 핵심 동기</span><span class="pg">p.2–3</span></div><div class="cb">
+사람 간 거래(집 매매·전세 계약 등)에서는 상대가 누구인지(신원)와 신용·평판을 확인하는 법적·플랫폼적 수단이 잘 마련돼 있다. 등기부등본으로 집주인 신원·채무 상태까지 확인해 사기를 피할 수 있다.
+<div class="g" style="margin-top:10px">
+<div class="k bd-s"><b class="tx-s"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg> 사람 세계</b>신원 인증 + 평판 조회 수단이 존재 → 상대를 믿고 거래 가능</div>
+<div class="k bd-d"><b class="tx-d"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg> 에이전트 세계</b>사람보다 많은 에이전트가 거래하는데, 상대 에이전트의 신원·과거 후기·평판을 확인할 수단이 <b>전무</b></div>
+</div>
+→ 결제해서 쓸 가치가 있는 에이전트인지 판단하려면 신원과 레퓨테이션(reputation)을 확인할 방법이 필요하다.</div></div>
+
+<div class="c"><div class="t"><h3>예시 · 날씨 예측 에이전트 고르기</h3><span class="pg">p.3</span></div>
+일주일 뒤 날씨를 예측해주는 서버 에이전트가 인터넷에 매우 많을 때, 가장 적절한 하나를 고르는 기준은 <b>신원</b>과 그 에이전트가 쌓아온 <b>레퓨테이션</b>이다. 맛집 갈 때 네이버·카카오 리뷰 플랫폼에서 평점·후기를 보고 결정하는 것과 같다.
+<div class="fl"><span class="n">서버 에이전트 다수</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">신원 확인</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">평판(리뷰·별점) 확인</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">이용 여부 결정</span></div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 중앙화 인증의 한계 → 탈중앙화가 필요한 이유</span><span class="pg">p.2</span></div><div class="cb">
+에이전트에 신원을 부여하려는 초기 시도는 <b>OAuth 기반</b>이었다. 웹사이트의 소셜 로그인처럼 OAuth·OIDC 프로토콜을 변형해 신원을 발급·증명했다. 그러나 이는 명백히 <b>중앙화된 서드파티 인증 방식</b>이다.
+<div style="margin-top:8px">중앙화 인증에서 탈피하는 것이 블록체인 분산 시스템의 시작이다. 신원과 레퓨테이션 기록을 <b>모두 탈중앙화된 방식</b>으로 관리해야, 특정 서드파티를 신뢰하지 않고도 동작하는 완전 분산 환경이 가능하다.</div></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 에이전트에 신원을 주는 두 가지 방법</span><span class="pg">p.2</span></div><div class="cb">
+강의자료는 신원 부여 방법으로 두 가지를 제시한다.
+<div class="g g2">
+<div class="k"><b>① DID / VC</b>Decentralized ID · Verifiable Credential. 블록체인 기반 분산 신원. 다소 복잡해 강의에서는 뒤로 미룸</div>
+<div class="k bd-w"><b class="tx-w">② ERC-8004 (오늘 주제)</b>이더리움 스마트 컨트랙트 표준으로 에이전트 신원·평판을 제공</div>
+</div></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] OAuth / OIDC 란</span><span class="pg">연계 개념</span></div><div class="cb">
+<b>OAuth 2.0</b>은 "구글로 로그인" 같은 위임 인가(authorization) 프로토콜이고, <b>OIDC</b>(OpenID Connect)는 그 위에 "이 사용자가 누구인가"라는 인증(authentication) 계층을 얹은 것이다. 둘 다 <b>구글·애플 같은 중앙 발급자(IdP)</b>를 신뢰해야 동작한다는 점이 블록체인이 지적하는 중앙화 한계다.</div></div>
+</section>
+
+<!-- ================= SECTION 2 ================= -->
+<section data-s="2">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> ERC가 붙으면 = 스마트 컨트랙트 표준</span><span class="pg">p.4</span></div><div class="cb">
+이름 앞에 <b>ERC</b>가 붙으면 스마트 컨트랙트 표준을 뜻한다. ERC-8004은 이미 스마트 컨트랙트로 <b>배포까지 완료</b>되어 있다.
+<div class="g" style="margin-top:8px">
+<div class="k"><b>이더리움 메인넷</b>배포됨</div>
+<div class="k"><b>Sepolia 테스트넷</b>배포됨</div>
+<div class="k"><b>EVM 계열 L2 (Arbitrum 등)</b>배포됨</div>
+</div>
+EVM 엔진을 쓰는 어떤 블록체인에서도 에이전트 신원 등록·평판 기록에 활용 가능하다.</div></div>
+
+<div class="c"><div class="t"><h3>이미 활발히 사용 중 (테스트넷 기준)</h3><span class="pg">p.4</span></div>
+표준화되기도 전인데 테스트넷에서 이 컨트랙트를 호출한 트랜잭션이 이미 많이 쌓였다 — 연구 측면에서 특히 많이 활용되고 있다.
+<div class="g">
+<div class="k"><b>register 호출 <span class="badge">1만 2천+ 건</span></b>에이전트를 등록해 고유 ID를 발급받는 트랜잭션</div>
+<div class="k"><b>giveFeedback 호출 <span class="badge">1만+ 건</span></b>어떤 에이전트가 어떻게 서비스했는지 별점·후기를 기록한 트랜잭션</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 두 개의 레지스트리 — 사용 주체가 다르다</span><span class="pg">p.4</span></div><div class="cb">
+ERC-8004은 이더리움에 두 개의 스마트 컨트랙트(레지스트리)를 배포해 둔다.
+<div class="g g2" style="margin-top:8px">
+<div class="k bd-w"><b class="tx-w"><svg class="i" aria-hidden="true"><use href="#i-id"/></svg> Identity Registry (신원)</b>에이전트를 개발한 <b>개발자·조직(owner)</b>이 트랜잭션을 발생시켜 신원을 등록<br><span class="addr">0x8004A818BFB912233c491871b3d84c89A494BD9e</span></div>
+<div class="k bd-a"><b class="tx-a"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Reputation Registry (평판)</b><b>클라이언트 에이전트</b>가 이용한 서버 에이전트에 리뷰·별점을 등록<br><span class="addr">0x8004B663056A597Dffe9eCcC1965A193B7388713</span></div>
+</div>
+→ Identity는 "에이전트 주인"이, Reputation은 "서비스를 쓴 클라이언트"가 쓴다. 쓰는 주체가 서로 다르다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 세 번째 — Validation Registry</span><span class="pg">p.4</span></div><div class="cb">
+강의자료 p.4에는 컨트랙트 종류로 <b>Identity / Reputation / Validation</b> 세 가지가 적혀 있다. 강의에서는 실제로 Identity·Reputation 두 개만 실습했다. Validation Registry는 제3자(검증자)가 에이전트의 작업 결과가 올바른지 검증한 기록을 남기는 용도로, 평판(주관적 후기)과 달리 "정말 맞게 수행했는가"를 다루는 레지스트리다.</div></div>
+</section>
+
+<!-- ================= SECTION 3 ================= -->
+<section data-s="3">
+<div class="c"><div class="t"><h3>A2A (Agent2Agent) 프로토콜</h3><span class="pg">p.5</span></div>
+에이전트들이 협업해 일하려면 서로 어떤 네트워크 통신 규격으로 서비스를 요청·수신할지 약속이 필요하다. 이를 정의한 것이 <b>구글이 만든 A2A 프로토콜</b>이다.
+<ul>
+<li>간단한 단일 응답뿐 아니라, 클로드·ChatGPT처럼 결과가 조금씩 나오는 <b>스트리밍</b> 응답</li>
+<li>동시에 여러 질문을 할 때, 각 질문의 <b>고유한 컨텍스트</b>에 맞춰 응답이 쪼개져 전달·유지되는 방식</li>
+</ul>
+<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">a2a-protocol.org · 어렵지 않으니 관심 있으면 살펴볼 것을 추천</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 에이전트는 수명이 짧다 → 신원을 owner에 묶는다</span><span class="pg">p.5</span></div><div class="cb">
+에이전트는 <b>잠깐 일하고 종료되는, 생애주기가 매우 짧은(short-lived)</b> 존재다 (on demand 생성·종료). 만약 고유 신원을 에이전트 자체에만 부여하면, 나쁜 짓을 한 에이전트를 죽이고 다시 만들어 <b>과거 이력이 삭제된 새 에이전트</b>를 얼마든지 만들 수 있어 책임을 물을 수 없다.
+<div class="fl" style="margin-top:8px"><span class="n">짧은 수명의 에이전트</span><svg class="i" aria-hidden="true"><use href="#i-link"/></svg><span class="n bd-w">현실 세계에서 바뀌지 않는<br>owner (개발자·회사)</span></div>
+그래서 신원을 <b>책임 가능한 주체(accountable entity)인 owner</b>에 항상 묶어 둔다. 이것이 DID/VC 방식의 기본 동작 원리이기도 하다.</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 에이전트 카드 — /.well-known/agent-card.json 은 반드시</span><span class="pg">p.6–7</span></div><div class="cb">
+A2A 표준상 에이전트가 동작하는 도메인 뒤에 <b>반드시</b> 고정 경로의 명함(에이전트 카드)이 있어야 한다.
+<pre>https://funny.dweb.ac.kr/.well-known/agent-card.json
+└───────── 도메인 ─────────┘└── 고정된 약속 경로 ──┘</pre>
+이 고정 엔드포인트에서 무조건 JSON 명함을 제공해야 한다. 제공하지 않으면 클라이언트는 이게 무슨 에이전트인지 알 수 없다. 이 아이디어는 OAuth·OIDC의 <code>.well-known</code> 규약에서 왔다.</div></div>
+
+<div class="c"><div class="t"><h3>에이전트 카드 JSON 구조</h3><span class="pg">p.7</span></div>
+<pre>{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "FunnyTaleAgent",
+  "description": "Generates short, funny stories on any topic.",
+  "image": "ipfs://Qm.../agent-cute-v2.png",
+  "services": [
+    {
+      "name": "A2A",
+      "endpoint": "https://funny.dweb.ac.kr/.well-known/agent-card.json",
+      "version": "0.3.0"
+    }
+  ],
+  "skills": [{
+    "id": "funny-story",
+    "name": "Funny Story",
+    "description": "Writes a short humorous story from a given topic.",
+    "examples": ["Tell me a funny story about a cat who learns to code."]
+  }],
+  "x402Support": true,
+  "active": true,
+  "registrations": [{
+    "agentRegistry": "eip155:11155111:0x8004……BD9e",
+    "agentId": 522
+  }],
+  "supportedTrust": ["reputation"]
+}</pre>
+<div class="g">
+<div class="k"><b>name / description</b>에이전트 이름과 무슨 서비스를 하는지 설명</div>
+<div class="k"><b>image</b>에이전트 프로필 사진 (IPFS 링크)</div>
+<div class="k"><b>services</b>어떤 엔드포인트에서 어떤 서비스를 하는지</div>
+<div class="k bd-w"><b class="tx-w">skills (매우 중요)</b>이 에이전트의 능력. 예시 요청 형식 포함. <b>클라이언트는 이 skills를 보고 서비스를 요청할지 판단</b>한다</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> registrations 필드 = 블록체인 신원 연결</span><span class="pg">p.7</span></div><div class="cb">
+에이전트가 ERC-8004로 신원을 등록하고 평판도 확인 가능하게 해뒀다면, 그 정보를 <code>registrations</code> 필드에 넣는다.
+<pre>"agentRegistry": "eip155:11155111:0x8004……BD9e"
+                  └────┘ └──────┘ └────────────┘
+                namespace  chainId  IdentityRegistry 주소
+"agentId": 522   → 이 레지스트리의 522번으로 등록됨</pre>
+<div class="g">
+<div class="k"><b>eip155</b>EVM 계열 체인 식별 namespace</div>
+<div class="k"><b>11155111</b>블록체인 네트워크 고유 ID = <b>이더리움 Sepolia</b> 테스트넷</div>
+<div class="k"><b>0x8004…BD9e</b>IdentityRegistry 스마트 컨트랙트 주소(40자리)</div>
+</div>
+형식: <code>{namespace}:{chainId}:{identityRegistry}</code> · 다른 chainId면 메인넷·Polygon 등 다른 네트워크를 의미한다.</div></div>
+
+<div class="c"><div class="t"><h3>클라이언트가 에이전트를 발견·검증하는 흐름</h3><span class="pg">p.8–9</span></div>
+클라이언트 에이전트는 서버 에이전트를 검색해 컨택할 때, 곧장 서비스를 요청하는 게 아니라 먼저 명함을 받는다.
+<div class="fl">
+<span class="num">1</span><span class="n">엔드포인트로 GET 요청<br><small>(agent-card.json)</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="num">2</span><span class="n">서버가 에이전트 카드 전달</span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="num">3</span><span class="n">skills 확인<br><small>필요한 서비스인가?</small></span>
+</div>
+<div class="fl">
+<span class="num">4</span><span class="n">registrations로 블록체인 접속<br><small>신원·평점 조회 (+IPFS 상세)</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="num">5</span><span class="n">신뢰할 만하면 이용<br><small>아니면 다른 에이전트 탐색</small></span>
+</div>
+결제 전에 사기 여부를 가리기 위해, 블록체인에 투명하게 관리되는 리뷰·평점을 직접 확인하는 것이 핵심이다.</div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] EIP-155 chainId 모음</span><span class="pg">p.7 보강</span></div><div class="cb">
+EIP-155가 정의한 체인 ID는 네트워크마다 고유하다. 자주 쓰이는 값:
+<div class="g">
+<div class="k"><b>1</b>Ethereum Mainnet</div>
+<div class="k"><b>11155111</b>Sepolia 테스트넷 (강의 실습)</div>
+<div class="k"><b>137</b>Polygon</div>
+<div class="k"><b>42161</b>Arbitrum One</div>
+</div></div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] .well-known 규약</span><span class="pg">p.6 보강</span></div><div class="cb">
+<code>/.well-known/</code>은 <b>RFC 8615</b>로 표준화된 경로로, 도메인마다 약속된 메타데이터 파일을 두는 곳이다. OIDC의 <code>/.well-known/openid-configuration</code>이 대표적이며, A2A는 같은 발상으로 <code>agent-card.json</code>을 둔다. 경로가 고정이라 클라이언트가 도메인만 알면 명함을 찾을 수 있다.</div></div>
+</section>
+
+<!-- ================= SECTION 4 ================= -->
+<section data-s="4">
+<div class="c"><div class="t"><h3>owner가 에이전트를 등록하는 3단계</h3><span class="pg">p.10</span></div>
+개발자(조직)가 LLM 에이전트를 개발해 도메인에서 구동(active)하기 시작하면, 에이전트 카드를 만드는 것과 동시에 Identity Registry에 신원을 등록해야 한다.
+<div class="fl">
+<span class="num">1</span><span class="n">에이전트 ID 획득<br><small>(#522)</small></span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="num">2</span><span class="n">registration 파일<br>IPFS 업로드</span>
+<svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="num">3</span><span class="n">파일을 #522에 연결<br><small>(link)</small></span>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 온체인 저장은 비싸다 → IPFS에 저장, CID만 매핑</span><span class="pg">p.16</span></div><div class="cb">
+에이전트의 상세 신원(블록체인 등록 정보·agentId·이름·owner 지갑 주소 등)을 JSON으로 함께 등록해야 의미가 있다. 그런데 블록체인에 직접 저장(<b>온체인</b>)하면 데이터가 클수록 트랜잭션 요금(가스)이 커진다.
+<div class="g g2" style="margin-top:8px">
+<div class="k bd-d"><b class="tx-d">AWS S3</b>중앙화 스토리지</div>
+<div class="k bd-s"><b class="tx-s">IPFS</b>분산 스토리지 · 무료 · 접속 URL(CID) 제공</div>
+</div>
+→ 큰 파일은 IPFS에 올려 <b>CID</b>를 받고, 그 주소를 agentId와 매핑해 블록체인에 등록한다. 온체인에는 작은 포인터만 남긴다.</div></div>
+
+<div class="c"><div class="t"><h3>❷ Remix에서 레지스트리 인터페이스 작성</h3><span class="pg">p.12</span></div>
+실제 컨트랙트가 아니라 <b>인터페이스만</b> 작성한다(함수 시그니처만 있고 body는 생략). 이미 배포된 Identity Registry를 Remix에서 불러와 호출하기 위한 껍데기다. 구현은 전부 배포된 컨트랙트에 들어 있다.
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IERC8004Identity {
+    function register()
+        external
+        returns (uint256 agentId);
+
+    function register(string calldata agentURI)
+        external
+        returns (uint256 agentId);
+
+    function ownerOf(uint256 agentId)
+        external
+        view
+        returns (address);
+
+    function tokenURI(uint256 agentId)
+        external
+        view
+        returns (string memory);
+
+    function setAgentURI(
+        uint256 agentId,
+        string calldata newURI
+    ) external;
+
+    function getAgentWallet(uint256 agentId)
+        external
+        view
+        returns (address);
+}</pre></div>
+
+<div class="c"><div class="t"><h3>❶❸ Remix ↔ MetaMask 연결 & register 실행</h3><span class="pg">p.11, p.13–14</span></div>
+<ul>
+<li>Sepolia의 Identity Registry 주소 <span class="addr">0x8004A818BFB912233c491871b3d84c89A494BD9e</span></li>
+<li>Remix 환경을 <b>Remix VM이 아니라 Injected Provider(MetaMask)</b>로 선택 → 지갑 계정 연결 (account 동기화 확인)</li>
+<li>Deployed contract에 <b>At Address</b>로 위 주소를 입력해 배포된 컨트랙트를 불러옴</li>
+<li>주황색 버튼 <code>register</code>(=트랜잭션) 클릭 → 가스비 확인 → confirm → 트랜잭션 성공</li>
+<li>Etherscan에서 방금 트랜잭션이 Identity Registry를 호출했음을 확인</li>
+</ul>
+<div class="fl"><span class="n">register 호출</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n bd-w">agentId <b>10690</b> 발급<br><small>(수업 전 리허설은 10602)</small></span></div>
+<div style="font-size:12px;color:var(--text-secondary)">함수 목록: register / transferForm / setAgentURI … · ID는 트랜잭션마다 새로 발급된다</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 읽기(read-only)는 트랜잭션이 아니다 = 가스비 없음</span><span class="pg">p.13, p.15</span></div><div class="cb">
+등록(register)은 상태를 바꾸므로 트랜잭션이지만, 아래 조회 함수들은 블록체인에 기록된 값을 읽어오기만 하므로 트랜잭션이 아니고 <b>가스비가 들지 않는다.</b>
+<div class="g">
+<div class="k"><b>ownerOf(10690)</b>→ 이 에이전트 owner의 지갑 주소 반환. 등록 시 owner도 함께 체인에 기록됨</div>
+<div class="k"><b>tokenURI(10690)</b>→ 연결된 agentURI 반환</div>
+</div>
+로그(log) 파일에서도 몇 번 ID로 만들어졌는지 확인할 수 있다.</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> ID만 받는 건 의미 없다 — setAgentURI로 신원 연결 필수</span><span class="pg">p.16–17</span></div><div class="cb">
+register로 ID만 얻는 것은 의미가 없다. 에이전트의 구체적 신원을 JSON으로 만들어 IPFS에 올리고 CID를 받은 뒤, 그 주소를 ID에 연결해야 비로소 신원 등록이 완성된다.
+<pre>❺ registration JSON → IPFS 업로드 → CID 획득
+   bafkreiaexlsydiirlguwc2sywbi7axwnoxr5kv...
+
+❻ setAgentURI(10690, "ipfs://&lt;CID&gt;")   // 트랜잭션
+   → agentId 와 IPFS 주소가 매핑됨</pre>
+이후 클라이언트가 <code>tokenURI(10690)</code>(읽기)로 URI를 얻어 IPFS에 접속하면 상세 신원을 확인할 수 있다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] IPFS · CID 복습</span><span class="pg">4 Distributed Storage 연계</span></div><div class="cb">
+<b>IPFS</b>는 콘텐츠를 내용 기반 주소(<b>CID</b>, Content Identifier)로 식별하는 분산 파일 시스템이다. 파일 내용이 바뀌면 CID도 바뀌므로, 온체인에 저장된 CID는 그 파일이 변조되지 않았음을 보장한다. 온체인에는 짧은 CID만 두고 큰 JSON은 IPFS에 두는 것이 가스 절약의 핵심이다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] Injected Provider / At Address</span><span class="pg">p.11–13 보강</span></div><div class="cb">
+Remix의 <b>Remix VM</b>은 브라우저 안의 가짜 체인이라 실제 네트워크에 기록되지 않는다. 실제 Sepolia에 트랜잭션을 보내려면 <b>Injected Provider</b>로 MetaMask를 연결해 지갑이 서명·가스비를 담당하게 한다. <b>At Address</b>는 "이 주소에 이미 배포된 컨트랙트를, 내가 작성한 인터페이스로 조작하겠다"고 Remix에 알려주는 기능이다.</div></div>
+</section>
+
+<!-- ================= SECTION 5 ================= -->
+<section data-s="5">
+<div class="c"><div class="t"><h3>평판 기록 흐름</h3><span class="pg">p.18</span></div>
+에이전트의 신원이 블록체인에서 관리되므로, 클라이언트 에이전트는 서버 에이전트(#522)의 신원을 확인하고 서비스를 요청·수신할 수 있다. 그 경험이 좋았다면 좋은 평점을, 나빴다면 나쁜 평점을 Reputation Registry에 남긴다. 실제로는 사람이 아니라 <b>클라이언트 에이전트가 자동으로</b> 피드백을 남긴다(예: "서비스를 받으면 그 ID의 에이전트에 피드백을 남겨라"는 지시를 받아 동작).</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Reputation → Identity 를 external call 로 검증</span><span class="pg">p.19</span></div><div class="cb">
+Reputation Registry는 당연히 Identity Registry를 <b>external하게 호출</b>한다(지난 시간의 Contract-to-Contract Call). 존재하지도 않는 에이전트에 별점을 남기면 안 되기 때문이다.
+<div class="fl" style="margin-top:8px">
+<span class="n">Client Agent</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-a">Reputation Registry<br><small>giveFeedback(agentId, …)</small></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-w">Identity Registry<br><small>ownerOf() / isAuthorizedOrOwner()</small></span>
+</div>
+Reputation Registry는 Identity Registry 주소(0x8004…92)를 저장하고 있으며, <code>getIdentityRegistry()</code>(읽기)로 그 주소를 반환한다. 유효한 agentId로 확인되면 피드백을 기록한다.</div></div>
+
+<div class="c"><div class="t"><h3>❷ Reputation 인터페이스</h3><span class="pg">p.21</span></div>
+Sepolia의 Reputation Registry 주소 <span class="addr">0x8004B663056A597Dffe9eCcC1965A193B7388713</span>. Identity Registry 때와 똑같이 인터페이스를 작성해 Remix에서 함수를 호출한다.
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IERC8004Reputation {
+    function getIdentityRegistry() external view returns (address);
+
+    function giveFeedback(
+        uint256 agentId,
+        int128  value,
+        uint8   valueDecimals,
+        string calldata tag1,
+        string calldata tag2,
+        string calldata endpoint,
+        string calldata feedbackURI,
+        bytes32 feedbackHash
+    ) external;
+
+    function getLastIndex(uint256 agentId, address clientAddress)
+        external view returns (uint64);
+
+    function readFeedback(
+        uint256 agentId,
+        address clientAddress,
+        uint64  feedbackIndex
+    ) external view returns (
+        int128 value, uint8 valueDecimals,
+        string memory tag1, string memory tag2, bool isRevoked
+    );
+}</pre></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 자기 자신에게는 피드백 불가 (revert)</span><span class="pg">p.22</span></div><div class="cb">
+피드백을 남길 때는 <b>에이전트를 등록한 지갑과 다른 지갑 주소</b>를 선택해야 한다. 자기가 자기 에이전트에 리뷰를 남기는 것은 악용 소지가 있어, 스마트 컨트랙트가 그런 트랜잭션을 <b>revert</b>(되돌림)한다. MetaMask 계정을 클라이언트 에이전트 역할의 다른 주소로 바꿔서 진행한다.</div></div>
+
+<div class="c"><div class="t"><h3>❸ giveFeedback 호출 — 별점 80 (⭐⭐⭐⭐)</h3><span class="pg">p.22–23</span></div>
+클라이언트 에이전트 지갑으로 <code>giveFeedback</code>을 호출(트랜잭션)한다. 요구하는 인자가 많다.
+<div class="row hd"><span>인자</span><span>의미</span><span>시연값</span></div>
+<div class="row"><code>agentId</code><span>사용한 서버 에이전트 ID</span><span>10602</span></div>
+<div class="row"><code>value</code><span>평점 값</span><span>80</span></div>
+<div class="row"><code>valueDecimals</code><span>소수점 자리수</span><span>0</span></div>
+<div class="row"><code>tag1</code><span>평가 항목 태그</span><span>"starred"</span></div>
+<div class="row"><code>feedbackURI</code><span>주관적 리뷰 JSON (IPFS 링크)</span><span>"ipfs://…"</span></div>
+<div class="row" style="border:none"><code>feedbackHash</code><span>기본값</span><span>0x000…000</span></div>
+주관적 리뷰 평가는 IPFS에 JSON으로 저장한 뒤 그 링크를 연결한다. 그러면 다른 에이전트가 별점뿐 아니라 IPFS에 접속해 구체적 리뷰 내용까지 확인할 수 있다.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> valueDecimals 로 소수점 평점 표현</span><span class="pg">p.25</span></div><div class="cb">
+또 다른 피드백 예시로 <code>value=9125, valueDecimals=2</code> → <b>91.25</b> (9125 / 10<sup>2</sup>), tag <code>"uptime"</code>. 이렇게 <b>다양한 지표(uptime 등)를 원하는 대로 설정</b>해 평점을 남길 수 있다는 것이 핵심이다.</div></div>
+
+<div class="c"><div class="t"><h3>❹❺ 피드백 조회 (읽기, 무료)</h3><span class="pg">p.24–25</span></div>
+<div class="g">
+<div class="k"><b>getLastIndex(agentId, clientAddress)</b>이 클라이언트가 해당 에이전트에 피드백을 몇 번 줬는지 반환 (예: 1)</div>
+<div class="k"><b>readFeedback(agentId, clientAddress, index)</b>기록된 피드백(value·tags·revoked 여부)을 조회</div>
+</div>
+제3자도 agentId만 알면 그 에이전트가 받은 평점을 검색·확인할 수 있다. 이 조회들은 모두 읽기 작업이라 트랜잭션이 아니고 비용이 들지 않는다.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 블록체인 평판 = 위변조 불가 → 신뢰 가능</span><span class="pg">p.18–25 종합</span></div><div class="cb">
+네이버 리뷰처럼 평점 조작·리뷰 삭제가 일어나는 중앙화 플랫폼과 달리, 블록체인에 한 번 기록된 리뷰는 <b>수정이 불가능</b>하다. 특정 개인·조직이 관리하는 플랫폼이 아니므로 위변조가 불가능하고, 그래서 <b>신뢰할 수 있는 reputation</b>이 된다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] ERC-721(NFT)과 닮은 구조</span><span class="pg">ERC 721 연계</span></div><div class="cb">
+Identity Registry가 <code>ownerOf(id)</code>·<code>tokenURI(id)</code> 같은 함수를 쓰는 것은 <b>ERC-721(NFT)</b>과 유사하다. 에이전트의 agentId를 "소유자가 있고 메타데이터 URI를 가리키는 토큰"처럼 다루는 셈이다. 이전 ERC-721·IPFS 메타데이터 수업과 같은 패턴이다.</div></div>
+</section>
+
+<!-- ================= SECTION 6 ================= -->
+<section data-s="6">
+<div class="c"><div class="t"><h3>ERC-8004 meets x402</h3><span class="pg">p.26</span></div>
+ERC-8004을 쓰는 것은 결국 "에이전트가 서비스를 이용하고 후기를 남기는 것"이다. 그래서 지난주의 <b>x402(결제 프로토콜)</b>와 자연스럽게 연결된다. x402로 결제·이용한 서비스에 대한 리뷰를 블록체인(Reputation Registry)에 작성한다고 보면 된다 — 하나의 흐름.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 가스 없는 클라이언트 → Facilitator 같은 Intermediate Server</span><span class="pg">p.26–27</span></div><div class="cb">
+클라이언트 에이전트가 네이티브 토큰(ETH)을 갖고 있지 않아 트랜잭션 가스비를 못 낼 수 있다. x402의 <b>Facilitator</b>처럼, 가스비를 대신 내주는 <b>중간 서버(Intermediate Server)</b>를 둔다.
+<div class="fl" style="margin-top:8px">
+<span class="n">Client Agent<br><small>ETH 없음</small></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-w">Intermediate Server<br><small>피드백 대신 제출 · 가스 대납</small></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg>
+<span class="n bd-a">Reputation Registry</span>
+</div>
+클라이언트는 "이 에이전트에 이런 피드백을 남겨줘"라고 중간 서버에 요청하고, 서버가 giveFeedback을 호출하며 가스비를 낸다.</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg> 중간 서버가 만드는 3가지 한계 (Issues)</span><span class="pg">p.27</span></div><div class="cb">
+<div class="g" style="grid-template-columns:1fr">
+<div class="k bd-d"><b class="tx-d"><span class="num" style="background:var(--text-danger)">1</span>평판 조작 가능</b>클라이언트가 최악의 경험을 남겨도, 중간 서버가 "매우 좋았다"로 조작해 기록할 수 있다</div>
+<div class="k bd-d"><b class="tx-d"><span class="num" style="background:var(--text-danger)">2</span>리뷰어 신원이 모호</b>트랜잭션을 발생시킨 주소가 리뷰어(sender)로 기록된다 → 실제 클라이언트가 아니라 <b>중간 서버</b>가 리뷰를 남긴 것처럼 기록됨</div>
+<div class="k bd-d"><b class="tx-d"><span class="num" style="background:var(--text-danger)">3</span>가스 비용 폭증</b>클라이언트(피드백)가 늘수록 중간 서버가 대납할 가스 비용이 피드백 양에 비례해 커진다 (초당 수십~수십만 건 가능)</div>
+</div></div></div>
+
+<div class="c"><div class="t"><h3>해결 아이디어 (리서치 토픽, 아직 없는 방법)</h3><span class="pg">p.28</span></div>
+교수님이 던지는 연구 주제로, 위 3가지 문제를 각각 겨냥한다.
+<div class="g" style="grid-template-columns:1fr">
+<div class="k bd-s"><b class="tx-s"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg> ① EIP-712 서명 피드백 → 조작 방지</b>클라이언트가 자신의 개인키로 서명해 피드백을 전달. 중간 서버가 마음대로 위변조할 수 없다</div>
+<div class="k bd-s"><b class="tx-s"><svg class="i" aria-hidden="true"><use href="#i-coin"/></svg> ② 배치(batch) 처리 → 가스 절감</b>같은 에이전트(#522)에 대한 피드백을 모아 하나의 트랜잭션으로 전달. 기본요금과 반복 접근 비용을 줄인다</div>
+<div class="k bd-s"><b class="tx-s"><svg class="i" aria-hidden="true"><use href="#i-id"/></svg> ③ ERC-4337 Smart Account → 리뷰어 신원 보존</b>스마트 컨트랙트를 잘 설계해, 최종 기록되는 리뷰가 중간 서버가 아니라 <b>실제 클라이언트가 직접 호출한 것처럼</b> 남게 한다 (다음 주 내용)</div>
+</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 디지털 서명의 두 목적 — ① 무결성 ② 부인 방지</span><span class="pg">p.28 보강</span></div><div class="cb">
+강의에서 "서명을 왜 하는가?"로 강조한 두 목적:
+<div class="g g2">
+<div class="k"><b>무결성 (Integrity)</b>전달 도중 메시지(피드백)가 훼손됐는지 검증</div>
+<div class="k"><b>부인 방지 (Non-repudiation)</b>정말 그 클라이언트 에이전트가 보낸 것이 맞는지 보장 → 나중에 "난 안 보냈다"고 부인 못 함</div>
+</div>
+서명된 피드백을 중간 서버에 넘기면, 서버가 내용을 위변조할 수 없다.</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 배치가 가스를 줄이는 원리 — Base Fee + Cold/Warm Access</span><span class="pg">p.28 · Gas 수업 연계</span></div><div class="cb">
+<div class="g g2">
+<div class="k"><b>기본요금(Base Fee) 절약</b>트랜잭션은 난이도와 무관하게 건당 최소 기본요금이 붙는다(택시 기본요금 비유). 여러 피드백을 한 트랜잭션에 <b>합승</b>시키면 건당 기본요금을 크게 낮출 수 있다</div>
+<div class="k"><b>Warm Access 절약</b>EVM에서 한 번 접근한(cold) 데이터를 다시 접근하면(warm) 가스가 확 줄어든다. 같은 에이전트에 대한 피드백만 모으면 같은 storage를 반복 접근하므로 warm access 혜택을 받는다</div>
+</div></div></div>
+
+<div class="c"><div class="t"><h3>또 다른 이슈 · Sybil & DoS 공격</h3><span class="pg">p.29</span></div>
+<div class="g g2">
+<div class="k bd-d"><b class="tx-d">Sybil Attack</b>실제 거래도 하지 않은 악의적 에이전트를 대량으로 만들어 특정 서버 에이전트의 평판을 부당하게 떨어뜨린다</div>
+<div class="k bd-d"><b class="tx-d">DoS Attack</b>중간 서버에 요청을 폭주시켜 서버의 ETH(가스)를 고갈시키고 마비시킨다</div>
+</div>
+이 공격들을 어떻게 막을지는 <b>연구(research)의 영역</b>이며, 다음 주에 걸쳐 (ERC-4337 등과 함께) 논의할 예정이다.</div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 용어 정리</span><span class="pg">p.28–29 보강</span></div><div class="cb">
+<div class="g g2">
+<div class="k"><b>EIP-712</b>사람이 읽을 수 있는 구조화된 데이터에 서명하는 표준. 지갑이 서명 내용을 명확히 보여줘 피싱을 줄인다</div>
+<div class="k"><b>ERC-4337</b>Account Abstraction. 스마트 컨트랙트 자체를 계정처럼 써서 가스 대납·배치·커스텀 인증을 가능케 한다 (다음 주 주제)</div>
+<div class="k"><b>Sybil</b>한 주체가 다수의 가짜 신원을 만들어 시스템을 속이는 공격 (평판·투표 시스템의 고전적 위협)</div>
+</div></div></div>
+</section>
+
+<!-- ================= SECTION 7 ================= -->
+<section data-s="7">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 한눈에 정리 — 핵심 체크리스트</span><span class="pg">p.1–29</span></div><div class="cb">
+<ol style="margin:0">
+<li>에이전트 환경엔 신원·평판 확인 수단이 없다 → 탈중앙(블록체인)으로 해결하려는 것이 ERC-8004 <span class="pg">p.2–3</span></li>
+<li>중앙화 인증(OAuth/OIDC)의 한계 탈피가 분산 시스템의 출발점 <span class="pg">p.2</span></li>
+<li><b>ERC</b> = 스마트 컨트랙트 표준. 이미 메인넷·Sepolia·EVM L2에 배포됨 <span class="pg">p.4</span></li>
+<li>두 레지스트리: <b>Identity</b>(owner가 신원 등록) / <b>Reputation</b>(client가 리뷰) — 주체가 다름 <span class="pg">p.4</span></li>
+<li>에이전트는 수명이 짧다 → 신원을 <b>owner(accountable entity)</b>에 묶음 <span class="pg">p.5</span></li>
+<li>A2A 에이전트 카드는 <b>/.well-known/agent-card.json</b>에 반드시 제공. skills 필드가 중요 <span class="pg">p.6–7</span></li>
+<li>registrations = <code>eip155:chainId:registry</code> + agentId (11155111=Sepolia) <span class="pg">p.7</span></li>
+<li>등록 3단계: ①ID 획득 ②IPFS 업로드 ③setAgentURI로 연결. 온체인은 비싸 CID만 매핑 <span class="pg">p.10, p.16</span></li>
+<li>register=트랜잭션 / ownerOf·tokenURI·readFeedback=읽기(무료) <span class="pg">p.13–15</span></li>
+<li>Reputation Registry는 Identity Registry를 <b>external call</b>로 agentId 검증 <span class="pg">p.19</span></li>
+<li>자기 에이전트에 자기가 피드백 → <b>revert</b> <span class="pg">p.22</span></li>
+<li>giveFeedback: value·valueDecimals로 평점(91.25=9125/10²), tag로 지표 지정 <span class="pg">p.22–25</span></li>
+<li>블록체인 평판은 <b>위변조 불가</b> → 신뢰 가능 <span class="pg">p.18–25</span></li>
+<li>x402 연계: 가스 없는 클라이언트는 중간 서버가 대납 (Facilitator 역) <span class="pg">p.26–27</span></li>
+<li>중간 서버 3대 한계: 평판 조작 · 리뷰어 신원 모호 · 가스 폭증 <span class="pg">p.27</span></li>
+<li>해결 아이디어(리서치): EIP-712 서명 · 배치 처리 · ERC-4337 스마트 어카운트 <span class="pg">p.28</span></li>
+<li>남은 공격: Sybil / DoS → 연구 영역, 다음 주 논의 <span class="pg">p.29</span></li>
+</ol></div></div>
+
+<div class="c"><div class="t"><h3>두 레지스트리 함수 빠른 참조</h3><span class="pg">p.12, p.21</span></div>
+<div class="g g2">
+<div class="k bd-w"><b class="tx-w">IdentityRegistry</b>
+<code>register()</code> · <code>register(agentURI)</code> · <code>setAgentURI(id, uri)</code> · <code>ownerOf(id)</code> · <code>tokenURI(id)</code> · <code>getAgentWallet(id)</code></div>
+<div class="k bd-a"><b class="tx-a">ReputationRegistry</b>
+<code>giveFeedback(id, value, decimals, tag1, tag2, endpoint, uri, hash)</code> · <code>getIdentityRegistry()</code> · <code>getLastIndex(id, client)</code> · <code>readFeedback(id, client, idx)</code></div>
+</div></div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('#tabs button'), secs = document.querySelectorAll('section[data-s]');
+  function show(n){
+    secs.forEach(function(s){ s.style.display = s.getAttribute('data-s') === n ? 'block' : 'none'; });
+    tabs.forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-t') === n); });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.getAttribute('data-t')); window.scrollTo({top:0}); }); });
+  show('1');
+})();
+</script>
+</body>
+</html>
