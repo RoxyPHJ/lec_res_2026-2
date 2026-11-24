@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Gas and Transaction Fee</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-accent:#E6F1FB;--text-accent:#185FA5;--border-accent:#85B7EB;
+  --bg-warning:#FAEEDA;--text-warning:#854F0B;--border-warning:#EF9F27;
+  --bg-success:#EAF3DE;--text-success:#3B6D11;--border-success:#97C459;
+  --bg-danger:#FCEBEB;--text-danger:#A32D2D;--border-danger:#F09595;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"JetBrains Mono",Consolas,"D2Coding",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-accent:#042C53;--text-accent:#85B7EB;--border-accent:#185FA5;
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-success:#173404;--text-success:#C0DD97;--border-success:#3B6D11;
+    --bg-danger:#501313;--text-danger:#F7C1C1;--border-danger:#A32D2D;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7}
+.page{max-width:760px;margin:0 auto;padding:2rem 16px 3rem}
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.15em;flex-shrink:0}
+code{font-family:var(--font-mono);font-size:.92em}
+.back{font-size:12px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-accent)}
+.title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.title h1{font-size:22px;font-weight:500;margin:0}
+.chip{background:var(--bg-accent);color:var(--text-accent);font-size:12px;padding:3px 10px;border-radius:var(--radius)}
+.src{font-size:12px;color:var(--text-secondary);margin:10px 0 6px;display:flex;align-items:center;gap:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.tabs button{font-family:var(--font-sans);font-size:13px;padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--text-primary);cursor:pointer}
+.tabs button:hover{background:var(--surface-1)}
+.tabs button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.legend{font-size:12px;color:var(--text-secondary);margin:4px 0 16px;display:flex;gap:12px;flex-wrap:wrap}
+.legend .lw{color:var(--text-warning)}.legend .la{color:var(--text-accent)}
+.c{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:14px;line-height:1.7}
+.ci,.ca{background:var(--surface-2);border-radius:12px;margin:0 0 12px;overflow:hidden;font-size:14px;line-height:1.7}
+.ci{border:1px solid var(--border-warning)}.ca{border:1px solid var(--border-accent)}
+.ch{padding:7px 16px;font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ch>span:first-child{display:flex;align-items:center;gap:6px}
+.ci .ch{background:var(--bg-warning);color:var(--text-warning)}.ca .ch{background:var(--bg-accent);color:var(--text-accent)}
+.cb{padding:12px 16px}
+.pg{font-size:11px;color:var(--text-secondary);border:0.5px solid var(--border-strong);border-radius:6px;padding:1px 6px;white-space:nowrap;font-weight:400}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.k{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;font-size:13px;line-height:1.55}
+.k b{display:block;font-weight:500;font-size:13px;margin-bottom:2px}
+.fl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;font-size:13px}
+.fl span.n{background:var(--surface-1);border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 10px}
+.fl small{color:var(--text-secondary)}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border-radius:var(--radius);padding:12px 14px;overflow-x:auto;line-height:1.55;margin:8px 0}
+.t{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px}
+.t h3{font-size:15px;font-weight:500;margin:0}
+.row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 80px;gap:8px;font-size:13px;padding:6px 0;border-bottom:0.5px solid var(--border)}
+.row3{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr)}
+.hd{color:var(--text-secondary);font-size:12px}
+.blk{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px;margin:10px 0}
+.blk div{border-radius:6px;padding:6px 0;text-align:center;font-size:12px}
+.blk .ok{background:var(--bg-success);color:var(--text-success)}
+.blk .no{background:var(--bg-danger);color:var(--text-danger)}
+.bd-d{border:0.5px solid var(--border-danger)}.bd-s{border:0.5px solid var(--border-success)}
+.tx-d{color:var(--text-danger)}.tx-s{color:var(--text-success)}.tx-w{color:var(--text-warning)}
+ul,ol{margin:6px 0 0;padding-left:20px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M5 12l6 6"/><path d="M5 12l6 -6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-equal" viewBox="0 0 24 24"><path d="M5 10h14"/><path d="M5 14h14"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1"/><path d="M12 7v10"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 9l1 0"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/></symbol>
+  <symbol id="i-gas" viewBox="0 0 24 24"><path d="M14 11h1a2 2 0 0 1 2 2v3a1.5 1.5 0 0 0 3 0v-7l-3 -3"/><path d="M4 20v-14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v14"/><path d="M3 20l12 0"/><path d="M18 7v1a1 1 0 0 0 1 1h1"/><path d="M4 11l10 0"/></symbol>
+</svg>
+
+<div class="page">
+<a class="back" href="../index.html"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg>목차</a>
+<div class="title">
+  <svg class="i" aria-hidden="true" style="font-size:22px;color:var(--text-secondary)"><use href="#i-gas"/></svg>
+  <h1>Gas and Transaction Fee</h1>
+  <span class="chip">블록체인</span>
+</div>
+<div class="src"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>강의자료: 26-2 1 Gas and Tx Fee.pdf · p.1–15 (표지 포함 전체 범위)</div>
+<div class="tabs" id="tabs">
+  <button class="on" data-t="1">1. Gas 개념</button><button data-t="2">2. 수수료 계산</button><button data-t="3">3. MetaMask 설정</button><button data-t="4">4. Base Fee 혼잡 제어</button><button data-t="5">5. EVM과 Opcode</button><button data-t="6">6. Remix 실습</button><button data-t="7">핵심 요약</button>
+</div>
+<div class="legend">
+  <span class="lw"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> amber = 강의 강조/시험 포인트</span>
+  <span class="la"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> blue = [부연설명]</span>
+</div>
+
+<section data-s="1">
+<div class="c"><div class="t"><h3>Gas의 정의</h3><span class="pg">p.2</span></div>
+이더리움에서 트랜잭션을 처리하는 데 필요한 연산·자원의 양을 측정하는 단위. 이더리움은 분산 데이터베이스이므로 참여하는 모든 노드가 자기 컴퓨팅 리소스를 써서 트랜잭션(=코드 실행)을 처리하고, 그 소모량이 Gas다. 돈이 아니라 일의 양이다.
+<div class="g">
+<div class="k"><b>단순 이체 (EOA → EOA)</b>약 21,000 gas · 노드가 쉽게 처리</div>
+<div class="k"><b>스마트 컨트랙트 호출</b>복잡한 로직 → 수만 gas 이상</div>
+</div></div>
+
+<div class="c"><div class="t"><h3>자동차 연료 비유</h3><span class="pg">강의 설명</span></div>
+<div class="fl"><span class="n">달릴 거리<br><small>= 트랜잭션 복잡도</small></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">필요 연료 10L<br><small>= Gas</small></span><svg class="i" aria-hidden="true"><use href="#i-x"/></svg><span class="n">리터당 2,000원<br><small>= Gas Price</small></span><svg class="i" aria-hidden="true"><use href="#i-equal"/></svg><span class="n">결제 20,000원<br><small>= Tx Fee</small></span></div>
+집→학교(20km)는 10L, 대전(200km)은 50L가 필요하듯, 복잡한 트랜잭션일수록 gas가 늘어난다. 휘발유 가격처럼 gas 단가도 시시각각 변한다.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Gwei — 가스 가격의 단위 (익숙해질 것)</span><span class="pg">p.3</span></div><div class="cb">
+<div style="font-size:18px;font-weight:500;margin:4px 0 8px">1 Gwei = 0.000000001 ETH = 10<sup>-9</sup> ETH</div>
+1 ETH는 수백만 원대로 gas당 가격을 표시하기엔 너무 큰 단위라서, 수수료(gas price)는 Gwei로 표기한다. MetaMask·블록 탐색기 모두 Gwei로 보여준다.</div></div>
+
+<div class="c"><div class="t"><h3>왜 수수료를 내는가</h3><span class="pg">강의 설명</span></div>
+은행 이체 수수료처럼, 이더리움에서 ETH/토큰을 보낼 때마다 수수료가 붙는다. 블록체인은 개인들이 참여한 공용 P2P 네트워크라 노드가 트랜잭션을 처리하고 상태·스토리지를 유지할 이유는 보상뿐이다. 수수료는 내 거래를 처리해 준 데 대한 보상이다.</div>
+</section>
+
+<section data-s="2">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 수수료 공식 (강의 강조)</span><span class="pg">p.4</span></div><div class="cb">
+<div style="font-family:var(--font-mono);font-size:15px;margin:4px 0 8px;line-height:1.8">Tx Fee = Gas Used × Gas Price<br>Gas Price = Base Fee + Priority Fee</div>
+Gas Price는 Base Fee와 Priority Fee 두 개의 합이라는 점이 핵심. 단위: gas × Gwei/gas = Gwei.</div></div>
+
+<div class="c"><div class="t"><h3>세 용어</h3><span class="pg">p.4</span></div>
+<div class="g">
+<div class="k"><b>Gas Used</b>실제 소비한 gas 양. 실행된 코드와 건드린 상태로 결정 (ETH 시세와 무관)</div>
+<div class="k"><b>Gas Price</b>gas 1단위당 가격(Gwei). EIP-1559에서 Base + Priority, maxFeePerGas로 상한</div>
+<div class="k"><b>Transaction Fee</b>최종 ETH 수수료 = Gas Used × Gas Price</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Base Fee vs Priority Fee — 돈이 어디로 가나</span><span class="pg">p.4, p.6</span></div><div class="cb">
+<div class="g">
+<div class="k bd-d"><b class="tx-d"><svg class="i" aria-hidden="true"><use href="#i-flame"/></svg> Base Fee (기본 요금)</b>네트워크가 알려주는 현재 gas당 시세. 반드시 지불. 누구에게도 안 가고 소각(burn) → ETH가 계속 늘어나 가치가 떨어지는 인플레이션 방지</div>
+<div class="k bd-s"><b class="tx-s"><svg class="i" aria-hidden="true"><use href="#i-coin"/></svg> Priority Fee (우선 요금, tip)</b>사용자가 얹어주는 금액. Priority × Gas Used만큼 처리한 노드(validator)가 가져감. 높을수록 빨리 처리 — 강의에서 "굉장히 중요"</div>
+</div>
+택시 비유: 새벽 서울역에서 택시가 안 잡힐 때 웃돈을 더 얹어주면 태워준다. Priority Fee가 그 웃돈이다.</div></div>
+
+<div class="c"><div class="t"><h3>블록 탐색기 영수증 계산 (이체 1건)</h3><span class="pg">p.6</span></div>
+<pre>Gas Price = 1.042206667 (Base) + 1.5 (Priority)
+          = 2.542206667 Gwei
+
+① Tx Fee   = 21,000 × 2.542206667 = 53,386.34 Gwei
+                                   (≈ 0.0000533863 ETH)
+② Burnt    = 21,000 × 1.042206667 = 21,886.34 Gwei
+③ Validator= 21,000 × 1.5         = 31,500.00 Gwei
+④ Savings  = 21,000 × (2.796031275 − 2.542206667)
+           = 21,000 × 0.253824608 = 5,330.32 Gwei</pre>
+원화로는 이체 한 번에 대략 몇 천 원 수준 (강의 당시 ETH 시세 기준). 전송 후 잔액은 보낸 0.01 ETH + 수수료만큼 차감된다.</div>
+
+<div class="c" style="background:var(--surface-1)"><div class="t"><h3 style="color:var(--text-secondary)">Txn Savings — 몰라도 되는 항목</h3><span class="pg">p.6</span></div>
+<span style="color:var(--text-secondary)">내가 내겠다고 한 최대치(MaxFee 2.796)보다 실제 적용 가격(2.542)이 낮아서 "이만큼 아껴줬다"고 표시하는 값. 강의에서 "별로 중요하지 않다"고 언급.</span></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] ETH 환산 자리수</span><span class="pg">p.4, p.6</span></div><div class="cb">
+53,386.34 Gwei × 10<sup>-9</sup> = 0.00005338634 ETH. 스크립트에 "0.000000533…"처럼 0이 더 붙어 인식된 부분이 있는데, 강의자료 표기(0.0000533863 ETH)가 맞다. ③ Validator 몫(31,500)은 강의에서 말로만 설명한 값을 계산한 것으로, ②+③ = ①로 검산된다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] EIP-1559</span><span class="pg">p.4</span></div><div class="cb">
+Base Fee + Priority Fee 구조와 Base Fee 소각은 2021년 이더리움 London 업그레이드의 EIP-1559에서 도입됐다. 그 전에는 사용자가 gas price 하나만 입찰하고 전액이 채굴자에게 갔다.</div></div>
+</section>
+
+<section data-s="3">
+<div class="c"><div class="t"><h3>시연: 0.01 ETH 이체</h3><span class="pg">p.5</span></div>
+테스트넷에서 'DBBB' 계좌 → '인천 블록체인' 계좌로 0.01 ETH 전송. MetaMask가 낮음/보통/높음 세 단계 수수료를 추천하고, 고급 탭에서 직접 지정할 수 있다.
+<div class="fl"><span class="n">수수료 낮음</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">노드 입장에서 돈 안 됨</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">계속 대기 → 결국 처리 안 됨(취소)</span></div>
+<div class="fl"><span class="n">수수료 높음</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">매력적인 거래</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">빠르게 처리</span></div></div>
+
+<div class="c"><div class="t"><h3>MetaMask 고급 설정 3가지</h3><span class="pg">p.5</span></div>
+<div class="g">
+<div class="k"><b>gasLimit (가스 한도)</b>이 이상의 gas가 드는 일은 하지 말라는 상한. 시연값 31,500 (21,000 이상으로 여유 설정)</div>
+<div class="k"><b>maxPriorityFeePerGas</b>우선 요금(tip). 시연값 1.5 Gwei → validator 몫</div>
+<div class="k"><b>maxFeePerGas</b>gas당 최대 지불 의향. 최소 Base + Tip(=1.05 + 1.5 = 2.55) 이상. 시연값 2.796</div>
+</div>
+<pre>실제 Gas Price = min{ maxFee, Base + Priority }
+              = min{ 2.796, 1.05 + 1.5 } = 2.55 Gwei
+→ 2.796을 다 쓰는 것이 아님 (1.05 소각, 1.5 validator)</pre></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Gas Limit 초과 → Revert, 수수료는 날아감</span><span class="pg">p.5, p.10</span></div><div class="cb">
+노드는 연산을 하나씩 수행하며 gas를 누적한다. 누적치가 gasLimit을 넘는 순간 Out of Gas → revert(처리 중단, 커밋 안 됨). 이때 이미 실행한 만큼의 수수료는 내야 하므로 처리도 안 되고 수수료만 날린다.
+<div class="g" style="margin-top:10px">
+<div class="k"><b>한도를 무한대로 쓰면?</b>예상 못한 큰 수수료가 나갈 수 있음 → 한도는 안전장치</div>
+<div class="k"><b>너무 작게 쓰면?</b>실제 필요량보다 작으면 Out of Gas → revert</div>
+</div></div></div>
+
+<div class="c"><div class="t"><h3>maxFee에 여유를 두는 이유</h3><span class="pg">p.5</span></div>
+Base Fee는 매 순간 바뀐다. 트랜잭션은 제출 후 mempool에서 5분, 10분 대기할 수 있어 실제 처리 시점의 Base Fee가 달라질 수 있다. 그래서 "gas당 이 정도까지는 낼 의향이 있다"는 여유분을 maxFeePerGas에 적는다.</div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 21,000의 정체</span><span class="pg">p.5</span></div><div class="cb">
+EOA→EOA 단순 이체의 21,000 gas는 모든 트랜잭션에 붙는 프로토콜 고정 기본 비용(intrinsic gas)이다. 강의에서는 "내 계좌·상대 계좌 접근 등 연산이 더해져 21,000이 된다"고 직관적으로 설명했는데, 엄밀히는 상수로 정해진 값이다.</div></div>
+</section>
+
+<section data-s="4">
+<div class="c"><div class="t"><h3>Base Fee = 이더리움의 혼잡 제어</h3><span class="pg">p.7–8</span></div>
+월급날 은행 서버가 폭주하면 "이 시간대엔 수수료를 받는다"고 해서 거래를 줄일 수 있다. 이더리움도 거래가 많으면 Base Fee를 올려 유입을 억제하고, 한산하면 내려서 거래를 유도한다. 네트워크 과목의 congestion control과 같은 역할.
+<div class="g">
+<div class="k"><b>지갑에 Base Fee가 높게 보이면</b>사용자가 "비싸다" 하고 거래를 미룸 <span class="pg">p.8</span></div>
+<div class="k"><b>Base Fee가 낮으면</b>"거의 공짜네" 하고 거래를 많이 발생</div>
+</div></div>
+
+<div class="c"><div class="t"><h3>블록 생성 흐름</h3><span class="pg">p.7</span></div>
+<div class="fl"><span class="n">Tx 제출</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">Mempool 대기</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">Validator가 Priority Fee 높은 순으로 꺼냄</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">가실행하며 gas 누적</span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">Block gas limit 내에서 블록 생성 = 커밋</span></div>
+<ul>
+<li>Mempool은 실제로 각 노드가 각자 가진다 (설명 편의상 하나로 그림)</li>
+<li>Validator는 P2P라 독립적으로 블록을 만들고, 순서는 합의 알고리즘으로 동기화</li>
+<li>블록에 담기지 않으면 커밋된 게 아님 → 계속 대기</li>
+<li>스마트 컨트랙트 호출도 상태를 바꾸는 작업이므로 모두 트랜잭션</li>
+</ul></div>
+
+<div class="c"><div class="t"><h3>Block gas limit — 개수가 아니라 gas 총량으로 제한</h3><span class="pg">p.7</span></div>
+강의 예시: 블록 gas limit = 220,000, 이체 1건 = 21,000
+<div class="blk">
+<div class="ok">1</div><div class="ok">2</div><div class="ok">3</div><div class="ok">4</div><div class="ok">5</div><div class="ok">6</div><div class="ok">7</div><div class="ok">8</div><div class="ok">9</div><div class="ok">10</div><div class="no">11</div>
+</div>
+10건 = 210,000 (OK) · 11건 = 231,000 (초과 → 못 담음). Etherscan에서 블록마다 tx 개수(116, 111, 125…)가 다른 이유: 싼 tx면 많이, 비싼 tx면 적게 담긴다.</div>
+
+<div class="c"><div class="t"><h3>Base Fee 조정 규칙</h3><span class="pg">p.7</span></div>
+아무도 정하지 않는다. 프로토콜이 매 블록마다 직전 블록이 얼마나 찼는지로 다시 계산. Target = gas limit의 절반.
+<div class="g">
+<div class="k bd-s"><b>#199: gasUsed &lt; target</b>Mempool이 한산 → 다음 블록 Base Fee <span class="tx-s">↓</span> (거래 유도)</div>
+<div class="k bd-d"><b>#200: gasUsed &gt; target</b>거래 몰림 → 다음 블록 Base Fee <span class="tx-d">↑</span> (유입 억제)</div>
+<div class="k"><b>#201: Now</b>직전 블록 기준으로 계산된 Base Fee 적용</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> Gas Limit과 Gas Price의 두 역할 — 그래프 해석할 수 있을 것</span><span class="pg">p.9</span></div><div class="cb">
+<div class="g">
+<div class="k"><b>Gas (일의 양) 축</b>트랜잭션이 계산을 많이 요구할수록 gas ↑ (이체 21,000 &lt; 컨트랙트 호출)</div>
+<div class="k"><b>Gas Price (단가) 축</b>Priority Fee ↑ → 빨리 처리 / 0에 가까우면 mempool에서 오래 대기</div>
+</div>
+최종 수수료 = 두 값의 곱. 강의: "이 그래프를 보고 해석할 수 있으면 지금까지 내용을 잘 이해한 것".</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] Base Fee 변화폭</span><span class="pg">p.7</span></div><div class="cb">
+EIP-1559 규칙상 Base Fee는 한 블록당 최대 ±12.5%까지만 변한다. 블록이 완전히 꽉 차면 +12.5%, 완전히 비면 −12.5%. 급등락을 막아 수수료 예측을 쉽게 하려는 설계다.</div></div>
+</section>
+
+<section data-s="5">
+<div class="c"><div class="t"><h3>EVM (Ethereum Virtual Machine)</h3><span class="pg">p.10</span></div>
+모든 노드가 트랜잭션을 처리할 스마트 컨트랙트 엔진(EVM)을 가진다. JS 엔진 같은 일반 실행 엔진과 구조가 비슷하다.
+<div class="g">
+<div class="k"><b>Program Counter</b>다음 실행 위치</div>
+<div class="k"><b>Stack</b>연산 피연산자</div>
+<div class="k"><b>Memory</b>실행 중 임시 공간</div>
+<div class="k"><b>Storage</b>영구 상태</div>
+<div class="k" style="border:1px solid var(--border-warning)"><b class="tx-w">Gas 측정 모듈</b>EVM만의 특징. opcode마다 gas 누적, 한도 초과 시 revert</div>
+</div></div>
+
+<div class="c"><div class="t"><h3>Solidity에서 Opcode까지</h3><span class="pg">p.11</span></div>
+<div class="fl"><span class="n">① Solidity<br><code>x = v;</code></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">② solc 컴파일<br><code>--optimize</code></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">③ Bytecode<br><code>0x60 0x04 0x60 0x00 0x55</code></span><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><span class="n">④ Opcodes<br><code>PUSH1 4 PUSH1 0 SSTORE</code></span></div>
+Solidity는 JavaScript와 문법이 비슷한 컨트랙트 언어. EVM은 바이트를 하나씩 읽어 실행하고, 실행되는 opcode마다 gas를 부과한다.</div>
+
+<div class="c"><div class="t"><h3>모든 Opcode는 가격이 정해져 있다</h3><span class="pg">p.11</span></div>
+<div class="row hd"><span>Opcode</span><span>하는 일</span><span>Gas</span></div>
+<div class="row"><code>ADD</code><span>스택 두 값 더하기</span><span>3</span></div>
+<div class="row"><code>MLOAD / MSTORE</code><span>메모리 읽기/쓰기</span><span>3+확장</span></div>
+<div class="row"><code>KECCAK256</code><span>해시 계산</span><span>30+6/word</span></div>
+<div class="row"><code>SLOAD (warm)</code><span>이미 접근한 storage 읽기</span><span>100</span></div>
+<div class="row"><code>SLOAD (cold)</code><span>처음 접근하는 storage 읽기</span><span>2,100</span></div>
+<div class="row tx-d"><code>SSTORE (0→비0)</code><span>새 storage 슬롯 쓰기 (영구 저장이라 매우 비쌈)</span><span>20,000</span></div>
+<div class="row"><code>CALL (cold)</code><span>다른 컨트랙트 호출</span><span>2,600+</span></div>
+<div class="row" style="border:none"><code>CREATE</code><span>컨트랙트 배포</span><span>32,000+200/byte</span></div></div>
+
+<div class="c"><div class="t"><h3>Gas Used를 결정하는 두 요인</h3><span class="pg">p.12</span></div>
+<div style="font-family:var(--font-mono);font-size:14px;margin:4px 0 8px">Gas Used = Σ (실행된 각 opcode의 gas 비용)</div>
+<div class="g">
+<div class="k"><b>1. Frequency (몇 번)</b>싼 opcode도 반복되면 비싸짐. 루프 100회 안의 SLOAD는 비용 100번</div>
+<div class="k"><b>2. Type (무엇을)</b>ADD 1,000번 ≈ 3,000 gas인데, SSTORE 한 번이 그보다 훨씬 비쌀 수 있음</div>
+</div>
+최적화 = 연산 횟수 줄이기 + 비싼 연산 피하기.</div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 스마트 컨트랙트는 gas까지 고려해 작성할 것</span><span class="pg">p.10–12</span></div><div class="cb">
+보안 취약점도 중요하지만, gas를 많이 쓰는 컨트랙트는 사용자가 수수료를 많이 내야 해서 아무도 쓰지 않는다. 바이트코드로 어떻게 변환되는지 확인해서 효율적으로 작성해야 한다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 음성 인식 중 헷갈리는 숫자 정리</span><span class="pg">p.11</span></div><div class="cb">
+강의에서 "처음 액세스는 22,100"이라고 한 부분은 SSTORE(0→비0) 20,000 + cold 접근 2,100 = 22,100으로 이해하면 된다. 또 실습 설명 중 "처음 액세스하는 값이면 20,000"처럼 들린 부분이 있는데, 읽기(SLOAD) 기준으로는 강의자료대로 cold 2,100 / warm 100이 맞다. cold/warm 구분은 EIP-2929(Berlin 업그레이드)에서 도입됐다.</div></div>
+</section>
+
+<section data-s="6">
+<div class="c"><div class="t"><h3>실습 환경</h3><span class="pg">p.13</span></div>
+Remix(웹 IDE)에서 새 .sol 파일 생성 → Ctrl+S → Deploy. Remix가 내부적으로 가짜 이더리움 네트워크를 띄워 바로 실행된다. 실제 개발은 Hardhat, Foundry 같은 도구도 사용. 주황색 버튼 함수 = 트랜잭션을 발생시키는 함수.</div>
+
+<div class="c"><div class="t"><h3>실습 1 · SStoreLab — 저장 값 변화에 따른 비용</h3><span class="pg">p.13</span></div>
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract SStoreLab {
+    uint256 public value;
+
+    function set(uint256 x) external {
+        value = x;
+    }
+}</pre>
+<div class="row row3 hd"><span>강의 시연 입력</span><span>Storage 변화</span><span>Tx cost</span></div>
+<div class="row row3"><span>101</span><span>0 → 101 (새 값)</span><span class="tx-d">43,718</span></div>
+<div class="row row3"><span>200</span><span>101 → 200</span><span>26,618</span></div>
+<div class="row row3"><span>300</span><span>200 → 300</span><span>거의 동일</span></div>
+<div class="row row3" style="border:none"><span>0</span><span>300 → 0 (기본값)</span><span class="tx-s">훨씬 적음</span></div>
+<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">강의자료 표는 입력 10/20/30/0 기준으로 같은 패턴</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 비교해서 쓸 수 있어야 함 (시험 포인트)</span><span class="pg">p.13</span></div><div class="cb">
+<div class="fl"><span class="n" style="border-color:var(--border-danger)">0 → 비0<br><small>높음 · 새로 추적 시작</small></span><span style="font-size:16px">&gt;</span><span class="n">비0 → 비0<br><small>보통</small></span><span style="font-size:16px">&gt;</span><span class="n" style="border-color:var(--border-success)">비0 → 0<br><small>낮음 · 추적 불필요</small></span></div>
+0은 기본값이라 더 이상 블록체인이 영구 기록할 필요가 없어 일의 양이 크게 줄어든다.</div></div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 43,718 − 26,618 = 17,100의 의미</span><span class="pg">p.11, p.13</span></div><div class="cb">
+0→비0 SSTORE는 20,000, 비0→비0 SSTORE는 약 2,900이라 차이가 정확히 17,100이다. 비0→0이 싼 이유는 슬롯을 비우면 gas 일부를 돌려주는 환급(refund) 규칙 때문이다.</div></div>
+
+<div class="c"><div class="t"><h3>실습 2 · WarmColdLab — 같은 키 반복 vs 다른 키</h3><span class="pg">p.14</span></div>
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract WarmColdLab {
+    mapping(uint256 =&gt; uint256) public values;
+    uint256 public result;
+
+    constructor() {
+        values[1] = 10;
+        values[2] = 20;
+        values[3] = 30;
+        values[4] = 40;
+        values[5] = 50;
+    }
+
+    function readSlots(uint256[] calldata keys) external {
+        uint256 sum;
+        for (uint256 i = 0; i &lt; keys.length; i++) {
+            sum += values[keys[i]];
+        }
+        result = sum;
+    }
+}</pre>
+<div class="g">
+<div class="k"><b>[1,1,1,1,1]</b>Cold + Warm×4 · 합 50 · 가장 저렴</div>
+<div class="k"><b>[1,1,2,2,3]</b>Cold, Warm, Cold, Warm, Cold</div>
+<div class="k bd-d"><b>[1,2,3,4,5]</b>Cold×5 · 시연에서 훨씬 많은 gas 소비</div>
+</div>
+처음 접근하는 슬롯만 cold, 같은 슬롯을 다시 읽으면 warm.</div>
+
+<div class="ca"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-info"/></svg> [부연설명] 이론상 차이</span><span class="pg">p.11, p.14</span></div><div class="cb">
+[1,2,3,4,5]는 [1,1,1,1,1]보다 cold 읽기가 4번 더 많으므로 이론상 4 × (2,100 − 100) = 8,000 gas 정도 더 든다. 스크립트의 구체적 수치는 음성 인식이 불명확해 생략했다.</div></div>
+
+<div class="c"><div class="t"><h3>강의 인사이트: 배치 처리</h3><span class="pg">p.14</span></div>
+트랜잭션을 배치 처리하면 warm 접근 효과 등으로 수수료를 크게 아낄 수 있다. 이런 아이디어로 트랜잭션 수수료를 절감하는 논문이 많이 나와 있으며, 연구 접목 방법은 이후 소개 예정.</div>
+
+<div class="c"><div class="t"><h3>실습 3 · StorageAccessLab — bad() vs good()</h3><span class="pg">p.15</span></div>
+<pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract StorageAccessLab {
+    uint256 public value = 10;
+
+    function bad() external {
+        value = value + 1;
+        value = value + 1;
+        value = value + 1;
+    }
+
+    function good() external {
+        uint256 temp = value;
+        temp = temp + 1;
+        temp = temp + 1;
+        temp = temp + 1;
+        value = temp;
+    }
+}</pre>
+<div class="g">
+<div class="k bd-d"><b class="tx-d">bad()</b>Storage 읽기→쓰기 ×3<br>= storage 접근 6번</div>
+<div class="k bd-s"><b class="tx-s">good()</b>Storage 읽기 1번 → local 변수로 3번 계산 → Storage 쓰기 1번<br>= storage 접근 2번</div>
+</div>
+<div class="g">
+<div class="k"><b>SSTORE</b>Storage 쓰기는 매우 비쌈</div>
+<div class="k"><b>SLOAD</b>Cold/Warm에 따라 차이</div>
+<div class="k"><b>Memory</b>실행 중에만 쓰는 임시 공간, Storage보다 저렴</div>
+</div></div>
+
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 결과는 같아도 작성법에 따라 수수료가 다르다</span><span class="pg">p.15</span></div><div class="cb">
+두 함수 모두 value를 +3 하지만 bad()가 훨씬 많은 수수료를 요구한다. good()처럼 storage 접근을 최소화한 코드가 사용자 친화적인 컨트랙트. 스마트 컨트랙트를 잘 짜야 하는 이유 = 보안 + 사용자 수수료 절감.</div></div>
+</section>
+
+<section data-s="7">
+<div class="ci"><div class="ch"><span><svg class="i" aria-hidden="true"><use href="#i-star"/></svg> 시험 전 체크리스트</span><span class="pg">p.2–15</span></div><div class="cb">
+<ol style="margin:0">
+<li>Gas = 일의 양(단위), 돈 아님. 이체 21,000 gas <span class="pg">p.2</span></li>
+<li>1 Gwei = 10<sup>-9</sup> ETH, 수수료는 Gwei로 표기 <span class="pg">p.3</span></li>
+<li>Tx Fee = Gas Used × (Base Fee + Priority Fee) <span class="pg">p.4</span></li>
+<li>Base Fee는 소각(인플레이션 방지), Priority Fee는 validator 몫 <span class="pg">p.4, p.6</span></li>
+<li>실제 gas price = min{maxFee, Base + Priority} <span class="pg">p.5</span></li>
+<li>gasLimit 초과 → Out of Gas → revert, 실행분 수수료는 손실 <span class="pg">p.5</span></li>
+<li>Validator는 Priority Fee 높은 순으로 block gas limit까지 담음 <span class="pg">p.7</span></li>
+<li>직전 블록 gasUsed가 target(절반)보다 크면 Base Fee ↑, 작으면 ↓ <span class="pg">p.7</span></li>
+<li>Gas/Gas Price 그래프 해석 <span class="pg">p.9</span></li>
+<li>Gas Used = Σ opcode 비용 (빈도 × 종류) <span class="pg">p.11–12</span></li>
+<li>저장 비용: 0→비0 &gt; 비0→비0 &gt; 비0→0 <span class="pg">p.13</span></li>
+<li>Cold 2,100 vs Warm 100, storage 접근 최소화 <span class="pg">p.14–15</span></li>
+</ol></div></div>
+</section>
+</div>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('#tabs button'), secs = document.querySelectorAll('section[data-s]');
+  function show(n){
+    secs.forEach(function(s){ s.style.display = s.getAttribute('data-s') === n ? 'block' : 'none'; });
+    tabs.forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-t') === n); });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.getAttribute('data-t')); window.scrollTo({top:0}); }); });
+  show('1');
+})();
+</script>
+</body>
+</html>
