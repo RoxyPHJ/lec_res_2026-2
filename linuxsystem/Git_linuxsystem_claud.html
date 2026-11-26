@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Git</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;--text-danger:#A32D2D;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-warning:#FAEEDA;--text-warning:#633806;--border-warning:#EF9F27;
+  --bg-accent:#E6F1FB;--text-accent:#0C447C;--border-accent:#85B7EB;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",Menlo,Consolas,"Noto Sans KR",monospace;
+  --arrow:#888780;
+  --g-fill:#F1EFE8;--g-stroke:#5F5E5A;--g-t:#444441;--g-s:#5F5E5A;
+  --p-fill:#EEEDFE;--p-stroke:#534AB7;--p-t:#3C3489;--p-s:#534AB7;
+  --c-fill:#FAECE7;--c-stroke:#993C1D;--c-t:#712B13;--c-s:#993C1D;
+  --tl-fill:#E1F5EE;--tl-stroke:#0F6E56;--tl-t:#085041;--tl-s:#0F6E56;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;--text-danger:#F09595;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-accent:#042C53;--text-accent:#B5D4F4;--border-accent:#185FA5;
+    --arrow:#B4B2A9;
+    --g-fill:#444441;--g-stroke:#B4B2A9;--g-t:#F1EFE8;--g-s:#D3D1C7;
+    --p-fill:#3C3489;--p-stroke:#AFA9EC;--p-t:#EEEDFE;--p-s:#CECBF6;
+    --c-fill:#712B13;--c-stroke:#F0997B;--c-t:#FAECE7;--c-s:#F5C4B3;
+    --tl-fill:#085041;--tl-stroke:#5DCAA5;--tl-t:#E1F5EE;--tl-s:#9FE1CB;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7;-webkit-text-size-adjust:100%}
+.page{max-width:760px;margin:0 auto;padding:1.5rem 16px 3rem}
+.back{font-size:13px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.back:hover{color:var(--text-primary)}
+button{font-family:inherit;font-size:13px;color:var(--text-primary);background:transparent;border:0.5px solid var(--border-strong);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{background:var(--surface-1)}
+button:active{transform:scale(.98)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 16px}
+.tabs button.on{background:var(--surface-1);border-color:var(--text-primary)}
+.sec{margin-bottom:28px}
+.sh{font-size:17px;font-weight:500;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:14px;line-height:1.7;color:var(--text-primary)}
+.imp{background:var(--bg-warning);border-color:var(--border-warning);color:var(--text-warning)}
+.ext{background:var(--bg-accent);border-color:var(--border-accent);color:var(--text-accent)}
+.off{background:var(--surface-1);color:var(--text-secondary)}
+.ct{font-weight:500;font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pg{font-size:11px;font-weight:400;padding:1px 8px;border-radius:999px;border:0.5px solid var(--border-strong);color:var(--text-secondary);margin-left:auto;white-space:nowrap}
+.imp .pg,.ext .pg{color:inherit;border-color:currentColor}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.6;color:var(--text-primary);white-space:pre}
+.cm{color:var(--text-muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
+.cell{background:var(--surface-1);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text-primary)}
+.bd{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--surface-1);border:0.5px solid var(--border);font-family:var(--font-mono);color:var(--text-primary)}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:13px}
+.st{background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text-primary)}
+code{font-family:var(--font-mono);font-size:13px}
+ul{margin:4px 0 0;padding-left:20px}
+li{margin:2px 0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+svg text{font-family:var(--font-sans)}
+svg .t{font-size:14px;fill:var(--text-primary)}
+svg .ts{font-size:12px;fill:var(--text-secondary)}
+svg .th{font-size:14px;font-weight:500;fill:var(--text-primary)}
+svg .arr{stroke:var(--arrow);stroke-width:1.5;fill:none}
+.c-gray>rect{fill:var(--g-fill);stroke:var(--g-stroke)}.c-gray>.th{fill:var(--g-t)}.c-gray>.ts{fill:var(--g-s)}
+.c-purple>rect{fill:var(--p-fill);stroke:var(--p-stroke)}.c-purple>.th{fill:var(--p-t)}.c-purple>.ts{fill:var(--p-s)}
+.c-coral>rect{fill:var(--c-fill);stroke:var(--c-stroke)}.c-coral>.th{fill:var(--c-t)}.c-coral>.ts{fill:var(--c-s)}
+.c-teal>rect{fill:var(--tl-fill);stroke:var(--tl-stroke)}.c-teal>.th{fill:var(--tl-t)}.c-teal>.ts{fill:var(--tl-s)}
+</style>
+</head>
+<body>
+<div class="page">
+<a class="back" href="../index.html"><i class="ti ti-arrow-left" aria-hidden="true"></i>목차</a>
+<h2 class="sr-only">Git 강의 정리: 버전 컨트롤 개념과 설치, Markdown, 저장소·커밋 3단계, 되돌리기(checkout·revert·reset), gitignore, 브랜치, Merge·Rebase, Git Hook·Husky·ESLint를 강의자료 페이지와 함께 탭별 카드로 정리</h2>
+<div style="padding:.75rem 0 0">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<h1 style="font-size:22px;font-weight:500;margin:0">Git</h1>
+<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg-warning);color:var(--text-warning)"><i class="ti ti-star" aria-hidden="true"></i> 중요</span>
+<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg-accent);color:var(--text-accent)"><i class="ti ti-info-circle" aria-hidden="true"></i> 부연설명</span>
+<span style="font-size:12px;padding:2px 8px;border-radius:999px;background:var(--surface-1);color:var(--text-secondary)">다음 시간 예고</span>
+</div>
+<div style="font-size:12px;color:var(--text-muted);margin-top:10px">강의자료 8_Git.pdf (Version Control System · Git) · p.1 ~ p.33 · 개요·설치 → Markdown → 저장소·커밋 → 되돌리기 → 브랜치 → Merge·Rebase → Git Hook·Linter &nbsp;|&nbsp; GitHub 원격 협업(p.34~47)은 이번 녹음에서 다루지 않고 다음 시간 예고</div>
+<div class="tabs" role="tablist">
+<button data-t="t1">개요·설치</button>
+<button data-t="t2">Markdown</button>
+<button data-t="t3">저장소·커밋 3단계</button>
+<button data-t="t4">되돌리기·gitignore</button>
+<button data-t="t5">브랜치</button>
+<button data-t="t6">Merge·Rebase</button>
+<button data-t="t7">Hook·Husky·Linter</button>
+<button data-t="t8">핵심 체크</button>
+</div>
+
+<!-- ==================== t1 개요·설치 ==================== -->
+<div class="sec" data-tab="t1">
+<div class="sh"><i class="ti ti-git-branch" aria-hidden="true"></i>Git 개요와 설치<span class="pg">p.1–3</span></div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>Git = 버전 컨트롤 시스템(VCS)<span class="pg">p.2</span></div>
+코드를 수정하다가 <b>원하는 시점에 저장(스냅샷)</b>해두고, 나중에 <b>그 시점으로 되돌아갈 수 있게</b> 해주는 도구. 리눅스든 맥이든 상관없이 동작.
+<ul>
+<li>그냥 컴퓨터에 계속 저장만 하면 원하는 이전 시점으로 <b>복구가 불가능</b>. 극단적으로 1년짜리 프로젝트에서 "6개월 전 소스코드로 돌아가고 싶다"고 해도 방법이 없음.</li>
+<li>소스코드뿐 아니라 <b>문서</b>도 특정 시점으로 보관 가능.</li>
+<li>한 문장으로: <b>"모든 소스코드의 변경 이력을 관리한다."</b></li>
+</ul>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-camera" aria-hidden="true"></i>스냅샷 = 커밋(commit)<span class="pg">p.2</span></div>
+특정 시점에 <b>스냅샷을 찍어 기록</b>하는 것을 Git에서 <b>커밋(commit)</b>이라고 부름. 언제든 그 커밋 시점으로 되돌아갈 수 있음.
+<ul>
+<li>극단적으로 하루에 한 번씩 스냅샷을 찍어두면, 미래에 원하는 과거 시점으로 돌아가 그 상태에서 다시 코드를 수정할 수 있음.</li>
+</ul>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-download" aria-hidden="true"></i>설치<span class="pg">p.3</span></div>
+macOS는 패키지 매니저 <code>brew</code>, Ubuntu는 <code>apt-get</code>으로 설치. 설치 후 버전·도움말로 확인.
+<pre><span class="cm"># macOS</span>
+brew install git
+
+<span class="cm"># Ubuntu / Linux</span>
+apt-get install git
+
+<span class="cm"># 설치 확인</span>
+git --version
+git            <span class="cm"># 사용 가능한 명령(help) 문서 출력</span></pre>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-folder" aria-hidden="true"></i>작업 디렉토리 만들기<span class="pg">p.3</span></div>
+코딩은 항상 <b>하나의 디렉토리를 만들고 그 안에서</b> 진행 → 그 디렉토리를 Git으로 관리.
+<pre>mkdir git_tutorial     <span class="cm"># 작업 폴더 생성</span>
+cd git_tutorial        <span class="cm"># 폴더 안으로 이동</span>
+touch dweb.md          <span class="cm"># 작업할 파일 하나 생성</span>
+code .                 <span class="cm"># VS Code로 현재 폴더 열기</span></pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">이 안에서 Python·JS·C 등 무엇을 코딩하든 자유. 이 작업 디렉토리를 Git으로 관리하는 것이 목표.</div>
+</div>
+</div>
+
+<!-- ==================== t2 Markdown ==================== -->
+<div class="sec" data-tab="t2">
+<div class="sh"><i class="ti ti-markdown" aria-hidden="true"></i>Markdown 문서 작성<span class="pg">p.4–5</span></div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-file-text" aria-hidden="true"></i>마크다운이란<span class="pg">p.4</span></div>
+<code>.md</code> 확장자 = <b>마크다운(Markdown) 언어</b>. 문서를 쉽게 작성하기 위한 문법으로, 역할은 HTML과 비슷. GitHub에서 소스코드 받을 때 보이는 <code>README.md</code>가 대표적.
+<div class="flow"><span class="st">나는 이렇게 코딩(.md 작성)</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">마크다운 파서가 해석</span><i class="ti ti-arrow-right" aria-hidden="true"></i><span class="st">사용자에겐 렌더링된 화면으로 보임</span></div>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-hash" aria-hidden="true"></i>기본 문법<span class="pg">p.5</span></div>
+<ul>
+<li><code>#</code>(해시/샵) 개수로 제목 크기 지정 → HTML의 <code>h1 / h2 / h3</code>와 동일. 많이 붙일수록 글자가 작아짐.</li>
+<li><code>**텍스트**</code> = <b>볼드</b>, <code>_텍스트_</code> = <i>이탤릭</i>.</li>
+<li><code>&lt;font color="red"&gt;…&lt;/font&gt;</code> 같은 HTML 태그도 그대로 사용 가능.</li>
+<li>개행(줄바꿈): 문장 끝에 <b>공백 두 칸</b>을 줘야 함(그냥 엔터만 치면 개행 안 됨).</li>
+</ul>
+<pre># Incheon National University
+## Linux System
+I love **Linux Class**
+I also love _Web Class_
+### Final Exam: December 11th</pre>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>VS Code 확장 + PDF 출력<span class="pg">p.4</span></div>
+마크다운을 편하게 쓰려면 확장 프로그램 설치 추천:
+<ul>
+<li><b>Markdown</b> 미리보기 확장 — 돋보기 아이콘을 열면 파서가 렌더링한 결과를 실시간으로 보여줌.</li>
+<li><b>Markdown PDF</b> 확장 — <code>.md</code>를 바로 PDF로 변환. 워드 없이 과제 작성·제출 가능.</li>
+</ul>
+</div>
+</div>
+
+<!-- ==================== t3 저장소·커밋 3단계 ==================== -->
+<div class="sec" data-tab="t3">
+<div class="sh"><i class="ti ti-database" aria-hidden="true"></i>저장소 시작과 커밋 3단계<span class="pg">p.6–11</span></div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-user-cog" aria-hidden="true"></i>git config — 사용자 정보 설정<span class="pg">p.6</span></div>
+커밋할 때마다 <b>"누가 이 소스코드를 만들었는지"</b> 메타데이터가 함께 기록됨. 아무것도 없는 것보다 누가 관리했는지 보이는 게 의미 있으므로 미리 설정.
+<pre>git config --global user.name "tweb"
+git config --global user.email you@inu.ac.kr
+git config --list     <span class="cm"># 설정값 확인 (두 값이 들어가 있음)</span></pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)"><code>--global</code> = 전역(환경 변수) 설정. 이름·이메일은 각자 본인 것으로.</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>git init — 폴더를 Git으로 관리 시작<span class="pg">p.6–7</span></div>
+관리하고 싶은 폴더에서 <code>git init</code> → 숨김 폴더 <b><code>.git</code></b>이 생성됨(메타데이터 저장소). 파일 옆에 <b>U</b> 표시가 뜨면 이제 Git 위에서 관리되기 시작한 것.
+<pre>git init</pre>
+<div style="margin-top:8px">파일 상태 약어:</div>
+<div class="grid">
+<div class="cell"><span class="bd">A</span> Added</div>
+<div class="cell"><span class="bd">M</span> Modified</div>
+<div class="cell"><span class="bd">D</span> Deleted</div>
+<div class="cell"><span class="bd">U</span> Untracked</div>
+<div class="cell"><span class="bd">C</span> Conflict</div>
+<div class="cell"><span class="bd">R</span> Renamed</div>
+</div>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>.git 숨김 폴더가 안 보일 때<span class="pg">p.7</span></div>
+VS Code에서 <code>.git</code> 숨김 폴더가 가끔 안 나타남. 설정(Settings)에서 <code>files.exclude</code>의 <code>**/.git</code> 항목을 삭제하면 화면에 보임.
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>파일의 3가지 상태 (가장 핵심)<span class="pg">p.8</span></div>
+Git으로 관리되는 파일은 세 단계를 거침. 수업 내내 반복 강조된 핵심 흐름.
+<div class="flow">
+<span class="st">Working Directory<br>(수정/Modified)</span>
+<i class="ti ti-arrow-right" aria-hidden="true"></i>
+<span class="st"><code>git add</code></span>
+<i class="ti ti-arrow-right" aria-hidden="true"></i>
+<span class="st">Staging Area<br>(Staged)</span>
+<i class="ti ti-arrow-right" aria-hidden="true"></i>
+<span class="st"><code>git commit</code></span>
+<i class="ti ti-arrow-right" aria-hidden="true"></i>
+<span class="st">Committed<br>(스냅샷 보관)</span>
+</div>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-plus" aria-hidden="true"></i>git add · status — 스테이징<span class="pg">p.9</span></div>
+작업 디렉토리의 파일을 커밋하려면 먼저 <code>add</code>로 <b>Staging 단계</b>로 올려야 함.
+<pre>git status            <span class="cm"># 현재 상태 확인 (Untracked 파일 안내)</span>
+git add dweb.md       <span class="cm"># Working Directory → Staging</span>
+git status            <span class="cm"># 이제 staged(초록색, 커밋 직전) 상태</span></pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">add 후 표시가 <b>U → A</b>로 바뀌고 초록색 = "커밋 되기 직전" 상태.</div>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-camera" aria-hidden="true"></i>git commit — 스냅샷 찍기<span class="pg">p.10</span></div>
+Staging 단계의 파일만 커밋 가능. <code>-m</code> 옵션으로 <b>메시지(태그)</b>를 남겨 "언제 무슨 작업을 했는지" 기록.
+<pre>git commit -m "first commit"
+git log               <span class="cm"># 커밋 내역 확인</span></pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)"><code>git log</code> → 커밋 아이디(해시), author(=config에 넣은 이름·이메일), 커밋 시간이 보임. 커밋 후 수정이 없으면 더 이상 추적할 것이 없어 초기 상태로 돌아감.</div>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-target" aria-hidden="true"></i>HEAD와 main 브랜치<span class="pg">p.10–11</span></div>
+<ul>
+<li><b>main</b> = 기본적으로 만들어지는 브랜치(컨테이너/바구니). 커밋들이 <b>연결 리스트 형태로 순서대로</b> 누적됨.</li>
+<li><b>HEAD</b> = 항상 <b>최신(가장 최근) 커밋</b>을 가리키는 포인터.</li>
+</ul>
+<pre>git add dweb.md
+git commit -m "second commit"   <span class="cm"># 수정 후 다시 add → commit</span></pre>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>Git Graph 확장<span class="pg">p.10</span></div>
+<b>Git Graph</b> 확장 프로그램을 설치하면, <code>git log</code>로 보던 커밋 내역을 <b>시각적으로</b> 볼 수 있음. 왼쪽 Git 아이콘 → "View Git Graph".
+</div>
+</div>
+
+<!-- ==================== t4 되돌리기·gitignore ==================== -->
+<div class="sec" data-tab="t4">
+<div class="sh"><i class="ti ti-arrow-back-up" aria-hidden="true"></i>되돌리기와 gitignore<span class="pg">p.12–16</span></div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-arrow-down" aria-hidden="true"></i>git restore --staged — 스테이징 취소<span class="pg">p.9 (스크립트)</span></div>
+Staging 단계로 올린 파일을 다시 Working Directory로 내리고 싶을 때(스테이징 제외).
+<pre>git restore --staged dweb.md   <span class="cm"># Staging → Working Directory (Modified 상태로 복귀)</span></pre>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-history" aria-hidden="true"></i>git checkout — 과거 시점으로 이동<span class="pg">p.12–13</span></div>
+커밋 아이디로 과거 시점의 소스코드를 로드. 아이디는 <b>앞 4자 이상</b>만 써도 됨.
+<pre>git checkout 661ed    <span class="cm"># 해당 커밋 시점의 소스코드가 로드됨 (detached)</span>
+git checkout main     <span class="cm"># main 브랜치의 최신 커밋으로 복귀</span></pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">최신 커밋 아이디를 직접 넣어도 되지만, <code>git checkout main</code>이 "최근 시점으로"라는 뜻으로 간단.</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>git revert — 되돌리는 "새 커밋"<span class="pg">p.14</span></div>
+과거 커밋을 <b>취소하는 새로운 커밋을 하나 더 만듦</b>. 과거로 이동하는 게 아니라, 되돌린 내용을 최신 시점에 올림 → <b>히스토리(기록)는 지워지지 않음</b>.
+<pre>git revert 661ed</pre>
+<ul>
+<li>같은 라인을 수정했던 경우 <b>충돌(conflict)</b> 발생 → VS Code 병합 편집기에서 양쪽 수락 후 수동으로 하나로 수정 → 병합 완료 → 커밋.</li>
+<li>실제로는 자주 쓰는 명령은 아님(개념만 알아두기).</li>
+</ul>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>git reset --hard — 커밋 삭제 (주의)<span class="pg">p.15</span></div>
+지정한 커밋 <b>이후에 발생한 모든 커밋을 완전히 삭제</b>. 그 시점으로 돌아가며, <b>삭제한 커밋은 복구 불가</b>.
+<pre>git reset --hard 661ed   <span class="cm"># 이 커밋 이후의 커밋을 전부 잘라냄</span></pre>
+<div style="margin-top:8px">
+<div class="grid">
+<div class="cell"><b>revert</b><br>되돌리는 새 커밋 생성 · 기록 보존</div>
+<div class="cell"><b>reset --hard</b><br>커밋 자체 삭제 · 복구 불가</div>
+</div>
+</div>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-shield-lock" aria-hidden="true"></i>.gitignore — 추적 제외 (보안)<span class="pg">p.16</span></div>
+비밀번호·키가 들어간 파일(<code>.env</code> 등)은 Git으로 관리하면 안 됨 → GitHub에 올라가 친구와 공유되면 <b>위험</b>.
+<pre><span class="cm"># git add . (점) = 현재 디렉토리의 모든 파일을 한 번에 스테이징</span>
+<span class="cm"># → 실수로 .env 같은 민감 파일까지 올라감!</span>
+
+<span class="cm"># 해결: .gitignore 파일을 만들고 제외할 파일명을 적음</span>
+.env</pre>
+<ul>
+<li><code>.gitignore</code>에 적힌 파일은 더 이상 추적·질문하지 않음(숨김 파일).</li>
+</ul>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>gitignore 자동 생성 사이트<span class="pg">p.16</span></div>
+어떤 파일을 제외할지 고민될 땐 <b>toptal gitignore.io</b> 사이트에서 언어별(node, python 등) 템플릿을 생성해 복붙. <code>.env</code>·숨김 파일은 물론, 패키지 관리자가 받는 큰 파일(예: node_modules)도 제외됨 → <b>GitHub에 올라가는 소스코드 용량이 훨씬 작아짐</b>(패키지는 언제든 다시 설치 가능하므로 관리 대상에서 제외).
+</div>
+</div>
+
+<!-- ==================== t5 브랜치 ==================== -->
+<div class="sec" data-tab="t5">
+<div class="sh"><i class="ti ti-git-branch" aria-hidden="true"></i>브랜치(Branch)<span class="pg">p.17–24</span></div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-sitemap" aria-hidden="true"></i>브랜치 개념<span class="pg">p.17</span></div>
+기본 <b>main(master)</b> 브랜치에 커밋이 누적됨. 여러 브랜치를 만들어 <b>작업을 분담</b>할 수 있음.
+<ul>
+<li>예: 전체는 A가 담당하고, 프론트엔드는 다른 친구, 인증은 또 다른 친구에게 브랜치를 할당해 동시에 개발.</li>
+<li>현재 커밋 시점에서 새 브랜치를 떼어내(분기) 그 브랜치에서 개발 진행.</li>
+</ul>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-plus" aria-hidden="true"></i>브랜치 생성·확인·이동<span class="pg">p.18–20</span></div>
+<pre>git branch                <span class="cm"># 브랜치 목록 (* = 현재 위치)</span>
+git branch feature/web    <span class="cm"># HEAD 시점에서 새 브랜치 분기</span>
+git checkout feature/web  <span class="cm"># 해당 브랜치로 이동</span>
+git branch                <span class="cm"># * 표시가 feature/web으로 바뀜</span></pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">기능 브랜치는 보통 <code>feature/</code> 접두어를 붙여 이름 지음(예: <code>feature/front</code>). 이미 있는 브랜치명(main)은 다시 못 만듦.</div>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-bolt" aria-hidden="true"></i>생성+이동 한 번에 · 삭제<span class="pg">p.21</span></div>
+<pre>git checkout -b feature/web   <span class="cm"># 브랜치 생성 + 체크아웃을 동시에</span>
+git branch -D feature/web     <span class="cm"># 브랜치 삭제</span></pre>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>브랜치별 git log 차이<span class="pg">p.22–24</span></div>
+브랜치가 분기되면 서로 <b>다른 길</b>을 감.
+<ul>
+<li>feature 브랜치에서 커밋 → main보다 <b>앞서나감</b>(HEAD가 feature 최신을 가리킴).</li>
+<li><b>main 브랜치</b>에서 <code>git log</code> → feature에서 한 커밋은 <b>보이지 않음</b>.</li>
+<li><b>feature 브랜치</b>에서 <code>git log</code> → 분기 이전 커밋 + 자기 커밋까지 <b>모두 보임</b>.</li>
+</ul>
+</div>
+</div>
+
+<!-- ==================== t6 Merge·Rebase ==================== -->
+<div class="sec" data-tab="t6">
+<div class="sh"><i class="ti ti-git-merge" aria-hidden="true"></i>Merge와 Rebase<span class="pg">p.25–29</span></div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>Merge — 브랜치 병합<span class="pg">p.25</span></div>
+기능 개발이 끝나면 하나의 소프트웨어로 <b>합쳐야(merge)</b> 함. <b>목적지(합칠 대상) 브랜치로 먼저 checkout</b> 후 merge.
+<pre>git checkout main         <span class="cm"># 목적지(main)로 이동</span>
+git merge feature/web     <span class="cm"># feature/web을 main으로 끌어와 병합</span>
+git branch -D feature/web <span class="cm"># 다 쓴 브랜치는 삭제(지저분하지 않게)</span></pre>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-alert-triangle" aria-hidden="true"></i>충돌(Conflict) 해결<span class="pg">p.26</span></div>
+<ul>
+<li>두 브랜치가 <b>같은 라인</b>을 수정하면 자동 병합 실패 → <b>수작업으로 해결</b>해야 함.</li>
+<li>서로 <b>다른 라인</b>을 수정했으면 Git이 자동으로 병합해 줌.</li>
+<li>VS Code "병합 편집기"에서 어디가 충돌인지 확인 → 양쪽(현재/수신) 수락 후 하나로 수정 → <b>병합 완료</b> → <b>커밋</b>까지 해야 스냅샷으로 기록됨.</li>
+</ul>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>Rebase — 히스토리를 한 줄로<span class="pg">p.28–29</span></div>
+Merge와 <b>결과는 같지만</b>, 분기 모양 없이 <b>커밋 히스토리를 한 줄로 깔끔하게</b> 만듦. 많이 쓰는 명령은 아니고 개념만.
+<pre>git checkout -b feature/front
+<span class="cm"># ... feature/front에서 커밋 ...</span>
+git checkout feature/front
+git rebase main           <span class="cm"># feature 커밋을 main 최신 뒤에 붙임</span></pre>
+rebase 후 main의 HEAD가 뒤처져 있으면(두 커밋이 붙긴 했지만 main HEAD는 과거를 가리킴) <b>Fast-forward</b> 필요:
+<pre>git checkout main
+git merge feature/front   <span class="cm"># 충돌 없이 HEAD를 맨 앞으로 전진(fast-forward)</span>
+git branch -D feature/front</pre>
+<div style="margin-top:8px;font-size:13px">충돌 시 수동 해결 후 진행. 되돌리려면 <code>git rebase --abort</code>.</div>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-git-fork" aria-hidden="true"></i>브랜치 vs 포크(Fork)<span class="pg">p.44 (스크립트)</span></div>
+<div class="grid">
+<div class="cell"><b>Branch</b><br>main과 연결되어 있음 → 언제든 다시 <b>합칠 수 있음</b>.</div>
+<div class="cell"><b>Fork</b><br>완전히 떼어내 <b>연결을 끊고</b> 새로 시작 → 머지 불가. (비트코인에서 포크해 새 체인을 만드는 식의 비유)</div>
+</div>
+</div>
+</div>
+
+<!-- ==================== t7 Hook·Husky·Linter ==================== -->
+<div class="sec" data-tab="t7">
+<div class="sh"><i class="ti ti-webhook" aria-hidden="true"></i>Git Hook · Husky · Linter<span class="pg">p.30–33</span></div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-bolt" aria-hidden="true"></i>Git Hook이란<span class="pg">p.30</span></div>
+Git이 워크플로 중 <b>특정 이벤트(커밋·푸시·다운로드 등)에서 자동으로 실행하는 스크립트</b>.
+<ul>
+<li><code>.git/hooks</code> 폴더에 여러 샘플이 <code>.sample</code> 확장자로 들어 있음.</li>
+<li>푸시할 때 / 내려받을 때 실행되는 것 등 각각 의미가 있고, 주로 <b>유효성 검사</b>용.</li>
+</ul>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-check" aria-hidden="true"></i>pre-commit hook<span class="pg">p.31</span></div>
+가장 많이 쓰는 훅. <b>커밋 직전에 무조건 실행</b>되는 셸 스크립트. <code>.sample</code> 확장자를 지우면 동작 시작.
+<pre><span class="cm"># .git/hooks/pre-commit  (셸 스크립트)</span>
+echo "hello, Incheon world"</pre>
+<div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">커밋하면 이 메시지가 출력됨 = 훅이 실행된 것. 여기에 검사 로직을 넣으면 <b>스냅샷을 찍기 전에 잘못된 부분(비밀번호 유출, 오류 등)을 한 번 더 검사</b> 가능.</div>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-package" aria-hidden="true"></i>Husky — Node 패키지 훅<span class="pg">p.32</span></div>
+셸 스크립트를 직접 짜기 번거로우니, <b>언어별 패키지로 pre-commit 훅을 작성</b>. JS 대표 패키지 = <b>Husky</b>(Python에도 유사 패키지 존재).
+<pre>npm init                      <span class="cm"># package.json 생성 (프로젝트 시작)</span>
+npm install --save-dev husky  <span class="cm"># 개발용 의존성으로 설치</span>
+npx husky init                <span class="cm"># husky 디렉토리·pre-commit 생성</span></pre>
+<ul>
+<li><code>--save-dev</code> = 배포 시엔 설치 안 되는 <b>개발용 패키지</b>(<code>devDependencies</code>에 기록) — 남들이 package.json만 봐도 용도 파악 가능.</li>
+<li><code>npx</code> = 다운로드한 패키지를 실행하고 사라진다고 생각.</li>
+<li><code>git commit -n</code> = pre-commit 훅을 <b>건너뛰고</b> 커밋.</li>
+</ul>
+</div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>ESLint — pre-commit 린터<span class="pg">p.33</span></div>
+<b>린터(linter)</b> = 코드 오류·스타일을 잡아주는 도구(컴파일 에러 류). JS 대표 린터 = <b>ESLint</b>. 커밋 전 무조건 실행 → <b>코딩 스타일 통일 + 잠재적 오류 제거</b>.
+<pre>npm install --save-dev eslint @eslint/js
+touch eslint.config.js        <span class="cm"># 설정 파일 (ESLint 홈페이지 Quick Start 복붙)</span>
+npx eslint ./src --fix        <span class="cm"># src 안 모든 파일 검사 + 자동 수정</span></pre>
+<ul>
+<li>선언만 하고 안 쓴 변수 → 기본은 <b>warning</b>. config에서 <code>no-unused-vars</code>를 <b><code>"error"</code></b>로 바꾸면 강력하게 에러를 내 <b>커밋 자체를 막음</b>.</li>
+<li><code>--fix</code> 옵션·스타일 룰 → 개발자마다 다른 코딩 스타일을 <b>자동으로 통일</b>(협업 시 가독성).</li>
+<li>이 명령을 <b>Husky pre-commit에 넣으면</b> 커밋할 때마다 자동으로 검사·스타일 수정 후 커밋됨.</li>
+</ul>
+</div>
+
+<div class="card ext">
+<div class="ct"><i class="ti ti-info-circle" aria-hidden="true"></i>1차/2차 검증 (CI/CD 맥락)<span class="pg">p.33 (스크립트)</span></div>
+<div class="flow">
+<span class="st">1차: 내 디바이스<br>pre-commit 훅으로 빠르게 검사·수정</span>
+<i class="ti ti-arrow-right" aria-hidden="true"></i>
+<span class="st">GitHub에 push</span>
+<i class="ti ti-arrow-right" aria-hidden="true"></i>
+<span class="st">2차: GitHub Actions(클라우드)<br>에서 재검사</span>
+</div>
+<div style="margin-top:10px;font-size:13px">서버 검증은 느리므로 내 기기에서 1차로 빠르게 걸러 수정하는 게 시간상 이득. pre-commit 훅은 특히 <b>CI/CD 파이프라인</b> 구성 시 많이 사용.</div>
+</div>
+</div>
+
+<!-- ==================== t8 핵심 체크 ==================== -->
+<div class="sec" data-tab="t8">
+<div class="sh"><i class="ti ti-list-check" aria-hidden="true"></i>핵심 체크<span class="pg">p.1–33</span></div>
+
+<div class="card imp">
+<div class="ct"><i class="ti ti-star" aria-hidden="true"></i>반드시 기억할 핵심</div>
+<ul>
+<li><b>3단계 흐름</b>: Working Directory → (<code>git add</code>) Staging → (<code>git commit</code>) Committed.</li>
+<li><b>commit</b> = 스냅샷, <b>HEAD</b> = 최신 커밋 포인터, <b>main</b> = 커밋이 리스트로 쌓이는 바구니.</li>
+<li>되돌리기 3종: <code>checkout</code>(이동) · <code>revert</code>(되돌리는 새 커밋, 기록 보존) · <code>reset --hard</code>(기록 삭제, 복구 불가).</li>
+<li><b>.gitignore</b>로 <code>.env</code> 등 비밀 파일 제외 — 보안 필수.</li>
+<li>브랜치 분기 → <b>merge</b>(같은 라인 충돌은 수동 해결) / <b>rebase</b>(히스토리 한 줄).</li>
+<li>커밋 전 검증: <b>pre-commit 훅 + Husky + ESLint</b>로 오류·스타일 1차 검사.</li>
+</ul>
+</div>
+
+<div class="card">
+<div class="ct"><i class="ti ti-route" aria-hidden="true"></i>명령어 요약</div>
+<div class="grid">
+<div class="cell"><span class="bd">git init</span> 저장소 시작</div>
+<div class="cell"><span class="bd">git add</span> 스테이징</div>
+<div class="cell"><span class="bd">git commit -m</span> 스냅샷</div>
+<div class="cell"><span class="bd">git log</span> 내역</div>
+<div class="cell"><span class="bd">git status</span> 상태</div>
+<div class="cell"><span class="bd">git restore --staged</span> 스테이징 취소</div>
+<div class="cell"><span class="bd">git checkout</span> 이동</div>
+<div class="cell"><span class="bd">git revert</span> 되돌리는 커밋</div>
+<div class="cell"><span class="bd">git reset --hard</span> 커밋 삭제</div>
+<div class="cell"><span class="bd">git branch</span> 브랜치</div>
+<div class="cell"><span class="bd">git merge</span> 병합</div>
+<div class="cell"><span class="bd">git rebase</span> 재배치</div>
+</div>
+</div>
+
+<div class="card off">
+<div class="ct"><i class="ti ti-calendar-event" aria-hidden="true"></i>다음 시간 예고 (이번 녹음 범위 밖)<span class="pg">p.34–47</span></div>
+이번 수업은 Git 로컬 사용(설치~훅/린터)까지. 강의자료 p.34~47의 <b>GitHub 원격 협업</b>(remote·push·pull·clone·Pull Request·Fork, Case 1·2·3)과 <b>CI(Continuous Integration)</b> 자동화 도구(GitHub Actions 등)는 <b>다음 시간</b>에 다룰 예정으로 예고만 됨.
+</div>
+</div>
+
+</div>
+</div>
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tabs button');
+  var secs=document.querySelectorAll('.sec');
+  function show(t){
+    secs.forEach(function(s){s.style.display=s.getAttribute('data-tab')===t?'block':'none';});
+    tabs.forEach(function(b){b.classList.toggle('on',b.getAttribute('data-t')===t);});
+  }
+  tabs.forEach(function(b){b.addEventListener('click',function(){show(b.getAttribute('data-t'));});});
+  show('t1');
+})();
+</script>
+</body>
+</html>
