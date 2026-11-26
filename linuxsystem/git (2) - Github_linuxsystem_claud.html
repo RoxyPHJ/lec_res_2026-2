@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>git (2) - Github</title>
+<style>
+:root{
+  --surface-0:#f5f4ef;--surface-1:#f1efe8;--surface-2:#ffffff;
+  --text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(31,30,29,.14);--border-strong:rgba(31,30,29,.28);
+  --bg-neutral:rgba(31,30,29,.06);
+  --bg-warning:#FAEEDA;--text-warning:#633806;--border-warning:#EF9F27;
+  --bg-accent:#E6F1FB;--text-accent:#0C447C;--border-accent:#85B7EB;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  --font-mono:"SF Mono",Menlo,Consolas,"Noto Sans KR",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface-0:#1f1e1d;--surface-1:#2a2927;--surface-2:#30302e;
+    --text-primary:#ece9e1;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);
+    --bg-neutral:rgba(255,255,255,.08);
+    --bg-warning:#412402;--text-warning:#FAC775;--border-warning:#854F0B;
+    --bg-accent:#042C53;--text-accent:#B5D4F4;--border-accent:#185FA5;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7;-webkit-text-size-adjust:100%}
+.page{max-width:760px;margin:0 auto;padding:1.5rem 16px 3rem}
+.back{font-size:13px;color:var(--text-secondary);text-decoration:none}
+.back:hover{color:var(--text-primary)}
+h1{font-size:22px;font-weight:500;margin:10px 0 2px}
+.sub{font-size:13px;color:var(--text-secondary);margin:0 0 14px}
+button{font-family:inherit}
+</style>
+</head>
+<body>
+<div class="page">
+<a class="back" href="../index.html">← 목차</a>
+<h1>git (2) - Github</h1>
+<p class="sub">리눅스시스템 · 8 Git</p>
+<style>
+.ln{font-size:14px;line-height:1.65;color:var(--text-primary)}
+.ln .src{font-size:12px;color:var(--text-muted);margin:0 0 8px}
+.ln .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.ln .tab{font-size:13px;padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer}
+.ln .tab.on{background:var(--text-primary);color:var(--surface-2);border-color:var(--text-primary)}
+.ln .panel{display:none}
+.ln .panel.on{display:block}
+.ln .card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin:0 0 12px}
+.ln .card.imp{background:var(--bg-warning);border-color:var(--border-warning)}
+.ln .card.note{background:var(--bg-accent);border-color:var(--border-accent)}
+.ln h3{font-size:15px;font-weight:500;margin:0 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ln .imp h3{color:var(--text-warning)}
+.ln .note h3{color:var(--text-accent)}
+.ln .pg{font-size:11px;font-weight:400;color:var(--text-secondary);border:0.5px solid var(--border-strong);border-radius:99px;padding:1px 8px;margin-left:auto}
+.ln p{margin:0 0 6px}
+.ln ul,.ln ol{margin:0 0 6px;padding-left:20px}
+.ln code{font-family:var(--font-mono);font-size:13px;background:var(--bg-neutral);padding:1px 5px;border-radius:4px}
+.ln pre{font-family:var(--font-mono);font-size:13px;line-height:1.55;background:var(--bg-neutral);border-radius:var(--radius);padding:10px 12px;margin:6px 0;overflow-x:auto;white-space:pre}
+.ln .flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.ln .st{background:var(--bg-neutral);border-radius:var(--radius);padding:6px 10px;font-size:13px}
+.ln .ar{color:var(--text-muted)}
+.ln .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:6px 0}
+.ln .cell{background:var(--bg-neutral);border-radius:var(--radius);padding:10px 12px;font-size:13px}
+.ln .cell b{font-weight:500;display:block;margin-bottom:2px}
+.ln .bd{font-size:11px;padding:1px 7px;border-radius:99px;background:var(--bg-neutral);color:var(--text-secondary)}
+</style>
+<div class="ln">
+<p class="src">강의자료: 8_Git.pdf p.34 – p.47 (Collaborating and working together · Case 1 – Case 3)</p>
+<div class="tabs" role="tablist">
+<button class="tab on" data-t="0">개요 · 실습 환경</button>
+<button class="tab" data-t="1">Case 1 · 혼자 쓰기</button>
+<button class="tab" data-t="2">Case 2 · 팀 협업</button>
+<button class="tab" data-t="3">Case 3 · Fork 기여</button>
+</div>
+
+<div class="panel on">
+<div class="card">
+<h3>GitHub을 쓰는 세 가지 목적 <span class="pg">p.34</span></h3>
+<div class="grid">
+<div class="cell"><b>1. 개인 클라우드 관리</b>로컬 디스크 공간을 차지하는 프로젝트를 올려두고, 필요하면 로컬에서 지웠다가 다시 내려받는다.</div>
+<div class="cell"><b>2. 팀 프로젝트 협업</b>캡스톤 디자인처럼 팀을 짜서 할 때, 각자 독립된 계정으로 저장소 하나를 함께 관리한다.</div>
+<div class="cell"><b>3. 오픈소스 기여</b>오픈소스의 기능을 개선했다면 그 변경을 원본에 반영하기 위해 코드 컨트리뷰션을 한다.</div>
+</div>
+</div>
+<div class="card">
+<h3>실습 환경: 두 사람을 시뮬레이션 <span class="pg">p.34</span></h3>
+<p>두 명 이상이 함께 쓰는 상황을 만들기 위해 계정 2개, 브라우저 2개, 컴퓨터 2대를 준비한다. 이메일만 있으면 GitHub 계정은 여러 개 만들 수 있다.</p>
+<div class="grid">
+<div class="cell"><b>나 (프로젝트 대표)</b>계정 <code>Dweb-Incheon</code><br>Chrome으로 접속<br>로컬 저장소: 맥북 터미널</div>
+<div class="cell"><b>친구 (동료)</b>두 번째 계정<br>Firefox로 접속<br>로컬 저장소: EC2 인스턴스</div>
+</div>
+<p>브라우저를 나누는 이유는 두 계정을 완전히 독립된 프로세스로 접속하기 위해서다. Edge, Safari 등 어떤 조합이든 상관없다.</p>
+</div>
+<div class="card">
+<h3>세 시나리오 한눈에 보기 <span class="pg">p.35 – p.47</span></h3>
+<div class="grid">
+<div class="cell"><span class="bd">Case 1</span><b>내 저장소 1개</b>remote add → push → pull/merge</div>
+<div class="cell"><span class="bd">Case 2</span><b>저장소 1개 + 여러 계정</b>collaborator → clone → feature 브랜치 → PR → 리뷰/머지</div>
+<div class="cell"><span class="bd">Case 3</span><b>저장소 2개 (원본 + fork)</b>fork → clone → push → 원본에 PR → upstream/fetch</div>
+</div>
+</div>
+</div>
+
+<div class="panel">
+<div class="card">
+<h3>로컬 프로젝트 만들고 첫 커밋 <span class="pg">p.35</span></h3>
+<pre>$ mkdir git_linux
+$ cd git_linux
+$ code .                 # 작업 디렉토리에서 VS Code 열기
+$ git init               # 이 디렉토리를 Git으로 관리 (.git 생성)
+$ git add dweb.md        # 파일을 스테이징 단계로
+$ git status
+$ git commit -m "first commit"</pre>
+<ul>
+<li><code>git add</code>에는 <code>-u</code>, <code>-A</code> 등 옵션이 많다. <code>git add .</code>은 현재 위치의 모든 파일을 스테이징한다. 단, <code>.gitignore</code>에 명시된 파일은 제외.</li>
+<li>커밋 후 Git Graph에서 커밋 1개를 확인할 수 있다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>GitHub에 원격 저장소 만들기 <span class="pg">p.35</span></h3>
+<div class="flow"><span class="st">Repositories</span><span class="ar">→</span><span class="st">New</span><span class="ar">→</span><span class="st">이름 · 설명 입력</span><span class="ar">→</span><span class="st">Public / Private</span><span class="ar">→</span><span class="st">Create repository</span></div>
+<ul>
+<li>주소 앞부분은 내 계정 이름, 저장소 이름은 자유롭게 짓는다. 설명(description)도 적을 수 있다.</li>
+<li><b style="font-weight:500">Private</b>: 오픈소스로 공개하지 않음. 남이 검색해도 소스코드를 볼 수 없다. 민감한 프로젝트나 별것 아닌 것들.</li>
+<li><b style="font-weight:500">Public</b>: 검색하면 소스코드가 나오고 누구나 내려받을 수 있다. 수업에서는 Public으로 진행.</li>
+<li>생성 후 안내 화면에 나오는 주소가 원격 저장소의 URL이다. 이 주소만 알면 언제든 프로젝트를 내려받을 수 있다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>로컬 저장소와 원격 저장소 연결 <span class="pg">p.36</span></h3>
+<p>연결을 해줘야 로컬 저장소의 프로젝트를 원격 저장소에 업로드할 수 있다. 원격 저장소 정보를 등록하는 명령이 <code>git remote add</code>다.</p>
+<pre>$ git remote add origin https://github.com/Dweb-Incheon/linux-class.git
+#                └ 원격 저장소 이름   └ 원격 저장소 URL
+$ git remote get-url origin     # 잘 등록됐는지 확인</pre>
+<p>원격 저장소 이름은 보통 <code>origin</code>이라고 쓴다. 다른 이름으로 바꾸지 말고 그대로 <code>origin</code>을 쓸 것.</p>
+</div>
+<div class="card">
+<h3>설정이 저장되는 곳: local과 global <span class="pg">p.37</span></h3>
+<div class="grid">
+<div class="cell"><b>로컬 설정</b>프로젝트의 숨김 폴더 <code>.git/config</code><br>해당 프로젝트에만 적용. remote 정보가 여기에 들어간다.</div>
+<div class="cell"><b>글로벌 설정</b>홈 디렉토리의 <code>~/.gitconfig</code><br><code>--global</code> 옵션으로 설정. 모든 Git 프로젝트에 적용. <code>user.name</code>, <code>user.email</code> 등.</div>
+</div>
+<pre>$ git config --list</pre>
+<p>로컬 설정이 우선 적용되고, 로컬에 없는 값은 글로벌 값이 들어와 적용된다.</p>
+</div>
+<div class="card">
+<h3>Push: 로컬 커밋을 원격으로 올리기 <span class="pg">p.36 – p.37</span></h3>
+<pre>$ git push origin main
+#          └ 어디로   └ 어떤 브랜치를</pre>
+<ul>
+<li>메인 브랜치의 스냅샷(커밋)들을 <code>origin</code>에 밀어넣는다(업로드).</li>
+<li>기본 브랜치는 <code>main</code> 또는 <code>master</code>. 우분투에서는 <code>master</code>로 만들어질 수 있고, config에서 <code>main</code>으로 바꿀 수 있다.</li>
+<li>이후에도 코드를 수정할 때마다 <code>git add</code> → <code>git commit</code> → <code>git push origin main</code>으로 동기화한다.</li>
+</ul>
+</div>
+<div class="card imp">
+<h3><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z"/></svg>중요: push 때 묻는 비밀번호는 토큰이다 <span class="pg">p.36</span></h3>
+<p>push를 하면 ID와 비밀번호를 묻는다. ID는 GitHub 계정이고, 비밀번호는 사이트 로그인 비밀번호가 아니라 발급받은 토큰이다.</p>
+<div class="flow"><span class="st">Settings</span><span class="ar">→</span><span class="st">Developer settings</span><span class="ar">→</span><span class="st">Tokens (classic)</span><span class="ar">→</span><span class="st">Generate new token (classic)</span></div>
+<ul>
+<li>토큰 이름과 유효기간(예: 7일)을 정한다.</li>
+<li>이 토큰으로 할 수 있는 역할의 범위를 선택한다. 맨 위 항목은 반드시 체크해야 한다.</li>
+<li>생성된 토큰은 반드시 복사해 둔다. 비밀번호 자리에 붙여넣는다(화면에는 보이지 않는다).</li>
+<li>EC2에 접속할 때 쓰는 개인키처럼 일종의 비밀번호 역할을 한다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>원격에서 커밋하고 로컬로 가져오기 <span class="pg">p.38</span></h3>
+<p>GitHub 웹에서 README를 추가하고 Commit changes로 바로 커밋할 수 있다(메인 브랜치에 이어서 커밋할지, 새 브랜치를 만들지 선택). 그러면 원격이 최신이고 로컬은 커밋 하나만큼 뒤처진 상태가 된다.</p>
+<div class="flow"><span class="st">원격: 커밋 3개 (README 포함)</span><span class="ar">→ 가져오기 →</span><span class="st">로컬: 커밋 2개</span></div>
+<pre>$ git pull origin main      # 원격 저장소의 내역을 가져오기
+$ git branch -a             # 원격 브랜치 origin/main 까지 표시
+$ git merge origin/main     # 가져온 내역을 내 main 에 병합</pre>
+<ul>
+<li>가져온 직후 Git Graph를 보면 <code>main</code>은 커밋 2개인데 <code>origin/main</code>에 커밋이 하나 더 있는 것으로 구분되어 보인다.</li>
+<li><code>git remote add</code>로 연결한 순간부터 <code>git branch -a</code>에 원격 저장소의 브랜치가 함께 보인다.</li>
+<li>병합하면 README 파일이 나타나고 원격과 완전히 같은 상태로 동기화된다.</li>
+</ul>
+</div>
+<div class="card note">
+<h3>[부연설명] pull과 fetch의 차이</h3>
+<p>일반적으로 <code>git pull</code>은 가져오기(fetch)와 병합(merge)을 한 번에 수행한다. 강의 시연처럼 "가져왔는데 <code>git log</code>에는 아직 안 보이고 <code>origin/main</code>만 앞서 있는" 상태는 <code>git fetch origin</code>을 했을 때의 모습이며, 그 뒤에 <code>git merge origin/main</code>을 하는 흐름이다. 강의자료 p.38도 병합을 "(필요시)"로 표기한다.</p>
+</div>
+<div class="card">
+<h3>혼자 쓸 때도 브랜치 활용 <span class="pg">p.38</span></h3>
+<p>메인 브랜치에서만 작업하지 않고, 특정 기능 구현이 필요하면 feature 브랜치를 만들어 작업한 뒤 병합할 수 있다.</p>
+<pre>$ git checkout -b feature/web
+$ git push origin feature/web</pre>
+<p>혼자 쓰는 용도는 여기까지만 익혀도 큰 문제가 없다.</p>
+</div>
+</div>
+
+<div class="panel">
+<div class="card">
+<h3>협업자(collaborator) 등록 <span class="pg">p.39</span></h3>
+<p>팀원 중 대표가 원격 저장소를 하나 만들고 친구들의 GitHub 계정을 등록하면, 대표의 저장소 하나로 모두가 함께 프로젝트를 진행할 수 있다.</p>
+<div class="flow"><span class="st">저장소 Settings</span><span class="ar">→</span><span class="st">Collaborators</span><span class="ar">→</span><span class="st">Add people</span><span class="ar">→</span><span class="st">Pending invite</span><span class="ar">→</span><span class="st">친구가 메일에서 Accept</span></div>
+<ul>
+<li>친구의 GitHub 계정이나 이메일로 추가한다. 친구 계정의 이메일로 초대장이 발송된다.</li>
+<li>Accept하는 순간, 친구가 만들지 않았는데도 친구의 저장소 목록에 해당 저장소가 나타난다.</li>
+</ul>
+</div>
+<div class="card imp">
+<h3><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z"/></svg>중요: 협업자는 대표와 같은 URL을 쓴다 <span class="pg">p.41</span></h3>
+<p>대표가 보는 저장소 URL과 친구가 보는 저장소 URL이 완전히 일치한다. 계정만 다를 뿐 같은 저장소이기 때문이다.</p>
+<p>fork는 저장소를 떼어내 내 것으로 가져오는 것이라 주소가 완전히 바뀐다. 협업자 등록과 fork는 전혀 다른 이야기다.</p>
+</div>
+<div class="card">
+<h3>친구: clone → feature 브랜치 → push <span class="pg">p.41</span></h3>
+<pre>$ git clone &lt;URL&gt; .                 # 현재 디렉토리에 풀기
+$ git clone &lt;URL&gt; git_linux         # 디렉토리를 만들어 그 안에 풀기
+$ cd git_linux
+$ git log                           # 대표의 로컬 저장소와 동일한 로그
+
+$ git checkout -b feature/web       # 브랜치 생성 + 이동을 한 번에
+$ vim dweb.md                       # 코드 수정
+$ git status                        # modified, 아직 스테이징 전
+$ git add dweb.md
+$ git commit -m "feature web commit"
+
+$ git remote get-url origin         # 대표 저장소의 URL
+$ git push origin feature/web</pre>
+<ul>
+<li>커밋 후 <code>git log</code>를 보면 feature 브랜치가 main보다 커밋 하나만큼 앞서 있다.</li>
+<li>push할 때 ID는 자기 자신의 GitHub 계정이고, 토큰도 자기 계정으로 발급받아야 한다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>Pull request (PR) 보내기 <span class="pg">p.42</span></h3>
+<p>feature 브랜치를 push하면 GitHub에 자동으로 안내가 뜬다. 원격 저장소에서 이 작업을 확인하고 main 브랜치와 병합할지 결정하도록 요청하는 것이 pull request, 줄여서 PR이다.</p>
+<div class="flow"><span class="st">feature/web push</span><span class="ar">→</span><span class="st">Compare &amp; pull request</span><span class="ar">→</span><span class="st">메시지 작성</span><span class="ar">→</span><span class="st">대표에게 PR 도착</span></div>
+<ul>
+<li>의미: "feature 브랜치 작업이 끝났으니 main 브랜치와 합쳐 달라."</li>
+<li>어떤 기능을 구현했는지 상대방이 확인할 수 있게 메시지를 적어 보낸다.</li>
+<li>권한이 대표와 같게 설정되어 있으면 친구가 직접 머지할 수도 있지만, 그렇게 하면 안 된다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>대표: 확인하고 머지 <span class="pg">p.43</span></h3>
+<div class="flow"><span class="st">Pull requests 탭</span><span class="ar">→</span><span class="st">Commits에서 변경 확인</span><span class="ar">→</span><span class="st">Merge pull request</span><span class="ar">→</span><span class="st">Confirm merge</span></div>
+<ul>
+<li>그냥 머지해 주면 안 되고, 어떤 기능을 구현해 병합하려는지 확인한 뒤 이상이 없으면 머지한다.</li>
+<li>어떤 병합이었는지 나중에 기억하기 좋게 코멘트를 달 수 있다.</li>
+</ul>
+</div>
+<div class="card imp">
+<h3><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z"/></svg>중요: branch protection rule <span class="pg">p.40</span></h3>
+<p>협업자를 그냥 넣는 것이 아니라, 브랜치를 마음대로 건드리지 못하게 보호 규칙을 건다.</p>
+<div class="flow"><span class="st">Settings</span><span class="ar">→</span><span class="st">Branches</span><span class="ar">→</span><span class="st">Add branch protection rule</span></div>
+<ul>
+<li>대상: 가장 중요한 <code>main</code>(<code>master</code>) 브랜치. <code>feature*</code>처럼 쓰면 feature 뒤에 어떤 문자가 오든 모두 적용된다.</li>
+<li>대표 규칙: 머지하기 전에 반드시 정해진 인원의 코드 승인을 받아야 한다. 예: 10명 팀이면 5명 승인, 2 – 3명 팀이면 최소 1명 승인.</li>
+<li>규칙이 걸리면 PR을 보낸 본인은 직접 머지할 수 없다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>머지 이후 다시 작업하기 <span class="pg">p.43</span></h3>
+<p>머지로 원격 저장소가 로컬보다 커밋 하나 앞서게 되므로, 최신 상태를 내려받아 동기화한 뒤 다시 작업한다.</p>
+<pre>$ git pull origin main          # 원격의 병합 결과를 로컬로
+$ git checkout feature/web      # 브랜치 이동은 branch 가 아니라 checkout
+$ vim dweb.md
+$ git add dweb.md
+$ git commit -m "..."
+$ git push origin feature/web</pre>
+</div>
+<div class="card">
+<h3>ID/토큰을 매번 묻지 않게: credential.helper <span class="pg">p.37</span></h3>
+<pre>$ git config (--global) credential.helper store
+$ git config (--global) credential.helper cache
+$ git config (--global) credential.helper 'cache --timeout=3600'</pre>
+<div class="grid">
+<div class="cell"><b>store</b>디스크에 저장. 한 번만 입력하면 이후에는 묻지 않는다. (자료: <code>~/.git-credentials</code>)</div>
+<div class="cell"><b>cache</b>메모리에 저장되어 일정 시간 뒤 사라진다. (자료: 기본 15분, <code>--timeout=3600</code>이면 60분)</div>
+</div>
+<p><code>--global</code>을 주면 홈 디렉토리의 설정에 들어가 모든 프로젝트에 적용되고, 주지 않으면 해당 프로젝트에서만 적용된다. 작업 디렉토리를 지우고 다시 만들면 로컬 설정이 초기화되어 다시 묻는다.</p>
+</div>
+<div class="card">
+<h3>리뷰어 지정 → 승인 → 머지 <span class="pg">p.42 – p.43</span></h3>
+<div class="flow"><span class="st">PR 생성 + Reviewers에 대표 지정</span><span class="ar">→</span><span class="st">대표: Add your review</span><span class="ar">→</span><span class="st">Approve</span><span class="ar">→</span><span class="st">머지 버튼 활성화</span><span class="ar">→</span><span class="st">Merge</span></div>
+<ul>
+<li>보호 규칙 때문에 리뷰가 필요하다는 안내가 PR 맨 위에 표시된다. 최소 1명 이상이 승인해야 머지할 수 있다.</li>
+<li>리뷰는 코드에 이상이 없는지 검토하는 것이다. 리뷰어를 몇 명 둘지는 팀 규모에 따라 정한다(예: 절반 이상).</li>
+<li>정리: 각자 서로 다른 feature 브랜치에서 작업하고, 하나의 main 브랜치에 주기적으로 머지한 뒤, 머지되면 pull로 다시 동기화한다.</li>
+</ul>
+</div>
+</div>
+
+<div class="panel">
+<div class="card">
+<h3>Fork 시나리오: 권한이 없는 저장소에 기여 <span class="pg">p.44</span></h3>
+<p>협업자에서 삭제되어 더 이상 저장소를 함께 관리하지 못하는 상황. 그래도 Public 저장소(오픈소스)는 검색이 되므로, 남의 저장소를 내 계정으로 떼어 와서 작업할 수 있다. 이것을 fork라고 한다.</p>
+<div class="flow"><span class="st">원본 저장소 (Dweb-Incheon)</span><span class="ar">→ Fork →</span><span class="st">내 계정의 저장소 (복사본)</span></div>
+<ul>
+<li>fork하면 완전히 내 것으로 가져오는 것이므로 저장소 이름을 마음대로 지어도 된다(예: <code>linux-system</code>).</li>
+<li>"Copy the main branch only"를 선택하면 여러 브랜치 중 main 브랜치의 커밋 내역만 가져온다.</li>
+<li>내 기여가 리뷰를 거쳐 원본에 머지되면 그것이 코드 컨트리뷰션이고, 좋은 이력이 된다.</li>
+</ul>
+</div>
+<div class="card imp">
+<h3><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z"/></svg>중요: fork한 저장소는 원본과 분리된 별개의 저장소 <span class="pg">p.44</span></h3>
+<div class="grid">
+<div class="cell"><b>Case 2 (collaborator)</b>원격 저장소 1개를 함께 사용. URL이 대표와 동일.</div>
+<div class="cell"><b>Case 3 (fork)</b>원격 저장소가 2개. URL의 계정 부분이 원본은 <code>Dweb-Incheon</code>, fork는 내 계정으로 완전히 다르다.</div>
+</div>
+</div>
+<div class="card">
+<h3>내 fork를 clone해서 작업 → 내 fork에 push <span class="pg">p.44 – p.45</span></h3>
+<pre>$ git clone &lt;내 fork URL&gt; git_linux
+$ cd git_linux
+# ... 코드 수정 ...
+$ git checkout -b feature/front     # main 이 아닌 새 브랜치에서 커밋
+$ git add dweb.md
+$ git commit -m "..."
+
+$ git remote get-url origin         # 원본이 아니라 내 계정의 fork 저장소
+$ git push origin feature/front</pre>
+<ul>
+<li>main 브랜치에서 커밋하지 않는다. 새 브랜치의 커밋 내역을 머지해 달라고 PR을 보내야 하기 때문이다.</li>
+<li>여기서 <code>origin</code>은 원본 저장소가 아니라 fork해서 가져온 내 계정의 원격 저장소다. push는 여기에 한다.</li>
+</ul>
+</div>
+<div class="card imp">
+<h3><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z"/></svg>중요: PR의 base와 head를 반드시 확인 <span class="pg">p.45</span></h3>
+<div class="flow"><span class="st">head: 내 fork 저장소의 feature/front</span><span class="ar">→ 병합 요청 →</span><span class="st">base: 원본 저장소(관리자)의 main</span></div>
+<p>PR 화면 위쪽의 base repository / 브랜치 표시를 잘 봐야 한다. 제대로 확인하지 않으면 엉뚱한 병합을 요청하게 된다.</p>
+</div>
+<div class="card">
+<h3>원본 관리자: 리뷰하고 머지 <span class="pg">p.46</span></h3>
+<div class="flow"><span class="st">Pull requests 탭</span><span class="ar">→</span><span class="st">코드 리뷰</span><span class="ar">→</span><span class="st">Approve</span><span class="ar">→</span><span class="st">Merge pull request</span><span class="ar">→</span><span class="st">Confirm merge</span></div>
+<ul>
+<li>main 브랜치에 "1명 이상 리뷰" 보호 규칙이 있으므로 리뷰를 승인해야 머지할 수 있다.</li>
+<li>머지하면 다른 사람이 fork해 가서 대신 개발해 준 내용이 원본 저장소에 들어온다.</li>
+</ul>
+</div>
+<div class="card">
+<h3>upstream과 fetch: 원본의 최신 내역 따라가기 <span class="pg">p.47</span></h3>
+<p>오픈소스는 계속 업데이트되는데 내가 fork한 시점이 오래됐다면, fork한 저장소가 원본보다 많이 뒤처진다. 이때 원본 저장소의 주소가 필요하고, 보통 <code>upstream</code>이라는 이름으로 등록한다. <code>upstream</code>은 명령이라기보다 <code>origin</code>처럼 원격 저장소에 붙이는 이름이다.</p>
+<pre>$ git remote add upstream &lt;원본 저장소 URL&gt;
+$ git remote get-url upstream       # 등록 확인
+
+$ git fetch upstream                # 원본 main 의 커밋들을 모두 가져오기
+$ git checkout main
+$ git merge upstream/main           # 가져온 최신 내역을 내 main 에 병합</pre>
+<div class="grid">
+<div class="cell"><b>origin</b>내 계정의 fork 저장소. push하는 곳.</div>
+<div class="cell"><b>upstream</b>원본 오픈소스 저장소. 최신 변경을 fetch해 오는 곳.</div>
+</div>
+<p>등록할 때 넣는 주소가 내 fork의 주소가 아니라 원본 저장소의 주소인지 잘 확인해야 한다. 이렇게 하면 원본에서 커밋이 계속 일어나도 내 main 브랜치와 동기화하면서 기여를 이어갈 수 있다.</p>
+</div>
+<div class="card">
+<h3>연습 방법 <span class="pg">p.34</span></h3>
+<p>계정 두 개를 만들어 직접 해 보거나, 옆 친구와 함께 계정을 만들어 협업을 해 보면 익숙해진다.</p>
+</div>
+</div>
+</div>
+<script>
+(function(){var r=document.querySelector('.ln'),t=r.querySelectorAll('.tab'),p=r.querySelectorAll('.panel');t.forEach(function(b){b.addEventListener('click',function(){var i=+b.dataset.t;t.forEach(function(x,j){x.classList.toggle('on',j===i)});p.forEach(function(x,j){x.classList.toggle('on',j===i)})})})})();
+</script>
+</div>
+</body>
+</html>
